@@ -1,6 +1,6 @@
 ---
 name: dev-start
-description: Start the VITAL Expo dev server in the background, restarting it if it is already running, with an optional cache-clear. Use when the user runs /dev-start, asks to start / restart / boot the dev server or Metro bundler, or wants a fresh-cache (clean) restart.
+description: Bring up the VITAL dev environment — the local Postgres (Docker Compose) and the Expo dev server (Metro) — in the background, restarting the dev server if it is already running, with an optional cache-clear. Use when the user runs /dev-start, asks to start / restart / boot the dev server, Metro bundler, or local database, or wants a fresh-cache (clean) restart.
 ---
 
 # dev-start
@@ -8,10 +8,17 @@ description: Start the VITAL Expo dev server in the background, restarting it if
 Bring the VITAL development environment up in the background. If it is already
 running, restart it cleanly. Optionally clear the Metro bundler cache on the way up.
 
-Today "everything" is a single process: the **Expo dev server** (`expo start`,
-Metro on port `8081`). This is an Expo SDK 56 + Expo Router project — keep to the
-SDK 56 CLI (`npx expo …`). If more long-running dev processes are added later
-(e.g. an API server), extend the start/stop steps below to cover each one.
+The dev environment is **two** long-running pieces:
+
+1. **Local Postgres**, run via **Docker Compose** (`docker compose up -d --wait`,
+   container `vital-postgres`, default port `5432`). This is how you get a database
+   to connect to locally; data persists in the `vital_pgdata` volume across restarts.
+2. The **Expo dev server** (`expo start`, Metro on port `8081`). This is an Expo
+   SDK 56 + Expo Router project — keep to the SDK 56 CLI (`npx expo …`).
+
+Postgres is brought up first (idempotently — leave it running across dev-server
+restarts), then the Expo dev server. If more long-running dev processes are added
+later, extend the start/stop steps below to cover each one.
 
 ## Argument
 
@@ -26,6 +33,18 @@ Anything else: treat as no cache clear and mention you ignored the unrecognized
 argument.
 
 ## Procedure
+
+0. **Bring up local Postgres (Docker Compose).** From the project root, run
+   `docker compose up -d --wait`. `--wait` blocks until the `pg_isready`
+   healthcheck passes, so anything that connects (e.g. `npm run migrate`) won't hit
+   a cold-start "connection refused". This is idempotent — if `vital-postgres` is
+   already healthy it returns immediately; do **not** restart it on a dev-server
+   restart. Requires Docker to be running and a `.env` (copy `.env.example`); if the
+   default port `5432` is taken by another local Postgres, set `POSTGRES_PORT` (and
+   the matching `DATABASE_URL`) in `.env`. If the daemon is down, surface that and
+   suggest starting Docker rather than retrying. To apply schema after it is up, run
+   `npm run migrate`; to stop the DB later, `docker compose down` (add `-v` to wipe
+   the volume). See `docs/database.md`.
 
 1. **Detect an already-running dev server.** Check both signals:
    - Claude Code background tasks: `TaskList` — look for a running task whose
@@ -52,6 +71,7 @@ argument.
    Metro "Waiting on http://localhost:8081" / QR-code banner). Tell the user:
    - whether this was a fresh start or a restart,
    - whether the cache was cleared,
+   - that Postgres is up (`vital-postgres`, `docker compose ps`) and on which port,
    - that Metro is on `http://localhost:8081`,
    - how to watch logs (read the background task's output) and that pressing
      `i` / `a` / `w` in the Expo CLI opens iOS / Android / web.
@@ -65,3 +85,6 @@ argument.
   is the whole point of the detect-and-stop step.
 - If `npx expo start` fails immediately (missing deps), surface the error and
   suggest `npm install` rather than silently retrying.
+- Postgres and Metro are independent: a wedged Metro (`/dev-start clean`) does not
+  require touching the database, and `docker compose down` does not stop Metro.
+  Leave Postgres running across dev-server restarts.

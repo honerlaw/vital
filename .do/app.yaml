@@ -49,3 +49,34 @@ services:
       - key: CLERK_AUTHORIZED_PARTIES
         scope: RUN_TIME
         value: ${APP_URL}
+      # DATABASE_URL points the app (and the migrate job below) at DO Managed Postgres.
+      # Declared here only to pin RUN_TIME scope; the VALUE is supplied by Doppler's native
+      # DO integration — never hardcode the connection string in this file. Runtime-only
+      # (the client bundle never sees it), unlike EXPO_PUBLIC_*. See docs/database.md.
+      - key: DATABASE_URL
+        scope: RUN_TIME
+
+# PRE_DEPLOY migration job. A DO job is its OWN component with its OWN build — it does NOT
+# inherit the web service's image or node_modules — so it re-declares github/environment_slug
+# and runs its own build. It applies pending schema migrations BEFORE new web containers take
+# traffic; a failed migration fails the deploy. The build is deliberately cheap: `npm ci
+# --omit=dev` (NOT `npm run export:web`) — the migrate job needs no Expo web build, and
+# node-pg-migrate + pg are regular dependencies so they install even with --omit=dev. See
+# docs/database.md for the verify-post-deploy caveats (failure semantics, first-deploy Doppler
+# timing, buildpack Node major >= 20.12).
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    environment_slug: node-js
+    github:
+      # Must match the web service's repo/branch.
+      repo: your-org/vital
+      branch: main
+      deploy_on_push: true
+    build_command: npm ci --omit=dev
+    run_command: npm run migrate
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME

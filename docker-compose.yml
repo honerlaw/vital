@@ -1,0 +1,34 @@
+# Local development Postgres for VITAL.
+#
+# Brought up by `docker compose up -d --wait` (the dev-start skill does this); `--wait`
+# blocks until the healthcheck passes so `npm run migrate` can connect immediately. Data
+# persists in the named volume `vital_pgdata` across restarts; `docker compose down -v`
+# wipes it.
+#
+# Credentials/db default to vital/vital/vital and can be overridden via `.env` (which
+# docker compose reads automatically). Keep local credentials alphanumeric so the
+# resulting DATABASE_URL parses identically under Compose interpolation and Node's
+# --env-file parser. This is LOCAL ONLY — production Postgres is DO Managed Postgres with
+# the connection URL supplied as a Doppler RUN_TIME secret (see docs/database.md).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vital-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vital}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vital}
+      POSTGRES_DB: ${POSTGRES_DB:-vital}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - vital_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vital} -d ${POSTGRES_DB:-vital}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vital_pgdata:
