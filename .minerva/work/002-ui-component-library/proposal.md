@@ -1,7 +1,25 @@
 # 002 — VITAL UI component library + screens
 
 ## Status
-Draft
+Implemented — gates green (lint `--max-warnings 0`, `tsc --noEmit`, `lint:rules-test` 20/20),
+web export bundles all routes; awaiting PR/merge (2026-05-31). `minerva:ship` flips this to
+`Shipped` once the PR actually merges.
+
+## What shipped (reconciliation outcomes)
+Built exactly as planned below. Notable concrete outcomes worth recording:
+- `theme.ts` → `src/theme.ts`: reflowed ~20 long lines (values byte-identical); the `type` export
+  uses `satisfies Record<string, TextStyle>` (not `: Record<…>`) so `AppText`'s `variant` keeps its
+  literal-key union. `programs.ts` → `src/data/{types,programs}.ts` + 11 per-helper engine files
+  under `src/data/engine/` + barrel; free-function API preserved; `startSession` uses
+  `Array.from({length},()=>false)` (avoids `any[]`).
+- Rest timer is local (`useRestTimer` + `Animated` API), not in the reducer; `workout` is a
+  top-level route outside `(tabs)` so the tab bar is hidden by route placement. (See
+  `.minerva/knowledge/005-decision-vital-state-and-nav-boundaries.md`.)
+- Hit the React-Compiler react-hooks rules (`react-hooks/refs`, `set-state-in-effect`) and the
+  no-floating-promises / import-name-collision rules; techniques captured in knowledge 003 + 004.
+- Added an `npm run typecheck` (`tsc --noEmit`) gate. `eslint.config.js` unchanged (guardrails
+  intact). Durable knowledge promoted to `.minerva/knowledge/003..005`; deferred scope in
+  `followups.md`.
 
 ## Goal
 Implement VITAL's UI component library and **five** screens (Today, Programs, Program
