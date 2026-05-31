@@ -2,9 +2,13 @@
 
 ## Status
 
-Draft. Approved via `minerva:propose-ship-auto` consensus panels — scope (revision round, single
-unit), approach (revision round, Approach A with wiring corrections), whole-proposal (revision
-round 3/3). No user escalations.
+Shipped (2026-05-31). Approved + delivered via `minerva:propose-ship-auto` consensus panels —
+scope (revision → single unit), approach (revision → Approach A with wiring corrections),
+whole-proposal (revision → 3/3); completion verified 3/3 (live: compose healthy, migration applied
++ idempotent, `doctl` spec validate, all gates green); review triage 0 high / 0 medium / 11 low
+(all IGNORE); promote partition 2/3. No user escalations. Durable learnings promoted to
+[[009-decision-postgres-node-pg-migrate]] and [[010-pattern-do-app-platform-migrations]]; forward
+work in `followups.md`.
 
 ## Goal
 
