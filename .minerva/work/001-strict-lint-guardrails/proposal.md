@@ -1,7 +1,7 @@
 # 001 — Strict deterministic ESLint guardrails
 
 ## Status
-Draft
+Shipped (2026-05-31)
 
 ## Goal
 Add a maximally strict, deterministic, **ESLint-native** guardrail config to this
@@ -49,9 +49,12 @@ guardrail is byte-reproducible. Expo-managed runtime deps keep their `~` ranges.
    - `@typescript-eslint/no-explicit-any: 'error'`
    - `@typescript-eslint/no-non-null-assertion: 'error'`
    - `@typescript-eslint/consistent-type-assertions: ['error', { assertionStyle: 'never' }]`
-     (verified during work to still permit `as const`).
+     (verified during work to permit `as const` on typescript-eslint 8.60.0 — no fallback needed).
    - `@typescript-eslint/ban-ts-comment: ['error', { 'ts-ignore': true, 'ts-expect-error': true, 'ts-nocheck': true, 'ts-check': false }]`
-   - `@stylistic/max-len: ['error', { code: 100, tabWidth: 2, ignoreUrls: true, ignoreTemplateLiterals: true, ignorePattern: '^\\s*(import|export)\\s' }]`
+   - `@stylistic/max-len: ['error', { code: 100, tabWidth: 2, ignorePattern: <module-specifier> }]`
+     — the only exemption is complete module-specifier lines (anchored regex ending in
+     `from '...';` or bare `import '...';`). `ignoreUrls`/`ignoreStrings`/`ignoreTemplateLiterals`
+     are deliberately NOT used: each exempts a whole line and is a trivial bypass.
    - `react/no-multi-comp: ['error', { ignoreStateless: false }]`
    - local `single-declaration: 'error'`.
 5. `tseslint.configs.disableTypeChecked` override for `**/*.js` (covers `eslint.config.js`
@@ -65,9 +68,11 @@ Wired as a flat-config plugin (this is an ESLint plugin, satisfying "plugin not 
 Counts, in the `Program` body:
 - `FunctionDeclaration`
 - `ClassDeclaration`
-- `VariableDeclarator` whose `init` (after unwrapping **one** `CallExpression` layer,
-  e.g. `memo(...)` / `forwardRef(...)`) is an `ArrowFunctionExpression` or
-  `FunctionExpression`.
+- `VariableDeclarator` whose `init` resolves (after unwrapping `memo`/`forwardRef` wrapper
+  calls by callee-name allow-list) to an `ArrowFunctionExpression`/`FunctionExpression`.
+- Anonymous/wrapper **default exports**: `export default () => ...`,
+  `export default memo(...)`, `export default forwardRef(...)`. (`export default <Identifier>`
+  references an already-counted declaration and is NOT double-counted.)
 
 Errors on the **second** such declaration. Does **not** count plain data consts
 (`StyleSheet.create(...)`, objects, primitives), `type`/`interface`/`enum`, re-exports,
@@ -97,13 +102,12 @@ FAIL fixtures silently no-op. Ships with `RuleTester` fixtures run via `node --t
    single component OK; type-alias + component OK; two functions FAIL; helper + component FAIL.
 9. Two consecutive `npm run lint` runs produce identical output; all lint deps exact-pinned.
 
-## Open questions
-- Exact `eslint` version to pin (latest 9.x compatible with `eslint-config-expo@56`).
-- Confirm `consistent-type-assertions: 'never'` permits `as const` on the installed
-  `typescript-eslint@8.60.0` (panel verified empirically; re-confirm in work). If it does
-  not, fall back to `no-restricted-syntax` banning `TSAsExpression`/`TSTypeAssertion`
-  except `as const`, with its own fixture.
-- Whether `reportUnusedDisableDirectives` adds value alongside `noInlineConfig` or is inert.
+## Open questions (resolved)
+- Exact `eslint` pin → **9.39.4** (latest 9.x; avoided 10.x for eslint-config-expo@56 safety).
+- `consistent-type-assertions: 'never'` permits `as const` on `typescript-eslint@8.60.0`
+  → **confirmed**, no `no-restricted-syntax` fallback needed.
+- `reportUnusedDisableDirectives` alongside `noInlineConfig` → **kept** as a backstop;
+  `noInlineConfig` is the primary gate and suppression was verified closed.
 
 ## Accepted trade-offs
 - "One function/component per file" will block multi-function util/hook files by design.
