@@ -38,9 +38,44 @@ Proposal approved via consensus panels. Beginning implementation.
   (ignored via globalIgnores; type-checked rules scoped to source).
 
 ## Decisions log
-(append as work proceeds)
+- Pinned eslint 9.39.4 (latest 9.x; eslint-config-expo@56 peer is >=8.10). Avoided
+  eslint 10.x for eslint-config-expo@56 compatibility safety.
+- RESOLVED: `consistent-type-assertions: {assertionStyle:'never'}` on typescript-eslint
+  8.60.0 PERMITS all `as const` forms (literal/array/object) and BLOCKS ordinary casts
+  (messageId `never`). Verified by direct Linter probe. No `no-restricted-syntax` fallback
+  needed. Skeptic's memory-based claim was wrong; proponent's empirical test was right.
+- Added `globals` (17.6.0, exact) as an explicit devDep since eslint.config.js requires it
+  directly for Node globals on the `**/*.js` override.
+- Custom rule unwraps wrapper calls by an ALLOW-LIST of callee names (`memo`, `forwardRef`,
+  incl. `React.`-prefixed) rather than unwrapping any CallExpression — so `[].map(fn)` /
+  `debounce(fn)` / `StyleSheet.create({})` are correctly treated as data, not declarations.
+- `node --test eslint-rules/` fails on Node 24 (treats dir as a module entry). Script uses
+  the shell-expanded glob `node --test eslint-rules/*.test.js` instead.
 
-## Open questions
-- Exact eslint 9.x pin.
-- Confirm `as const` under 'never' on 8.60.0.
-- Keep/drop reportUnusedDisableDirectives.
+## DIVERGENCE (bug found in verification, fixed in-approach — no replan)
+- The first `max-len` ignorePattern `^\s*(import|export)\s` was TOO BROAD: it exempted
+  every `export const`/`export function` code line, punching a hole in the line-length
+  guardrail (a 101-char `export const` PASSED when it must fail). Narrowed to
+  `^\s*(import|export)\b.*\bfrom\b|^\s*import\s+['"]` — exempts only module-specifier
+  lines (`import ... from`, `export ... from`, bare `import '...'`), while `export const`/
+  `export function` code lines are now correctly enforced. Re-verified: 101-char export-const
+  FAILS, 114-char import PASSES. Approach unchanged; this was an option-value correction.
+
+## Success-criteria verification (all met — evidence)
+1. `npm run lint` exit 0 on src/app/index.tsx + _layout.tsx (component + StyleSheet const). ✅
+2. `any` -> FAIL [no-explicit-any (+ no-unsafe-return)]. ✅
+3. `x as string` -> FAIL [consistent-type-assertions]; `{} as const` -> PASS. ✅
+4. 101-char `export const` -> FAIL [max-len]; 114-char `import ... from` -> PASS (errorCount 0). ✅
+5. two module-level functions -> FAIL [local/single-declaration]; component + StyleSheet -> PASS. ✅
+6. `// eslint-disable-next-line` does NOT suppress (no-explicit-any still fires + unused-directive
+   error); `@ts-expect-error` -> FAIL [ban-ts-comment]. ✅
+7. `eslint .` lints eslint.config.js + eslint-rules/*.js clean (no projectService "not in
+   project" error) — whole-repo run is exit 0. ✅
+8. RuleTester 13/13 pass via `npm run lint:rules-test`. ✅
+9. Two consecutive `eslint . --format json` runs byte-identical; all lint deps exact-pinned. ✅
+
+## Open questions (resolved)
+- Exact eslint 9.x pin -> 9.39.4. RESOLVED.
+- `as const` under 'never' on 8.60.0 -> permitted. RESOLVED.
+- Keep/drop reportUnusedDisableDirectives -> KEPT as a backstop; `noInlineConfig` is the
+  primary gate and the disable fixture confirmed suppression is closed. RESOLVED.
