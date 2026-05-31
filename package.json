@@ -3,8 +3,12 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/archivo": "^0.4.2",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
+    "@expo/vector-icons": "^15.0.2",
     "expo": "~56.0.8",
     "expo-constants": "~56.0.16",
+    "expo-font": "~56.0.5",
     "expo-linking": "~56.0.13",
     "expo-router": "~56.2.8",
     "expo-splash-screen": "~56.0.10",
@@ -35,7 +39,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint . --max-warnings 0",
-    "lint:rules-test": "node --test eslint-rules/*.test.js"
+    "lint:rules-test": "node --test eslint-rules/*.test.js",
+    "typecheck": "tsc --noEmit"
   },
   "private": true
 }

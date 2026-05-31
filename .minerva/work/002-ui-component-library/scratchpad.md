@@ -28,4 +28,37 @@
 Run total so far: 9 panel agents (3 panels × P/S/A), 0 user escalations.
 
 ## Implementation log
-(to be maintained during Phase 2)
+- Installed `@expo/vector-icons` (was absent), `expo-font`, `@expo-google-fonts/archivo`,
+  `@expo-google-fonts/jetbrains-mono`. Verified font exports `Archivo_{400,500,600,700}` +
+  `JetBrainsMono_{400,500,700}` match `theme.ts` `font.*` strings exactly.
+- `theme.ts` → `src/theme.ts`: reflowed ~20 long lines (whitespace only); switched the
+  `type` annotation from `: Record<string, TextStyle>` to `satisfies Record<string, TextStyle>`
+  so `AppText` gets literal `variant` keys (runtime values unchanged).
+- `programs.ts` split: `src/data/types.ts`, `src/data/programs.ts` (PROGRAMS + DEFAULT_STATE),
+  11 engine helpers each own file under `src/data/engine/` + barrel `index.ts`. Public
+  free-function API preserved. tsc confirms all names resolve.
+- State: `src/state/{actions,reducer,app-context,StateProvider,useAppStore}`.
+- 16 components in `src/components/`, hooks/utils in `src/hooks` + `src/utils`.
+- Screens: `src/app/_layout.tsx` (fonts+splash+providers+Stack), `(tabs)/_layout.tsx`
+  (custom TabBar), `(tabs)/{index,programs,history}.tsx`, `program/[id].tsx`, `workout.tsx`
+  (top-level route → tab bar hidden while live).
+
+### Lint/compiler fixes during work (no replan — routine)
+- `startSession`: `Array(n).fill(false)` inferred `any[]` → `Array.from({length}, () => false)`.
+- `RestTimerBar`: `useRef(new Animated.Value()).current` tripped `react-hooks/refs`
+  (RC rule) → lazy `useState(() => new Animated.Value())`.
+- `useRestTimer`: synchronous `setState` in effect body tripped `react-hooks/set-state-in-effect`
+  → moved decrement + auto-hide into the deferred `setTimeout` callback (seconds in deps,
+  no stale closure).
+- `AppText`: default `theme` import collided with named `theme`/`type` exports
+  (`import/no-named-as-default*`) → `import * as theme`.
+- `TabBar`: `@react-navigation/bottom-tabs` is vendored inside expo-router, not re-exported by
+  name → derived props type via `Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0]`.
+
+### Verification evidence (pre-completion-panel)
+- `npm run lint` (`--max-warnings 0`): PASS (exit 0).
+- `npm run typecheck` (`tsc --noEmit`): PASS (clean).
+- `npm run lint:rules-test`: PASS (20/20).
+- `npx expo export --platform web`: PASS — 935 modules bundled, React Compiler on, all 10
+  routes statically rendered (`/`, `/workout`, `/program/[id]`, `(tabs)/*`) with no
+  render-time crash.
