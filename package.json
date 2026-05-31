@@ -3,19 +3,25 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@clerk/backend": "^3.4.14",
+    "@clerk/expo": "^3.3.0",
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
     "compression": "^1.8.1",
     "expo": "~56.0.8",
+    "expo-auth-session": "~56.0.13",
     "expo-constants": "~56.0.16",
+    "expo-crypto": "~56.0.4",
     "expo-font": "~56.0.5",
     "expo-linking": "~56.0.13",
     "expo-router": "~56.2.8",
+    "expo-secure-store": "~56.0.4",
     "expo-server": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
+    "expo-web-browser": "~56.0.5",
     "express": "^5.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -31,10 +37,12 @@
     "@stylistic/eslint-plugin": "5.10.0",
     "@types/compression": "^1.8.1",
     "@types/express": "^5.0.3",
+    "@types/node": "^25.9.1",
     "@types/react": "~19.2.2",
     "eslint": "9.39.4",
     "eslint-config-expo": "56.0.4",
     "globals": "17.6.0",
+    "tsx": "^4.22.4",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.60.0"
   },
@@ -45,9 +53,13 @@
     "web": "expo start --web",
     "lint": "eslint . --max-warnings 0",
     "lint:rules-test": "node --test eslint-rules/*.test.js",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
     "serve": "node server.js"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
 }

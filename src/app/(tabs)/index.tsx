@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from '@/components/AppText';
 import Button from '@/components/Button';
 import CornerCard from '@/components/CornerCard';
@@ -39,9 +39,14 @@ export default function TodayScreen() {
 
   return (
     <Screen>
-      <AppText variant="label" style={styles.eyebrow}>
-        {dateEyebrow(new Date())}
-      </AppText>
+      <View style={styles.headerRow}>
+        <AppText variant="label" style={styles.eyebrow}>
+          {dateEyebrow(new Date())}
+        </AppText>
+        <TouchableOpacity onPress={() => router.push('/account')} accessibilityRole="button">
+          <AppText variant="backLink">Account</AppText>
+        </TouchableOpacity>
+      </View>
       <AppText variant="screenTitle" style={styles.title}>
         Today&apos;s session
       </AppText>
@@ -79,7 +84,13 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space.lg },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: space.lg,
+  },
+  eyebrow: {},
   title: { marginTop: space.sm },
   hero: { marginTop: space.lg },
   day: { marginTop: space.sm },

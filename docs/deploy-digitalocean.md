@@ -26,11 +26,17 @@ straight from `process.env` — no Doppler CLI is baked into the image.
 
 Define at minimum:
 
-| Key                   | Scope                | Notes |
-|-----------------------|----------------------|-------|
-| `EXPO_PUBLIC_API_URL` | `RUN_AND_BUILD_TIME` | The deployed origin native clients call. **Inlined at build time.** |
+| Key                                  | Scope                | Notes |
+|--------------------------------------|----------------------|-------|
+| `EXPO_PUBLIC_API_URL`                | `RUN_AND_BUILD_TIME` | The deployed origin native clients call. **Inlined at build time.** |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | `RUN_AND_BUILD_TIME` | Clerk publishable key (public). **Inlined at build time** — same caveat as `EXPO_PUBLIC_API_URL`. |
+| `CLERK_SECRET_KEY`                   | `RUN_TIME` (SECRET)  | Clerk secret key. Server-only, read by `@clerk/backend`; never inlined into the client. |
+| `CLERK_AUTHORIZED_PARTIES`           | `RUN_TIME`           | Comma-separated allowlist of trusted web origins (the app URL) for the cookie session. |
 
 Future runtime-only secrets (e.g. a database URL once a DB is added) are `RUN_TIME` scoped.
+
+See [§5 Clerk authentication](#5-clerk-authentication) for the dashboard configuration the
+auth flows depend on.
 
 > [!IMPORTANT]
 > **`EXPO_PUBLIC_*` is inlined at BUILD time**, not read at runtime. `expo export` bakes the
@@ -88,6 +94,38 @@ curl -s https://<your-app>.ondigitalocean.app/ | head
 # Confirm the API origin was inlined at build time (NOT "undefined")
 curl -s https://<your-app>.ondigitalocean.app/ | grep -o 'EXPO_PUBLIC_API_URL[^,]*' || true
 ```
+
+## 5. Clerk authentication
+
+VITAL's signup / signin / forgot-password flows and the per-route API guard are backed by
+[Clerk](https://clerk.com). The code is configured by the three env vars above; the following
+**Clerk dashboard** setup is a manual prerequisite (it cannot be asserted from the repo, and
+the local build/tests run without real Clerk keys):
+
+1. Create a Clerk application. Copy the **Publishable key** and **Secret key** into Doppler as
+   `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`.
+2. Under **User & Authentication → Email, Phone, Username**, enable **Email address** as an
+   identifier and **Password** as an authentication strategy.
+3. Ensure the **password reset** flow uses the **email code** strategy
+   (`reset_password_email_code`) — this is what `forgot-password.tsx` drives. It is on by
+   default when email + password are enabled; confirm it is not disabled.
+4. Set `CLERK_AUTHORIZED_PARTIES` to the app's web origin(s) so the web cookie session is
+   trusted (native clients authenticate with a Bearer token and are unaffected).
+
+### Verify auth after deploy
+
+```bash
+# Public route stays open
+curl -s https://<your-app>.ondigitalocean.app/api/health      # -> {"status":"ok"}
+
+# Protected route rejects an unauthenticated request (fail-closed)
+curl -s -o /dev/null -w '%{http_code}\n' \
+  https://<your-app>.ondigitalocean.app/api/me                # -> 401
+```
+
+A full signup → signin → forgot-password round-trip is verified manually in the app against a
+live Clerk instance (it requires real keys and email delivery, so it is out of automated
+test scope).
 
 ## Notes & caveats
 
