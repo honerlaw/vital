@@ -1,0 +1,105 @@
+# Deploying VITAL to DigitalOcean App Platform
+
+VITAL's web target is an Expo Router **server** export (`web.output: "server"`): a static
+client (`dist/client`) plus server-side API/SSR handlers (`dist/server`). It is hosted as a
+**single** DigitalOcean (DO) App Platform web-service component that runs `server.js` — an
+Express process that serves the static client and mounts the Expo server handler for routes
+and `/api/*`.
+
+This runbook covers provisioning. It is **executed by the operator** — the repo ships the
+config (`.do/app.yaml`, `server.js`, build/run scripts), and the local build is verified, but
+no DO account is provisioned from the repo.
+
+## Prerequisites
+
+- A DigitalOcean account + team, with this GitHub repo connected to App Platform.
+- `doctl` installed and authenticated (`doctl auth init`) if deploying from the CLI.
+- A [Doppler](https://doppler.com) project/config for VITAL, with the DigitalOcean App
+  Platform integration enabled.
+
+## 1. Secrets & env — Doppler
+
+All env vars and secrets are managed in Doppler and synced into the App Platform app via
+Doppler's **native DigitalOcean integration** (Integrations → DigitalOcean App Platform).
+The integration writes the values as app-level env vars, so the running container reads them
+straight from `process.env` — no Doppler CLI is baked into the image.
+
+Define at minimum:
+
+| Key                   | Scope                | Notes |
+|-----------------------|----------------------|-------|
+| `EXPO_PUBLIC_API_URL` | `RUN_AND_BUILD_TIME` | The deployed origin native clients call. **Inlined at build time.** |
+
+Future runtime-only secrets (e.g. a database URL once a DB is added) are `RUN_TIME` scoped.
+
+> [!IMPORTANT]
+> **`EXPO_PUBLIC_*` is inlined at BUILD time**, not read at runtime. `expo export` bakes the
+> value into the client bundle. The var **must** be scoped `RUN_AND_BUILD_TIME` (or
+> `BUILD_TIME`). If it is missing or `RUN_TIME`-only when `export:web` runs, the bundle
+> silently ships `undefined` as the API origin and the build still "succeeds" — a silent
+> failure. Confirm the var is present at build (see §4).
+>
+> On the **first** deploy, the DO-provided `${APP_URL}` may not yet be resolvable at build
+> time. Either set `EXPO_PUBLIC_API_URL` to an explicit URL (custom domain or the known
+> `*.ondigitalocean.app` URL) via Doppler, or deploy once and trigger a second build after
+> `${APP_URL}` is assigned so the correct origin is baked in.
+
+## 2. The app spec
+
+`.do/app.yaml` defines one web-service component. Edit `services[0].github.repo` to your
+connected repo, then validate the schema locally **without provisioning**:
+
+```bash
+doctl apps spec validate .do/app.yaml --schema-only
+```
+
+Key fields:
+
+- `build_command: npm ci --include=dev && npm run export:web` — `--include=dev` keeps
+  `typescript` and other devDependencies installed even though the buildpack sets
+  `NODE_ENV=production`, so the Expo toolchain is available to `expo export`.
+- `run_command: npm run serve` — runs `node server.js`.
+- `http_port: 8080` — the app listens on `process.env.PORT` (DO sets `PORT=8080`), falling
+  back to `8080` locally.
+- `health_check.http_path: /api/health` — DO probes the `GET /api/health` route.
+
+## 3. Deploy
+
+CLI:
+
+```bash
+doctl apps create --spec .do/app.yaml   # first time
+doctl apps update <APP_ID> --spec .do/app.yaml   # subsequent spec changes
+```
+
+Or via the dashboard: **Apps → Create App → GitHub source**, point at the repo/branch, and
+import `.do/app.yaml`. With `deploy_on_push: true`, pushes to `main` redeploy automatically.
+
+## 4. Verify the deploy
+
+```bash
+# Health route (also DO's health probe target)
+curl -s https://<your-app>.ondigitalocean.app/api/health
+# -> {"status":"ok"}
+
+# App shell
+curl -s https://<your-app>.ondigitalocean.app/ | head
+
+# Confirm the API origin was inlined at build time (NOT "undefined")
+curl -s https://<your-app>.ondigitalocean.app/ | grep -o 'EXPO_PUBLIC_API_URL[^,]*' || true
+```
+
+## Notes & caveats
+
+- **Static → server side effect.** Flipping `web.output` to `server` means the web target is
+  no longer a CDN-only static artifact; it requires a running Node server (which App Platform
+  provides). Pure-static hosting / `npx expo serve` static assumptions no longer apply.
+- **Local build proves wiring, not the DO substrate.** Running `npm run export:web` +
+  `npm run serve` locally validates the server entry, the health route, and the export output,
+  but it runs with a full `node_modules` and your local shell env. It **cannot** detect the two
+  DO-buildpack-specific failure modes — devDependency pruning (mitigated by `--include=dev`)
+  and build-time env scoping (mitigated by `RUN_AND_BUILD_TIME`). Confirm both with the
+  post-deploy checks in §4.
+- **Database.** App Platform runs a full Node runtime, so when a DB is added it can use an
+  ordinary TCP client (e.g. DO Managed Postgres) with its URL supplied as a `RUN_TIME` Doppler
+  secret.

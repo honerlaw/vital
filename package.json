@@ -6,14 +6,17 @@
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
+    "compression": "^1.8.1",
     "expo": "~56.0.8",
     "expo-constants": "~56.0.16",
     "expo-font": "~56.0.5",
     "expo-linking": "~56.0.13",
     "expo-router": "~56.2.8",
+    "expo-server": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
+    "express": "^5.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -26,6 +29,8 @@
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "5.10.0",
+    "@types/compression": "^1.8.1",
+    "@types/express": "^5.0.3",
     "@types/react": "~19.2.2",
     "eslint": "9.39.4",
     "eslint-config-expo": "56.0.4",
@@ -40,7 +45,9 @@
     "web": "expo start --web",
     "lint": "eslint . --max-warnings 0",
     "lint:rules-test": "node --test eslint-rules/*.test.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "export:web": "expo export -p web",
+    "serve": "node server.js"
   },
   "private": true
 }

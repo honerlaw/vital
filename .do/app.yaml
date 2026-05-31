@@ -1,0 +1,36 @@
+# DigitalOcean App Platform spec for VITAL — a single web-service component that
+# builds the Expo Router server export and serves it via server.js.
+#
+# Env VALUES are managed by Doppler's DigitalOcean App Platform integration; the keys
+# are declared here only to pin the scope they require. See docs/deploy-digitalocean.md
+# for the Doppler setup and the build-time-vs-runtime caveat.
+#
+# Validate locally (no provisioning) with:
+#   doctl apps spec validate .do/app.yaml --schema-only
+name: vital
+region: nyc
+services:
+  - name: web
+    environment_slug: node-js
+    github:
+      # Replace with the GitHub repo connected to your DigitalOcean team.
+      repo: your-org/vital
+      branch: main
+      deploy_on_push: true
+    # --include=dev keeps devDependencies (typescript, etc.) installed even though the
+    # buildpack sets NODE_ENV=production, so `expo export` has its full toolchain.
+    build_command: npm ci --include=dev && npm run export:web
+    run_command: npm run serve
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /api/health
+    envs:
+      # EXPO_PUBLIC_* is inlined into the client bundle at BUILD time by `expo export`,
+      # so this MUST be RUN_AND_BUILD_TIME. If the value is absent at build, the client
+      # silently bakes in `undefined` as the API origin. ${APP_URL} is the app's own URL;
+      # see the runbook for the first-deploy build-time caveat and Doppler alternative.
+      - key: EXPO_PUBLIC_API_URL
+        scope: RUN_AND_BUILD_TIME
+        value: ${APP_URL}
