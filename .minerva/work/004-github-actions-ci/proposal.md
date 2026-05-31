@@ -2,7 +2,12 @@
 
 ## Status
 
-Draft
+Promoted (2026-05-31) — implementation complete and verified: all 6 build-phase
+success criteria met (gates green from a clean `npm ci`; criterion 4 GitHub Actions
+semantics confirmed). Durable knowledge captured in
+`.minerva/knowledge/006-pattern-ci-no-typegen-needed.md`; deferred work in
+`followups.md`. PR + merge pending (ship phase) — criterion 7 (PR check goes green) is
+verified during ship.
 
 ## Goal
 
