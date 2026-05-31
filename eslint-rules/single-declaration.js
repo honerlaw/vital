@@ -65,6 +65,12 @@ module.exports = {
     return {
       Program(program) {
         let count = 0;
+        const bump = (node) => {
+          count += 1;
+          if (count > 1) {
+            context.report({ node, messageId: 'tooMany' });
+          }
+        };
         for (const statement of program.body) {
           const declaration = unwrapExport(statement);
           if (declaration === null || declaration === undefined) {
@@ -74,21 +80,24 @@ module.exports = {
             declaration.type === 'FunctionDeclaration' ||
             declaration.type === 'ClassDeclaration'
           ) {
-            count += 1;
-            if (count > 1) {
-              context.report({ node: declaration, messageId: 'tooMany' });
-            }
+            bump(declaration);
             continue;
           }
           if (declaration.type === 'VariableDeclaration') {
             for (const declarator of declaration.declarations) {
               if (isFunctionOrComponentInit(declarator.init)) {
-                count += 1;
-                if (count > 1) {
-                  context.report({ node: declarator, messageId: 'tooMany' });
-                }
+                bump(declarator);
               }
             }
+            continue;
+          }
+          // Anonymous / wrapper default export: `export default () => ...`,
+          // `export default memo(() => ...)`, `export default forwardRef(...)`.
+          // (`export default function X() {}` is a FunctionDeclaration, handled
+          // above; `export default Identifier` is a reference to an already-counted
+          // declaration and is correctly NOT counted.)
+          if (isFunctionOrComponentInit(declaration)) {
+            bump(declaration);
           }
         }
       },

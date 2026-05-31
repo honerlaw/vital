@@ -55,6 +55,15 @@ ruleTester.run('single-declaration', rule, {
         'const items = [1, 2, 3].map((n) => n * 2);\n' +
         'function List() { return null; }',
     },
+    // Anonymous default-export component forms (single declaration each).
+    { code: 'export default () => null;' },
+    { code: 'export default memo(() => null);' },
+    { code: 'export default forwardRef((props, ref) => null);' },
+    // A declaration plus a default export OF THAT declaration is one declaration —
+    // the default export is an identifier reference, not a second declaration.
+    {
+      code: 'const App = () => null;\nexport default App;',
+    },
   ],
   invalid: [
     // Two function declarations.
@@ -79,6 +88,27 @@ ruleTester.run('single-declaration', rule, {
       code:
         'function A() { return null; }\n' +
         'const B = memo(() => null);',
+      errors: [{ messageId: 'tooMany' }],
+    },
+    // Helper plus an anonymous memo default export (the idiomatic RN miss).
+    {
+      code:
+        'function helper() { return 1; }\n' +
+        'export default memo(() => null);',
+      errors: [{ messageId: 'tooMany' }],
+    },
+    // Helper plus an anonymous arrow default export.
+    {
+      code:
+        'function helper() { return 1; }\n' +
+        'export default () => null;',
+      errors: [{ messageId: 'tooMany' }],
+    },
+    // Helper plus a forwardRef default export.
+    {
+      code:
+        'function helper() { return 1; }\n' +
+        'export default forwardRef((props, ref) => null);',
       errors: [{ messageId: 'tooMany' }],
     },
   ],

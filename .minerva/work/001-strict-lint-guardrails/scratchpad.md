@@ -84,6 +84,32 @@ Proposal approved via consensus panels. Beginning implementation.
 8. RuleTester 13/13 pass via `npm run lint:rules-test`. ✅
 9. Two consecutive `eslint . --format json` runs byte-identical; all lint deps exact-pinned. ✅
 
+## Panel decisions 2026-05-31 (continued)
+- [3/3 accept] completion verification: all 9 success criteria honestly met (arbiter
+  independently re-ran every check). One medium finding (max-len `from`-substring
+  over-exemption) found + fixed pre-advance (DIVERGENCE 2).
+- [revise -> revised per skeptic] review triage: Proponent accepted original dispositions;
+  Skeptic dissented with empirically-confirmed bypasses. Adopted stricter dispositions
+  (revision round). Final: F1 FIX, F2 FIX, F5(new) FIX, F3 IGNORE/documented.
+
+## Review findings 2026-05-31
+- F1 [HIGH -> FIXED]: `single-declaration` missed anonymous/wrapper default exports
+  (`export default () => ...`, `export default memo(...)`, `export default forwardRef(...)`).
+  Confirmed: helper + `export default memo(() => null)` produced NO error. Fixed by counting
+  the unwrapped default-export declaration via `isFunctionOrComponentInit`; preserves the
+  no-double-count of `export default <Identifier>`. Added 7 RuleTester fixtures (now 20/20).
+- F2 [LOW -> raised to MEDIUM, FIXED]: `max-len ignoreTemplateLiterals: true` let a 148-col
+  (verified 112-col) line pass by wrapping in backticks. REMOVED the option.
+- F5 [MEDIUM, new from skeptic -> FIXED]: `max-len ignoreUrls: true` exempted the ENTIRE line
+  if it contained a URL substring (verified 110-col code line with trailing `// https://...`
+  comment passed). Trivial universal bypass. REMOVED the option. Re-verified both now FIRE.
+  Only remaining max-len exemption is the module-specifier `ignorePattern` (structurally
+  unbreakable, cannot smuggle code).
+- F3 [LOW -> IGNORE/documented]: two JSX components trigger BOTH `react/no-multi-comp` and
+  `single-declaration` (double error). Intentional — they enforce distinct invariants
+  (multiple components vs multiple declarations); a non-component helper trips only
+  `single-declaration`. Deduping would create coverage blind spots. Documented, not changed.
+
 ## Open questions (resolved)
 - Exact eslint 9.x pin -> 9.39.4. RESOLVED.
 - `as const` under 'never' on 8.60.0 -> permitted. RESOLVED.

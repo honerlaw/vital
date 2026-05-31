@@ -59,17 +59,18 @@ module.exports = defineConfig([
           'ts-check': false,
         },
       ],
-      // Hard ~100-column limit. Mechanically unbreakable tokens are exempt:
-      // URLs, template literals, and module-specifier lines (`import ... from`,
-      // `export ... from`, and bare `import '...'`). Note this deliberately does
-      // NOT exempt `export const`/`export function` code lines — those must wrap.
+      // Hard 100-column limit. The ONLY exemption is module-specifier lines
+      // (`import ... from '...'`, `export ... from '...'`, bare `import '...'`),
+      // which are structurally unbreakable and cannot smuggle arbitrary code.
+      // `ignoreUrls`/`ignoreStrings`/`ignoreTemplateLiterals` are deliberately NOT
+      // enabled: each exempts an entire line, making them trivial bypasses (append
+      // a URL comment, wrap an expression in backticks) — counter to the goal of an
+      // un-bypassable cap. Long `export const`/`export function` lines must wrap.
       '@stylistic/max-len': [
         'error',
         {
           code: 100,
           tabWidth: 2,
-          ignoreUrls: true,
-          ignoreTemplateLiterals: true,
           ignorePattern:
             "^\\s*(import|export)\\b.*\\bfrom\\s+['\"][^'\"]*['\"];?\\s*$|^\\s*import\\s+['\"][^'\"]*['\"];?\\s*$",
         },
