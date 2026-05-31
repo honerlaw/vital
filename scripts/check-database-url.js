@@ -17,7 +17,7 @@ if (!process.env.DATABASE_URL) {
   console.error(
     'DATABASE_URL is not set.\n' +
       '  Local dev: run via `doppler run -- npm run migrate` (Doppler injects DATABASE_URL).\n' +
-      '  Production: DATABASE_URL is provided by Doppler’s native DigitalOcean integration.',
+      '  Production: DATABASE_URL is provided by the native Doppler DigitalOcean integration.',
   );
   process.exit(1);
 }

@@ -35,6 +35,32 @@ Working notes during implementation. Promoted/discarded at `minerva:promote`.
   bootstrap; dev-start `.env.example` refs; README pointer must not dangle) and deferred
   knowledge 009/010 reconciliation to promote.
 
+## Review triage 2026-05-31
+
+- [2/2 accept] Inline review (no PR yet) + Minerva audit. Dispositions:
+  - F1 [low] `.do/app.yaml` comment cited a "buildpack Node major >= 20.12" caveat that
+    this change deleted from docs/database.md (the `--env-file-if-exists` flag is gone;
+    `engines.node` is `>=22` regardless) → **FIX** applied (dropped the obsolete clause;
+    comment-only edit, no build/run command touched).
+  - F2 [low] curly apostrophe in `scripts/check-database-url.js` error string → **FIX**
+    applied (rephrased to ASCII).
+  - M1 [Minerva audit] → **DEFER TO PROMOTE** (see below).
+- Spec fidelity: completion-verification panel already confirmed 3/3. Knowledge
+  compliance: the only drift is the past-tense 009/010 records (deferred, not a FIX).
+- No load-bearing finding → no replan triggered.
+
+## Promote-deferred knowledge reconciliation (M1)
+
+Knowledge entries from work 007 now describe mechanisms this unit removed — reconcile at
+promote WITHOUT rewriting history (add a forward, superseding entry; optionally a light
+"superseded by 008" cross-reference):
+- `009-decision-postgres-node-pg-migrate.md`: documents the `--env-file-if-exists=.env`
+  flag flow (lines ~34-40) AND states the local compose port is "overridable via
+  `POSTGRES_PORT`" (line ~40) — both removed by 008 (flag dropped; port hardcoded to 5432
+  with no override).
+- `010-pattern-do-app-platform-migrations.md`: the "Buildpack Node major / Node ≥ 20.12"
+  caveat (line ~57) is obsolete now that the env-file flag is gone.
+
 ## Panel concerns 2026-05-31
 
 - (review-phase scrutiny) Guard message must name `DATABASE_URL` specifically (not a
