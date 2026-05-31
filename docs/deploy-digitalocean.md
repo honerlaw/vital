@@ -100,6 +100,7 @@ curl -s https://<your-app>.ondigitalocean.app/ | grep -o 'EXPO_PUBLIC_API_URL[^,
   DO-buildpack-specific failure modes — devDependency pruning (mitigated by `--include=dev`)
   and build-time env scoping (mitigated by `RUN_AND_BUILD_TIME`). Confirm both with the
   post-deploy checks in §4.
-- **Database.** App Platform runs a full Node runtime, so when a DB is added it can use an
-  ordinary TCP client (e.g. DO Managed Postgres) with its URL supplied as a `RUN_TIME` Doppler
-  secret.
+- **Database.** App Platform runs a full Node runtime, so the DB uses an ordinary TCP client
+  (DO Managed Postgres) with its URL supplied as a `RUN_TIME` Doppler secret. Schema migrations
+  run automatically on deploy via a `PRE_DEPLOY` job in `.do/app.yaml`. See
+  [`database.md`](./database.md) for the full local + production migration flow and caveats.

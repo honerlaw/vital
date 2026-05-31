@@ -28,4 +28,25 @@ Run totals so far: 12 panel dispatches (4 agents reused across arbiter calls), 0
 
 ## Implementation notes
 
-(work-phase notes go here)
+- Versions pinned: node-pg-migrate ^8.0.4 (bin `bin/node-pg-migrate.js` confirmed), pg ^8.21.0,
+  Node v24 local. CLI defaults: env var `DATABASE_URL`, dir `migrations`, table `pgmigrations`,
+  advisory lock + single-transaction on by default. SQL migrations via `-j sql`.
+- package.json: `pg`/`node-pg-migrate` landed in `dependencies` (npm install); added top-level
+  `"//db"` comment (JSON has no comments, and a `"//"` key inside `dependencies` would be read as
+  a package — so it lives at the top level) + `engines.node: ">=20.12"` + migrate/migrate:create/
+  migrate:down scripts with `--env-file-if-exists=.env` baked onto the bin.
+- Initial migration: `migrations/1780265290146_init-app-meta.sql` (timestamp format from the tool,
+  not the proposal's illustrative `0001`) — pgcrypto + `app_meta(key,value,updated_at)`; down drops
+  the table but leaves pgcrypto (shared idempotent extension).
+- **Live verification (Docker daemon up):** an unrelated `seekless-postgres` already held host
+  5432, so verified on `POSTGRES_PORT=5440` via local gitignored `.env` (the override mechanism the
+  compose file + .env.example document; committed default stays 5432). compose config valid;
+  `up --wait` → Healthy; `npm run migrate` applied, 2nd run = "No migrations to run!" (idempotent);
+  `pgmigrations` row present; `app_meta` table + `pgcrypto` extension confirmed via psql;
+  `migrate:down` drops table, re-up recreates it.
+- `.do/app.yaml`: added `DATABASE_URL` (RUN_TIME, Doppler-declared, no value) on web + a PRE_DEPLOY
+  `migrate` job (own github/environment_slug, `npm ci --omit=dev` build, `npm run migrate`).
+  `doctl apps spec validate --schema-only` passes.
+- Gates: lint ✓, typecheck ✓, lint:rules-test ✓ (0 fail), `expo export -p web` ✓ (dist emitted,
+  /api/health route intact). New non-JS/TS files (compose, .sql, docs, .env.example) are outside
+  the eslint graph; no inline disables.

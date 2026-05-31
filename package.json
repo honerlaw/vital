@@ -2,6 +2,10 @@
   "name": "vital",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "//db": "pg and node-pg-migrate are REGULAR dependencies (not devDependencies) on purpose: the production migrate job (.do/app.yaml PRE_DEPLOY) builds under NODE_ENV=production, which prunes devDeps, so the migration runner must survive pruning. See docs/database.md.",
+  "engines": {
+    "node": ">=20.12"
+  },
   "dependencies": {
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
@@ -17,6 +21,8 @@
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
     "express": "^5.1.0",
+    "node-pg-migrate": "^8.0.4",
+    "pg": "^8.21.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -47,7 +53,10 @@
     "lint:rules-test": "node --test eslint-rules/*.test.js",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
-    "serve": "node server.js"
+    "serve": "node server.js",
+    "migrate": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js up",
+    "migrate:create": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js create -j sql",
+    "migrate:down": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js down"
   },
   "private": true
 }
