@@ -54,6 +54,35 @@ Gate evidence (all green together):
 - **Guards:** declarative `Stack.Protected guard={...}` (no imperative `router.replace()` in an
   effect), per [[004-pattern-expo56-react-compiler-hook-rules]].
 
+## Panel decisions 2026-05-31 (work → review)
+
+- [3/3 accept] completion verification: all 8 success criteria met; both panelists + arbiter
+  independently re-ran lint/typecheck/rules-test/test (clean) and the web export (11 routes
+  prerender + 2 API routes). Live Clerk round-trip honestly out-of-scope (manual post-merge).
+- [2/2 accept, quorum met] review triage: dispositions applied below.
+
+## Review finding 2026-05-31
+
+- **F1 [FIXED]** — `(auth)` group had no pinned anchor, so a signed-out user opening `/` could
+  land on `forgot-password` (alphabetical) instead of `sign-in`. Fixed by adding
+  `export const unstable_settings = { initialRouteName: 'sign-in' }` to `(auth)/_layout.tsx`
+  (verified against expo-router 56's `getRoutesCore` anchor logic; one-line, no second edit
+  needed, typecheck unaffected).
+- **F2 [SUGGEST]** — `apiFetch` builds `${base}${path}`; would double-slash if
+  `EXPO_PUBLIC_API_URL` ever had a trailing slash (`${APP_URL}` does not). Normalize if it ever
+  becomes user-set.
+- **F3 [SUGGEST]** — auth screens display Clerk's raw `error.message`; `FieldError.longMessage`
+  / friendlier copy would improve UX in a later pass.
+- **F4 [IGNORE]** — verifier memoized even if env was empty at first call; env is present at
+  prod boot, and the test seam bypasses the cache. Negligible.
+- **F5 [IGNORE]** — built-in `@clerk/expo/token-cache` used instead of a hand-rolled cache
+  (documented deviation; strictly better).
+
+Security sweep (Skeptic, review phase): no token logging anywhere; `/api/health` public by
+construction; `requireAuth` fails closed with no stack leak; Bearer token only rides the
+`Authorization` header to the fixed `EXPO_PUBLIC_API_URL` origin (no token-in-URL / open
+redirect); splash cannot hang (hides on `isLoaded`, which Clerk always resolves).
+
 ## Panel concerns 2026-05-31
 
 Carried forward from the panels for the work + review phases to scrutinize:
