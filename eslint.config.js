@@ -70,7 +70,8 @@ module.exports = defineConfig([
           tabWidth: 2,
           ignoreUrls: true,
           ignoreTemplateLiterals: true,
-          ignorePattern: "^\\s*(import|export)\\b.*\\bfrom\\b|^\\s*import\\s+['\"]",
+          ignorePattern:
+            "^\\s*(import|export)\\b.*\\bfrom\\s+['\"][^'\"]*['\"];?\\s*$|^\\s*import\\s+['\"][^'\"]*['\"];?\\s*$",
         },
       ],
       // One function/component per file.

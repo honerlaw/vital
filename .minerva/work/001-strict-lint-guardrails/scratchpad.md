@@ -61,6 +61,16 @@ Proposal approved via consensus panels. Beginning implementation.
   `export function` code lines are now correctly enforced. Re-verified: 101-char export-const
   FAILS, 114-char import PASSES. Approach unchanged; this was an option-value correction.
 
+## DIVERGENCE 2 (completion-panel skeptic finding, fixed in-approach — no replan)
+- The narrowed ignorePattern `^\s*(import|export)\b.*\bfrom\b|...` still over-exempted: ANY
+  line starting with import/export that merely CONTAINED the word `from` (e.g. an object key
+  `{ from: x }` or a long string "... from ...") escaped the 100-col cap. A bypass in an
+  "un-bypassable" guardrail. Anchored the exemption to a real trailing module specifier:
+  `^\s*(import|export)\b.*\bfrom\s+['"][^'"]*['"];?\s*$|^\s*import\s+['"][^'"]*['"];?\s*$`.
+  Re-verified: 102-char `export const cfg = { from: ... }` now FIRES max-len; 103-char bare
+  `import '...'` and 114-char `import {..} from 'react-native'` stay exempt; 103-char string
+  containing "from" FIRES. Option-value correction, approach unchanged.
+
 ## Success-criteria verification (all met — evidence)
 1. `npm run lint` exit 0 on src/app/index.tsx + _layout.tsx (component + StyleSheet const). ✅
 2. `any` -> FAIL [no-explicit-any (+ no-unsafe-return)]. ✅
