@@ -5,8 +5,8 @@
 Shipped (2026-05-31). Approved via `minerva:propose-ship-auto` consensus panels — scope 3/3
 (revote), approach 3/3, whole-proposal 2/3 (Arbiter-decided); completion verified 3/3; review
 triage 2/2 (one FIX applied — `(auth)` anchor). Durable learnings promoted to
-[[009-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] and
-[[010-pattern-src-unit-tests-node-tsx]]. Deferrals in `followups.md`.
+[[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] and
+[[012-pattern-src-unit-tests-node-tsx]]. Deferrals in `followups.md`.
 
 ### As shipped — deltas from the plan above
 
@@ -23,7 +23,7 @@ The TASK-0 spike passed (no HALT). Four sensible deltas from the as-written Appr
    `isLoaded`; no imperative *navigation* runs in an effect.
 
 Test runner shipped as `node --import tsx --test "src/**/*.test.ts"` (+ `@types/node` devDep and
-a file-scoped `/// <reference types="node" />`). See [[010-pattern-src-unit-tests-node-tsx]].
+a file-scoped `/// <reference types="node" />`). See [[012-pattern-src-unit-tests-node-tsx]].
 
 ## Goal
 
