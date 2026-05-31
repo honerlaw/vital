@@ -2,8 +2,10 @@
 
 ## Status
 
-Draft — approved 2026-05-31 via `minerva:propose-ship-auto` consensus panels
-(scope 3/3, approach 3/3, whole-proposal 3/3).
+Shipped (2026-05-31). Approved via `minerva:propose-ship-auto` consensus panels
+(scope 3/3, approach 3/3, whole-proposal 3/3); completion verified 3/3; review triage 2/2.
+Durable learnings promoted to [[006-decision-digitalocean-app-platform-hosting]],
+[[007-pattern-expo-router-server-self-host]], [[008-pattern-dynamic-app-config-strict-lint]].
 
 ## Goal
 
@@ -39,30 +41,32 @@ secrets sync. Seven files:
    injected static config:
 
    ```ts
-   export default ({ config }) => ({
-     ...config,
-     extra: {
-       ...config.extra,
-       router: { ...config.extra?.router, origin: process.env.EXPO_PUBLIC_API_URL ?? false },
-     },
-   });
+   export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
+     const rawOrigin: unknown = process.env.EXPO_PUBLIC_API_URL;
+     const origin = typeof rawOrigin === 'string' && rawOrigin.length > 0 ? rawOrigin : false;
+     return { ...config, extra: { router: { origin } } };
+   };
    ```
 
    In SDK 56 a dynamic config **replaces** `app.json` unless it spreads the injected
    `config` (verified against `@expo/config`); without `...config` the existing `scheme`,
-   `plugins`, `experiments.reactCompiler`, and splash config would be silently dropped. Lands
-   on the strict-lint `.ts` surface — written to conform from the start: no `any`, no
-   casts/non-null, ≤100 cols, single declaration ([[001-constraint-strict-eslint-guardrails]],
-   [[002-pattern-eslint-strict-config-gotchas]]).
+   `plugins`, `experiments.reactCompiler`, and splash config would be silently dropped. As
+   shipped, `config.extra` is **not** spread (it is typed `any`, which `no-unsafe-assignment`
+   forbids; app.json has no `extra`), and the `any`-typed `process.env` value is read through
+   `unknown` + `typeof` narrowing rather than a cast. Returns `Partial<ExpoConfig>` because the
+   injected `config` is `Partial`. See [[008-pattern-dynamic-app-config-strict-lint]],
+   [[001-constraint-strict-eslint-guardrails]].
 
 3. **`server.js`** (new, CommonJS) — Express entry. Registers `compression()` and
-   `express.static('dist/client')` **first**, then
-   `app.all('*', createRequestHandler({ build: 'dist/server' }))` from
-   `expo-server/adapter/express` (correct package: `expo-server`, not `@expo/server`).
-   Listens on `process.env.PORT || 8080`. Kept as `.js` so it sits under the lenient
-   base-expo lint, not the strict `.ts` gate — matching Expo's own self-host docs and
-   avoiding fighting strict rules in trivial glue. The adapter returns a bare middleware and
-   does not bundle express, so express/compression are required as standalone packages.
+   `express.static('dist/client')` **first**, then mounts the Expo handler as a terminal
+   `app.use(createRequestHandler({ build: 'dist/server' }))` from `expo-server/adapter/express`
+   (correct package: `expo-server`, not `@expo/server`). As shipped it uses `app.use(handler)`
+   rather than `app.all('*', handler)`: Express 5 (path-to-regexp v8) rejects a bare `'*'`, and
+   `app.use` is wildcard-safe on Express 4 and 5. Listens on `process.env.PORT || 8080` and
+   drains in-flight requests on `SIGTERM`/`SIGINT` (App Platform sends SIGTERM on every
+   redeploy). Kept as `.js` so it sits under the lenient base-expo lint, not the strict `.ts`
+   gate. The adapter returns a bare middleware and does not bundle express, so express/
+   compression are standalone direct dependencies. See [[007-pattern-expo-router-server-self-host]].
 
 4. **`package.json`** — add `express`, `compression`, `expo-server` to `dependencies`
    (explicit direct deps; `expo-server` is promoted from a transitive dep of expo-router);
