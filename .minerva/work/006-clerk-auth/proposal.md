@@ -2,10 +2,28 @@
 
 ## Status
 
-Draft. Approved via `minerva:propose-ship-auto` consensus panels — scope 3/3 (revote),
-approach 3/3, whole-proposal 2/3 (Arbiter-decided on the final revision-round vote; the lone
-Skeptic dissent was a pinnable test-loader detail, resolved below). Skeptic concerns logged in
-`scratchpad.md`.
+Shipped (2026-05-31). Approved via `minerva:propose-ship-auto` consensus panels — scope 3/3
+(revote), approach 3/3, whole-proposal 2/3 (Arbiter-decided); completion verified 3/3; review
+triage 2/2 (one FIX applied — `(auth)` anchor). Durable learnings promoted to
+[[009-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] and
+[[010-pattern-src-unit-tests-node-tsx]]. Deferrals in `followups.md`.
+
+### As shipped — deltas from the plan above
+
+The TASK-0 spike passed (no HALT). Four sensible deltas from the as-written Approach:
+
+1. **Sign-in uses `signIn.password({ identifier, password })`**, not `signIn.create(...)` — the
+   Core-3 signals method for password sign-in.
+2. **No separate error-extractor helper.** Each Core-3 method returns `{ error: ClerkError | null }`
+   (no throw), so screens display `result.error.message` inline.
+3. **Token cache is Clerk's built-in `@clerk/expo/token-cache`** (native-only, no-op on web) —
+   not a hand-rolled secure-store cache in its own file.
+4. **Guards are declarative `Stack.Protected`** with an `unstable_settings.initialRouteName:
+   'sign-in'` anchor on `(auth)` (review F1). There IS one `useEffect` — it hides the splash on
+   `isLoaded`; no imperative *navigation* runs in an effect.
+
+Test runner shipped as `node --import tsx --test "src/**/*.test.ts"` (+ `@types/node` devDep and
+a file-scoped `/// <reference types="node" />`). See [[010-pattern-src-unit-tests-node-tsx]].
 
 ## Goal
 
