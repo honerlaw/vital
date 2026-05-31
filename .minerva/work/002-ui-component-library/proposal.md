@@ -1,9 +1,8 @@
 # 002 — VITAL UI component library + screens
 
 ## Status
-Implemented — gates green (lint `--max-warnings 0`, `tsc --noEmit`, `lint:rules-test` 20/20),
-web export bundles all routes; awaiting PR/merge (2026-05-31). `minerva:ship` flips this to
-`Shipped` once the PR actually merges.
+Shipped (2026-05-31) — merged to `main` via PR #2. Gates green (lint `--max-warnings 0`,
+`tsc --noEmit`, `lint:rules-test` 20/20); web export bundles all routes.
 
 ## What shipped (reconciliation outcomes)
 Built exactly as planned below. Notable concrete outcomes worth recording:
