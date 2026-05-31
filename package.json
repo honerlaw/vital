@@ -60,9 +60,9 @@
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
     "serve": "node server.js",
-    "migrate": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js up",
-    "migrate:create": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js create -j sql",
-    "migrate:down": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js down"
+    "migrate": "node scripts/check-database-url.js && node node_modules/node-pg-migrate/bin/node-pg-migrate.js up",
+    "migrate:create": "node node_modules/node-pg-migrate/bin/node-pg-migrate.js create -j sql",
+    "migrate:down": "node scripts/check-database-url.js && node node_modules/node-pg-migrate/bin/node-pg-migrate.js down"
   },
   "private": true,
   "engines": {

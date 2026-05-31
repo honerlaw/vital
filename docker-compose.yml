@@ -1,15 +1,18 @@
 # Local development Postgres for VITAL.
 #
 # Brought up by `docker compose up -d --wait` (the dev-start skill does this); `--wait`
-# blocks until the healthcheck passes so `npm run migrate` can connect immediately. Data
-# persists in the named volume `vital_pgdata` across restarts; `docker compose down -v`
-# wipes it.
+# blocks until the healthcheck passes so `doppler run -- npm run migrate` can connect
+# immediately. Data persists in the named volume `vital_pgdata` across restarts;
+# `docker compose down -v` wipes it.
 #
-# Credentials/db default to vital/vital/vital and can be overridden via `.env` (which
-# docker compose reads automatically). Keep local credentials alphanumeric so the
-# resulting DATABASE_URL parses identically under Compose interpolation and Node's
-# --env-file parser. This is LOCAL ONLY — production Postgres is DO Managed Postgres with
-# the connection URL supplied as a Doppler RUN_TIME secret (see docs/database.md).
+# Credentials/db/port are HARDCODED to vital/vital/vital on 5432 — there is intentionally
+# NO `.env`/env-var override. `docker compose up` therefore needs no env at all and is not
+# wrapped in `doppler run`. The matching local connection string is a fixed
+# `postgres://vital:vital@localhost:5432/vital`, supplied to the app via Doppler (the `dev`
+# config's DATABASE_URL); see docs/database.md. If host port 5432 is already taken on your
+# machine, free it (stop the other local Postgres) — the port is no longer overridable.
+# This is LOCAL ONLY — production Postgres is DO Managed Postgres with the connection URL
+# supplied as a Doppler RUN_TIME secret.
 
 services:
   postgres:
@@ -17,15 +20,15 @@ services:
     container_name: vital-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-vital}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vital}
-      POSTGRES_DB: ${POSTGRES_DB:-vital}
+      POSTGRES_USER: vital
+      POSTGRES_PASSWORD: vital
+      POSTGRES_DB: vital
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - vital_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vital} -d ${POSTGRES_DB:-vital}"]
+      test: ["CMD-SHELL", "pg_isready -U vital -d vital"]
       interval: 5s
       timeout: 5s
       retries: 10
