@@ -32,6 +32,16 @@ app.use(createRequestHandler({ build: SERVER_BUILD_DIR }));
 
 const port = process.env.PORT || 8080;
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`VITAL server listening on port ${port}`);
 });
+
+// App Platform sends SIGTERM on every redeploy/scale-down. Drain in-flight requests
+// instead of dropping them.
+const shutdown = (signal) => {
+  console.log(`Received ${signal}, closing server`);
+  server.close(() => process.exit(0));
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

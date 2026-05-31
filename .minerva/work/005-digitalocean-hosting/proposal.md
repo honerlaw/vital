@@ -107,9 +107,9 @@ secrets sync. Seven files:
    output, not static-only).
 2. `PORT=8081 node server.js` boots; `curl -s localhost:8081/api/health` → `{"status":"ok"}`;
    `curl -s localhost:8081/` → the app's HTML shell.
-3. `doctl apps spec validate --spec .do/app.yaml` passes; the spec is a single web-service
-   component with `build_command` (`--include=dev`), `run_command`, `PORT` http_port, and
-   `/api/health` health check.
+3. `doctl apps spec validate .do/app.yaml --schema-only` passes; the spec is a single
+   web-service component with `build_command` (`--include=dev`), `run_command`, `PORT`
+   http_port, and `/api/health` health check.
 4. `app.config.ts` sets `extra.router.origin` from `EXPO_PUBLIC_API_URL` when set and is inert
    (relative) when unset; **and** `npx expo config --type public` still reports `scheme: "vital"`,
    all three plugins (expo-router, expo-splash-screen, expo-font), `web.output: "server"`, and

@@ -12,6 +12,20 @@ Live working notes for the DigitalOcean App Platform hosting work unit.
   prerequisite, build-time env scoping, devDep pruning, catch-all ordering, package name
   (expo-server not @expo/server). Skeptic's round-2 "new HIGH" concerns (6,7) were a misread of
   a slash-separated package list as one import path — clarified, Skeptic flipped to accept.
+- [3/3 accept] completion verification: all 6 success criteria independently re-verified by
+  execution (export, live server boot + curl /api/health + /, doctl validate, expo config both
+  env states, lint, typecheck) — concordant across all three agents.
+- [2/2 accept, quorum met] review triage: minerva audit clean (faithful to spec + knowledge,
+  no constraint violations); code review found no deploy-blocking bugs, all LOW. Dispositions:
+  FIX F2 (server.js SIGTERM/SIGINT graceful shutdown — App Platform sends SIGTERM on redeploy),
+  FIX F8 (proposal.md criterion-3 stale `--spec` → positional syntax); IGNORE F1 (Express
+  default 500 safe), F3 (health check catches missing dist/), F5 (express caret matches repo
+  convention), F6 (documented placeholder repo). No load-bearing divergence → no replan.
+
+## Review finding 2026-05-31 (applied)
+
+- server.js: added SIGTERM/SIGINT → server.close() graceful shutdown. Verified: SIGTERM logs
+  "Received SIGTERM, closing server" and the process exits cleanly. Lint green.
 - [3/3 accept, round 2] whole-proposal acceptance. Round 1 Skeptic "revise" on one real HIGH:
   app.config.ts replaces app.json unless it spreads `...config` (verified vs @expo/config) —
   would drop scheme/plugins/experiments.reactCompiler. Fixed with mandatory `...config` spread +
