@@ -34,6 +34,21 @@ services:
       - key: EXPO_PUBLIC_API_URL
         scope: RUN_AND_BUILD_TIME
         value: ${APP_URL}
+      # Clerk publishable key — public, but like EXPO_PUBLIC_API_URL it is inlined into the
+      # client bundle at BUILD time, so it MUST be RUN_AND_BUILD_TIME (absent at build => the
+      # client bakes in a blank key and ClerkProvider errors). Value injected by Doppler.
+      - key: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+        scope: RUN_AND_BUILD_TIME
+      # Clerk secret key — server-only, read at runtime by @clerk/backend in requireAuth.
+      # Never inlined into the client. SECRET type; value injected by Doppler.
+      - key: CLERK_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+      # Allowlist of origins authenticateRequest trusts for the web cookie session (subdomain
+      # cookie-leak protection). The app's own URL; native Bearer requests are unaffected.
+      - key: CLERK_AUTHORIZED_PARTIES
+        scope: RUN_TIME
+        value: ${APP_URL}
       # DATABASE_URL points the app (and the migrate job below) at DO Managed Postgres.
       # Declared here only to pin RUN_TIME scope; the VALUE is supplied by Doppler's native
       # DO integration — never hardcode the connection string in this file. Runtime-only
