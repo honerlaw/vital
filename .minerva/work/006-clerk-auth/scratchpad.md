@@ -15,6 +15,45 @@ Working notes for the Clerk-auth work unit. See `proposal.md` for the approved d
   lone remaining Skeptic concern (test module-resolution) a pinnable tactical detail with a
   concrete fix, now folded into the proposal (`node --import tsx --test`).
 
+## TASK 0 spike — PASSED 2026-05-31 (no HALT/replan)
+
+Verified versions: `@clerk/expo@3.3.0` (current, not deprecated `@clerk/clerk-expo`),
+`@clerk/backend@3.4.14`, `expo-secure-store@56.0.4`, `tsx@4.22.4`, `@types/node@25`.
+`@clerk/expo` peer range `expo >=53 <57` / `react ^19` / `react-native >=0.73` → SDK 56 OK.
+
+Gate evidence (all green together):
+- `npm run lint` + `typecheck` + `lint:rules-test` (20) + `npm test` (5) clean — **zero casts,
+  zero inline disables**. The whole `@clerk/expo` Core-3 signals API and `@clerk/backend`
+  consume cast-free.
+- `expo export -p web` builds; all 11 routes prerender (incl. `(auth)` screens + `account`) →
+  **ClerkProvider renders on react-native-web**. `/api/me` + `/api/health` bundle.
+- Real `server.js` probe (Express-5 expo-server adapter): `/api/health` → 200 public;
+  `/api/me` no-auth and bogus-Bearer → clean `401 {"error":"Unauthorized"}`. The bogus-Bearer
+  reaching `requireAuth` proves the **adapter does not mangle the Authorization header**.
+- Node `>=22` engine pinned (running Node 24); satisfies `@clerk/backend` (>=20.9) and gives
+  `node --import tsx --test` its TS story.
+- Optional peers (`expo-apple-authentication`, `expo-local-authentication`,
+  `@clerk/expo-passkeys`) NOT installed — export + server verified fine without them (lazy).
+
+## Deviations from the proposal (sensible, within work-phase discretion)
+
+- **Token cache:** used Clerk's built-in `tokenCache` from `@clerk/expo/token-cache` (typed
+  `TokenCache | undefined`, native-only / no-op on web) instead of hand-rolling a secure-store
+  cache. Official + web-safe → strictly better; no own file needed.
+- **node:test types:** added `@types/node` (devDep) + a file-scoped `/// <reference types="node" />`
+  in the test file (not banned by `ban-ts-comment` / `noInlineConfig`) rather than a repo-wide
+  `compilerOptions.types` change that could drop other global types.
+- **Test seam:** `src/server/verifier-registry.ts` (a data const, exempt from one-function rule)
+  lets the REAL `GET /api/me` use an injected fake → deterministic, offline, cast-free
+  route-level 401/200 tests (closes Skeptic gap #3 end-to-end, not just the helper).
+- **Fail-closed hardening:** `requireAuth` catches a throwing verifier → clean 401 (no stack
+  leak). Found during the live-server probe: missing key made `authenticateRequest` throw a
+  500 with a full stack-trace HTML body. Added a unit test for the throw path.
+- **Error display:** screens read each Core-3 method's returned `{ error }.message`
+  (`ClerkError extends Error`) — no separate error-extractor helper required.
+- **Guards:** declarative `Stack.Protected guard={...}` (no imperative `router.replace()` in an
+  effect), per [[004-pattern-expo56-react-compiler-hook-rules]].
+
 ## Panel concerns 2026-05-31
 
 Carried forward from the panels for the work + review phases to scrutinize:
