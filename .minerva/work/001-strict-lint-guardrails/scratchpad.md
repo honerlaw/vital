@@ -1,0 +1,1 @@
+Promoted 2026-05-31 — durable knowledge in `.minerva/knowledge/001-constraint-strict-eslint-guardrails.md` and `002-pattern-eslint-strict-config-gotchas.md`; proposal.md reconciled to shipped reality; forward work in followups.md. Prior scratchpad (panel decisions, divergences, verification transcripts) preserved in git history.
