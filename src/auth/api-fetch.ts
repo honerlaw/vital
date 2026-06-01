@@ -8,9 +8,11 @@
  * a missing token simply means "no Bearer header" (the server still rejects with 401).
  *
  * On native the request needs an absolute origin (there is no page origin); it is read from
- * `EXPO_PUBLIC_API_URL` (the same origin app.config.ts feeds to expo-router). On web the var
- * is unset and a relative path is used.
+ * `EXPO_PUBLIC_API_URL` via the shared `apiBaseUrl` helper. On web the var is unset and a
+ * relative path is used.
  */
+import { apiBaseUrl } from '@/auth/api-base';
+
 type GetSessionToken = () => Promise<string | null>;
 
 export async function apiFetch(path: string, getToken: GetSessionToken): Promise<Response> {
@@ -26,7 +28,5 @@ export async function apiFetch(path: string, getToken: GetSessionToken): Promise
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const rawBase: unknown = process.env.EXPO_PUBLIC_API_URL;
-  const base = typeof rawBase === 'string' ? rawBase : '';
-  return fetch(`${base}${path}`, { headers });
+  return fetch(`${apiBaseUrl()}${path}`, { headers });
 }
