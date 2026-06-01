@@ -9,8 +9,15 @@
   test runs in), [[014-pattern-server-pg-access-expo-routes]] (the read path the seed feeds),
   [[001-constraint-strict-eslint-guardrails]] (the one-function-per-file rule that shaped the layout).
 
-How VITAL seeded the `programs` table from data that **also still lives in a TypeScript constant**
-(`src/data/programs.ts` `PROGRAMS`, read synchronously by the engine until the deferred async cutover)
+> ⚠ The **009 programs-catalog instance** of this pattern was **retired in
+> [[016-pattern-ssr-safe-startup-hydration-gate]] (work 010)**: when the engine cut over to reading
+> the catalog from Postgres at startup, the dual-source window closed, so `PROGRAMS`, the generator
+> (`scripts/gen-programs-seed.ts`), and the drift test were deleted (the migration is now the sole
+> seed). The **technique below remains valid** for any future dual-source window — this note records
+> that its first application ended, not that the pattern is deprecated.
+
+How VITAL seeded the `programs` table from data that **also lived in a TypeScript constant**
+(`src/data/programs.ts` `PROGRAMS`, read synchronously by the engine until the async cutover)
 without the two sources silently diverging.
 
 ## The technique

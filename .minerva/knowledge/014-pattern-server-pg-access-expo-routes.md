@@ -28,9 +28,17 @@ data-access layer). How an Expo Router `+api.ts` route reads Postgres under the 
 - **Attach `pool.on('error', …)`.** node-postgres emits `'error'` on an **idle** client when the
   backend drops the connection (DO idle-recycle, failover, network blip). That event fires outside any
   request `await`, so the route's `try/catch` cannot catch it — unhandled, it throws and **crashes the
-  long-running `server.js` process**. A listener that logs lets pg discard and recycle the client. (A
-  symmetric `pool.end()` on SIGTERM is still owed — deferred, because adding a second exported function
-  to `db.ts` would break one-function-per-file; fold it in when the engine-cutover unit relaxes that.)
+  long-running `server.js` process**. A listener that logs lets pg discard and recycle the client.
+- **Drain on shutdown (the construct→survive→drain story, completed in 010).** At pool creation,
+  register `process.once('SIGTERM', () => void created.end())` and the same for `'SIGINT'` (capture a
+  local `const created` so the closure references a non-null `Pool` with no narrowing cast). This stays
+  **inside** `query()`'s pool-creation block — no second top-level function, so one-function-per-file
+  holds (the original reason this was deferred from 009). It is **best-effort**: `server.js`'s
+  `server.close()` already finishes in-flight requests (and their queries) before `process.exit`, so
+  the drain only releases **idle** pooled clients and never interrupts a live query; if `process.exit`
+  wins the race the idle sockets drop exactly as before (no regression). Because the listener registers
+  only when the pool is first created, an offline route-import test (which never queries) leaks no
+  process listener.
 - **`query()` returns `Record<string, unknown>[]`** (typed `UnknownRow`), forcing callers to narrow
   every column. Supplying `query<UnknownRow>()` to pg keeps row values `unknown` rather than the
   default `any`, so no `any` leaks into the route. `@types/pg` is required (pg ships no types) and is a

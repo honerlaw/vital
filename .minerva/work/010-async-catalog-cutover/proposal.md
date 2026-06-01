@@ -2,8 +2,15 @@
 
 ## Status
 
-Draft — approved via `minerva:propose-ship-auto` consensus panels (scope 3/3; approach accepted
-after 2 revisions; whole-proposal 3/3 after 1 revision). Zero user escalations.
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on merge). Approved
+and delivered via `minerva:propose-ship-auto` consensus panels (scope 3/3; approach accepted after 2
+revisions; whole-proposal 3/3 after 1 revision; completion 3/3; review triage 2/2; promote partition
+2/2). Zero user escalations. All success criteria verified (see scratchpad archive); the design
+shipped as approved — no divergences. Review fix folded in: `SET_ACTIVE_PROGRAM` now no-ops on an id
+absent from the hydrated catalog (F2), upholding the activeProgramId-in-catalog invariant. Durable
+patterns captured in [[016-pattern-ssr-safe-startup-hydration-gate]]; [[014-pattern-server-pg-access-expo-routes]]
+gained the pool-drain resolution; [[015-pattern-generated-seed-drift-guard]] annotated (009 instance
+retired here). Deferred work in `followups.md`.
 
 ## Goal
 
