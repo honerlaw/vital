@@ -36,15 +36,27 @@ argument.
 
 0. **Bring up local Postgres (Docker Compose).** From the project root, run
    `docker compose up -d --wait`. `--wait` blocks until the `pg_isready`
-   healthcheck passes, so anything that connects (e.g. `npm run migrate`) won't hit
+   healthcheck passes, so anything that connects (e.g. the migrate runner) won't hit
    a cold-start "connection refused". This is idempotent — if `vital-postgres` is
    already healthy it returns immediately; do **not** restart it on a dev-server
-   restart. Requires Docker to be running and a `.env` (copy `.env.example`); if the
-   default port `5432` is taken by another local Postgres, set `POSTGRES_PORT` (and
-   the matching `DATABASE_URL`) in `.env`. If the daemon is down, surface that and
-   suggest starting Docker rather than retrying. To apply schema after it is up, run
-   `npm run migrate`; to stop the DB later, `docker compose down` (add `-v` to wipe
-   the volume). See `docs/database.md`.
+   restart. The compose file hardcodes `vital`/`vital`/`vital` on port `5432` and
+   reads **no** env — run `docker compose up` bare (not via `doppler run`). Requires
+   Docker to be running; the host port `5432` is **not** overridable, so if it is
+   already taken by another local Postgres, free it (stop the other instance). If the
+   Docker daemon is down, surface that and suggest starting Docker rather than
+   retrying. To apply schema after it is up, run `doppler run -- npm run migrate`; to
+   stop the DB later, `docker compose down` (add `-v` to wipe the volume). See
+   `docs/database.md`.
+
+   **Doppler prerequisite (env / secrets).** Local env vars come from Doppler via the
+   CLI, not a `.env` file. A first-time developer must install the Doppler CLI and run
+   `doppler login` then `doppler setup` once (the committed `doppler.yaml` pins
+   `vital`/`dev`). Migrations and the Expo dev server are launched through
+   `doppler run -- …` so they receive `DATABASE_URL` / `EXPO_PUBLIC_*` from the `dev`
+   config. If a stale local `.env` / `.env.local` exists, remove it — Expo would
+   otherwise inline its values into the client bundle. If `doppler run` reports it is
+   not set up, surface the `doppler login` / `doppler setup` steps rather than falling
+   back to a `.env`.
 
 1. **Detect an already-running dev server.** Check both signals:
    - Claude Code background tasks: `TaskList` — look for a running task whose
@@ -59,9 +71,10 @@ argument.
      (Windows). Tolerate "no such process" — if nothing was listening, continue.
 
 3. **Start the dev server in the background.** Run via the Bash tool with
-   `run_in_background: true` so it does not block:
-   - Normal: `npx expo start`
-   - Cache clear (argument given): `npx expo start --clear`
+   `run_in_background: true` so it does not block. Wrap in `doppler run` so Metro
+   inlines `EXPO_PUBLIC_*` from the Doppler `dev` config:
+   - Normal: `doppler run -- npx expo start`
+   - Cache clear (argument given): `doppler run -- npx expo start --clear`
 
    Run it from the project root. Do not wait for it to exit — it is a long-lived
    server.
@@ -83,8 +96,10 @@ argument.
 - Keep this idempotent: running `/dev-start` repeatedly should always leave
   exactly one dev server running, never a pile of orphaned Metro processes — that
   is the whole point of the detect-and-stop step.
-- If `npx expo start` fails immediately (missing deps), surface the error and
-  suggest `npm install` rather than silently retrying.
+- If `doppler run -- npx expo start` fails immediately, distinguish the cause:
+  missing deps → suggest `npm install`; Doppler not set up (`doppler run` errors) →
+  suggest `doppler login` / `doppler setup`. Don't silently retry or fall back to a
+  `.env`.
 - Postgres and Metro are independent: a wedged Metro (`/dev-start clean`) does not
   require touching the database, and `docker compose down` does not stop Metro.
   Leave Postgres running across dev-server restarts.

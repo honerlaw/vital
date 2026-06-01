@@ -24,6 +24,14 @@ Doppler's **native DigitalOcean integration** (Integrations → DigitalOcean App
 The integration writes the values as app-level env vars, so the running container reads them
 straight from `process.env` — no Doppler CLI is baked into the image.
 
+> [!NOTE]
+> **Local dev uses the same Doppler secrets, fetched differently.** Locally there is no native
+> integration, so developers run commands through the Doppler **CLI** — `doppler run -- <cmd>`
+> injects the `dev` config's secrets into the process environment. Either way the code reads from
+> `process.env`; only the injector differs (CLI locally, native integration in prod). The CLI is
+> never invoked from `package.json` scripts, so production — which has no Doppler CLI — runs the
+> same scripts unchanged. See [`database.md`](./database.md) for the local Doppler setup.
+
 Define at minimum:
 
 | Key                                  | Scope                | Notes |

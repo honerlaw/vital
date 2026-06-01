@@ -13,8 +13,12 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 2. Start the app
 
    ```bash
-   npx expo start
+   doppler run -- npx expo start
    ```
+
+   Local env vars (and the Postgres / migrate setup) come from Doppler via the CLI —
+   see [`docs/database.md`](docs/database.md) for the one-time `doppler login` /
+   `doppler setup` and the local database flow.
 
 In the output, you'll find options to open the app in a
 

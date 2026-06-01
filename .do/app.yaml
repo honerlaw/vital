@@ -63,7 +63,7 @@ services:
 # --omit=dev` (NOT `npm run export:web`) — the migrate job needs no Expo web build, and
 # node-pg-migrate + pg are regular dependencies so they install even with --omit=dev. See
 # docs/database.md for the verify-post-deploy caveats (failure semantics, first-deploy Doppler
-# timing, buildpack Node major >= 20.12).
+# timing).
 jobs:
   - name: migrate
     kind: PRE_DEPLOY

@@ -10,37 +10,69 @@ local and production stay symmetric.
 
 ## Local development
 
+Local secrets come from **Doppler** via the Doppler CLI — the same values production gets,
+read the same way (from `process.env`), just injected by `doppler run` locally instead of by
+Doppler's native DO integration. **There is no `.env` file.**
+
+### 0. One-time Doppler setup
+
+Install the [Doppler CLI](https://docs.doppler.com/docs/install-cli)
+(`brew install dopplerhq/cli/doppler`), then from the repo root:
+
+```sh
+doppler login          # authenticate this machine (once)
+doppler setup          # selects project=vital / config=dev from the committed doppler.yaml
+```
+
+`doppler setup` is non-interactive thanks to the repo's `doppler.yaml`
+(`setup: { project: vital, config: dev }`). The `dev` config must already exist in the Doppler
+project, populated with the local values — notably
+`DATABASE_URL=postgres://vital:vital@localhost:5432/vital`, plus `EXPO_PUBLIC_*` and `CLERK_*`
+for the client and auth. Provisioning the Doppler project/config is an **operator step**, like
+the DO Managed Postgres instance itself.
+
+If you have a leftover `.env` / `.env.local` from before this change, **delete it.** Expo
+auto-loads `.env` and would inline a stale `EXPO_PUBLIC_*` into the client bundle for any key
+Doppler doesn't set.
+
 ### 1. Start Postgres
 
 ```sh
-cp .env.example .env          # first time only
 docker compose up -d --wait   # --wait blocks until the healthcheck passes
 ```
 
-This starts the `vital-postgres` container (`postgres:16-alpine`) on port `5432`, with data
-persisted in the `vital_pgdata` named volume. `/dev-start` runs this for you.
+This starts the `vital-postgres` container (`postgres:16-alpine`) with **hardcoded** credentials
+`vital`/`vital`/`vital` on port `5432`, data persisted in the `vital_pgdata` named volume. The
+compose file is fully self-contained — `docker compose up` needs no env and is **not** wrapped in
+`doppler run`. `/dev-start` runs this for you.
 
-If port `5432` is already taken by another local Postgres, set `POSTGRES_PORT` **and** the
-matching `DATABASE_URL` in `.env` (e.g. `5440` / `postgres://vital:vital@localhost:5440/vital`).
+The host port is hardcoded to `5432` with **no override** (the `POSTGRES_PORT` env var is gone).
+If `5432` is already taken by another local Postgres, **free it** (stop the other instance)
+before bringing this one up.
 
 Stop it with `docker compose down` (add `-v` to also wipe the volume).
 
 ### 2. Apply migrations
 
 ```sh
-npm run migrate          # apply all pending migrations (idempotent)
+doppler run -- npm run migrate     # apply all pending migrations (idempotent)
 ```
 
-The migrate scripts read `DATABASE_URL` from `.env` via Node's `--env-file-if-exists` flag (no
-extra dependency). Re-running `npm run migrate` when nothing is pending prints
-`No migrations to run!` and exits 0.
+`doppler run` injects `DATABASE_URL` (and the rest of the `dev` config) into the process
+environment; the migrate runner reads `DATABASE_URL` straight from `process.env`. Running
+`npm run migrate` **without** `doppler run` fails fast with a clear message (from
+`scripts/check-database-url.js`) instead of an opaque libpq connection error. Re-running when
+nothing is pending prints `No migrations to run!` and exits 0.
 
 ### 3. Author a migration
 
 ```sh
-npm run migrate:create -- add_workouts_table   # creates migrations/<timestamp>_add-workouts-table.sql
-npm run migrate:down                            # roll back the most recent migration
+doppler run -- npm run migrate:create -- add_workouts_table   # creates migrations/<timestamp>_add-workouts-table.sql
+doppler run -- npm run migrate:down                            # roll back the most recent migration
 ```
+
+`migrate:create` only scaffolds a file and needs no connection, but running everything through
+`doppler run` keeps the workflow uniform.
 
 Migrations are **plain SQL** files in `migrations/`, with `-- Up Migration` and
 `-- Down Migration` sections. Keeping them SQL (not TS) keeps migration content off the strict
@@ -52,12 +84,16 @@ TypeScript ESLint surface — the same lenient lane `server.js` uses.
   migrate job builds under `NODE_ENV=production`, which prunes devDeps, so the runner must
   survive pruning. `pg` is pure-JS (no `pg-native`), and migrations/scripts never enter the
   Metro / `expo export` graph, so the client bundle and strict `.ts` lint are untouched.
-- **The env-file flag is baked onto the migrate bin**, e.g.
-  `node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js up`. It
-  must wrap the bin directly, **never** `node --env-file=.env npm run migrate` (there the flag
-  would apply to `npm` and the spawned migrate child would not load `.env`). `--env-file-if-exists`
-  requires **Node ≥ 20.12** (pinned via `engines.node`); in production no `.env` exists, so the
-  flag is a non-fatal no-op and `DATABASE_URL` comes from Doppler-synced `process.env`.
+- **`DATABASE_URL` is read from `process.env` everywhere** — there is no `--env-file` indirection.
+  Locally, `doppler run -- npm run migrate` injects it; in production the native DO integration
+  injects it into the `PRE_DEPLOY` job's environment. The same migrate scripts work unchanged in
+  both places because both resolve `DATABASE_URL` the same way.
+- **A fail-fast guard fronts the connecting migrate commands.** `migrate` (`up`) and
+  `migrate:down` run `node scripts/check-database-url.js && …`, which exits 1 with an actionable
+  message when `DATABASE_URL` is unset (the common "forgot `doppler run`" case, and the documented
+  first-deploy "secret not yet synced" case). `node-pg-migrate` already errors on a missing
+  connection — the guard just fails earlier and clearer. `migrate:create` is offline file
+  scaffolding, so it carries no guard.
 
 ## Production (DigitalOcean App Platform)
 
@@ -84,12 +120,9 @@ These behaviors can't be exercised by a local `node` — confirm them on the fir
 - **Failure blocks the deploy.** A failing `PRE_DEPLOY` job is expected to fail the deployment so
   bad schema never ships ahead of, or behind, the code. Confirm on the first intentional failure.
 - **First-deploy Doppler timing.** The very first deploy that introduces the migrate job is the
-  most likely moment for `DATABASE_URL` to be empty (secret not yet synced). If the first migrate
-  fails for that reason, confirm the Doppler sync, then redeploy.
-- **Buildpack Node major.** `environment_slug: node-js` does not pin a Node major; the
-  `--env-file-if-exists` flag needs Node ≥ 20.12. If the buildpack resolves an older major, the
-  job crashes with an unknown-flag error — pin the Node version (e.g. an `engines`/`.node-version`
-  the buildpack honors) and redeploy.
+  most likely moment for `DATABASE_URL` to be empty (secret not yet synced). The
+  `scripts/check-database-url.js` guard turns this into a clear "DATABASE_URL is not set" failure
+  rather than an opaque connection error; confirm the Doppler sync, then redeploy.
 - **Operator alternative.** To apply migrations out-of-band (or recover from the above), run them
   manually against the deployed app: `doctl apps run <app-id> --component migrate -- npm run migrate`.
 

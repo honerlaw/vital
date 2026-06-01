@@ -1,0 +1,9 @@
+# Doppler repo config — pins the project/config so `doppler setup` is non-interactive.
+# After `doppler login`, run `doppler setup` (or `doppler setup --no-interactive`) in the
+# repo root and the CLI selects vital/dev from here. Then run local commands that need
+# secrets through `doppler run -- <cmd>` (e.g. `doppler run -- npm run migrate`,
+# `doppler run -- npx expo start`). See docs/database.md. Production does NOT use the CLI —
+# it reads secrets from Doppler's native DigitalOcean App Platform integration.
+setup:
+  project: vital
+  config: dev
