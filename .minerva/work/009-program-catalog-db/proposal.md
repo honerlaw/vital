@@ -2,7 +2,10 @@
 
 ## Status
 
-Draft — approved via `minerva:propose-ship-auto` consensus panels (scope 3/3, approach 3/3 after one revision, whole-proposal 3/3 after one revision).
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on merge). Approved
+and delivered via `minerva:propose-ship-auto` consensus panels (scope 3/3; approach 3/3 after one
+revision; whole-proposal 3/3 after one revision; completion 3/3; review triage 2/2; promote
+partition 2/2 after one revision). All five success criteria verified (see scratchpad archive).
 
 ## Goal
 
@@ -139,6 +142,24 @@ holds the two sources identical until then.
 - Whether the program **detail** screen (`program/[id].tsx`) should also fetch
   (`GET /api/programs/[id]`) — deferred; this unit is scoped to the list tab per the ask. Likely
   the first task of the follow-up async-cutover unit.
+
+## As-built notes
+
+Durable patterns from this unit are captured in [[014-pattern-server-pg-access-expo-routes]] and
+[[015-pattern-generated-seed-drift-guard]]. Two divergences from the approach above, both benign:
+
+- The seed generator shipped as `scripts/gen-programs-seed.ts` (TypeScript, strict-linted), **not**
+  the `scripts/*.js` lenient lane — required so it can import the canonical TS `PROGRAMS` and be
+  imported by the tsx-run drift test with no CJS/ESM friction. The migration `.sql` *content* still
+  stays off the lint surface (ESLint never lints `.sql`).
+- The shared guards were split into `src/data/guards/*` (one predicate per file + `index.ts`),
+  forced by the one-function-per-file `local/single-declaration` rule; `db.ts` inlines its pool init
+  into `query()`, and the generator's helpers are inner arrows, for the same reason.
+
+Review fixes folded in (triage F1/F2): `db.ts` attaches `pool.on('error')` so an idle-client backend
+drop logs and recycles instead of crashing the self-hosted server; `programs+api.ts` logs the caught
+cause before returning the opaque 500. Deferred follow-ups (engine cutover, detail-screen fetch,
+`pool.end()` on SIGTERM) are recorded in `followups.md`.
 
 ## Decision log
 
