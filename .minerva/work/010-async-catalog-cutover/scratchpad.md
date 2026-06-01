@@ -2,6 +2,44 @@
 
 ## Log
 
+## Log 2026-06-01 — implementation
+
+- State: `types.ts` (AppState gains `programs` + `programsStatus`, new `ProgramsStatus`);
+  `src/state/default-state.ts` (DEFAULT_STATE + DEFAULT_ACTIVE_PROGRAM_ID, moved out of programs.ts;
+  both importers `app-context.ts` + `StateProvider.tsx` repointed); `actions.ts` (HYDRATE_PROGRAMS /
+  HYDRATE_PROGRAMS_ERROR); `reducer.ts` (HYDRATE handling incl. empty→error + activeProgramId
+  normalize; threads `state.programs`); `StateProvider.tsx` (mount fetch → HYDRATE).
+- Engine: `getProgram(id)` → `getProgram(programs, id)`; `finishSession` reads `state.programs`.
+- Gate: `src/components/CatalogStatus.tsx` (Loading/error placeholder); render-guard in
+  `(tabs)/_layout.tsx`; early-return guards in `program/[id].tsx` (+ non-throwing find + not-found)
+  and `workout.tsx`. Home `index.tsx` + list tab `programs.tsx` read `state.programs` (list tab
+  dropped its own fetch).
+- Retired: deleted `src/data/programs.ts`, `scripts/gen-programs-seed.ts`,
+  `programs-seed-drift.test.ts`, the `gen:programs-seed` npm script. Migration kept (sole seed).
+  `program-guards.test.ts` repointed to `src/test-support/programs.ts` fixture.
+- T3: `db.ts` registers best-effort `process.once('SIGTERM'|'SIGINT', () => void created.end())` at
+  pool creation (captured `created` const avoids the null-narrowing; no new top-level fn).
+
+### Verification evidence
+
+1. `npm run lint` (--max-warnings 0) 0 errors; `tsc --noEmit` clean; `npm test` 17/17 (4 new reducer
+   tests + guards via fixture; drift test removed); `lint:rules-test` 20/20. ✓ (SC#1/#6)
+2. SC#2a — reducer tests: HYDRATE non-empty→ready+normalized; absent active id→first program; empty
+   →error; HYDRATE_PROGRAMS_ERROR→error. ✓
+3. SC#1 — `grep '@/data/programs'` in src → NONE. ✓
+4. SC#6 — `expo export -p web` bundles all 11 routes + 3 API routes; pg tokens (pg-pool/pg-protocol/
+   SCRAM) present in dist/server only, ZERO in dist/client. ✓
+5. SC#5 — db.ts has process.once SIGTERM/SIGINT → created.end(); only one top-level fn (`query`). ✓
+6. SC#2b — boot smoke check: `node server.js` (local PG) → /api/health 200, /api/programs 200 with 5
+   programs (bbr,gzclp,ppl,wendler,nsuns). The signed-in UI flow (Loading→catalog, error view on
+   failure) is the MANUAL acceptance step (run the app signed in) — not automatable headlessly.
+
+### Divergence notes
+
+- Added `src/components/CatalogStatus.tsx` (shared gate placeholder) and `src/test-support/programs.ts`
+  (test fixture replacing the retired PROGRAMS) — both within the accepted approach, not divergences.
+- Worktree needed its own `npm install` (the shared parent `node_modules` predated 009's `@types/pg`).
+
 ## Open questions
 
 ## Panel decisions 2026-06-01

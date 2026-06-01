@@ -21,7 +21,7 @@ import { colors, space } from '@/theme';
 export default function TodayScreen() {
   const { state, dispatch } = useAppStore();
   const router = useRouter();
-  const program = getProgram(state.activeProgramId);
+  const program = getProgram(state.programs, state.activeProgramId);
   const dayIndex = state.cursor % program.days.length;
   const day = getNextWorkout(program, state.cursor);
   const upcoming = getUpcoming(program, state.cursor, 3);

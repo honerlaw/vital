@@ -43,8 +43,13 @@ export interface LiveSession {
   completed: boolean[][];
 }
 
+/** Catalog hydration state: loading until the first fetch resolves, then ready or error. */
+export type ProgramsStatus = 'loading' | 'ready' | 'error';
+
 /** Top-level app state (drive this from Context/reducer or a store). */
 export interface AppState {
+  programs: Program[];       // the catalog, hydrated from GET /api/programs at startup
+  programsStatus: ProgramsStatus;
   activeProgramId: string;
   cursor: number;            // index into active program's days = NEXT workout
   history: SessionLog[];

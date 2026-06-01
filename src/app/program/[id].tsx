@@ -3,9 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
 import BackLink from '@/components/BackLink';
 import Button from '@/components/Button';
+import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import Tag from '@/components/Tag';
-import { getProgram } from '@/data/engine';
 import { useAppStore } from '@/state/useAppStore';
 import { border, colors, space } from '@/theme';
 
@@ -13,7 +13,26 @@ export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, dispatch } = useAppStore();
   const router = useRouter();
-  const program = getProgram(id);
+
+  // Deep-link / SSR guard (standalone route, outside the tabs layout); after all hooks.
+  if (state.programsStatus !== 'ready') return <CatalogStatus status={state.programsStatus} />;
+
+  // Untrusted route param → non-throwing lookup with a not-found view (vs the throwing engine
+  // `getProgram`, which is reserved for trusted ids).
+  const program = state.programs.find((p) => p.id === id);
+  if (!program) {
+    return (
+      <Screen>
+        <BackLink label="Programs" onPress={() => router.back()} />
+        <AppText variant="screenTitle" style={styles.title}>
+          Not found
+        </AppText>
+        <AppText variant="body" style={styles.blurb}>
+          {`No program "${id}".`}
+        </AppText>
+      </Screen>
+    );
+  }
   const active = program.id === state.activeProgramId;
 
   const onSetActive = () => {

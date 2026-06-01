@@ -9,8 +9,23 @@ import { Action } from '@/state/actions';
 
 export const reducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
+    case 'HYDRATE_PROGRAMS': {
+      const programs = action.programs;
+      // An empty catalog is treated as unavailable so the render-gate shows the error view rather
+      // than the home tab trying to resolve a now-absent active program.
+      if (programs.length === 0) {
+        return { ...state, programs, programsStatus: 'error' };
+      }
+      // Re-point activeProgramId if the persisted id isn't in the hydrated catalog.
+      const activeProgramId = programs.some((p) => p.id === state.activeProgramId)
+        ? state.activeProgramId
+        : programs[0].id;
+      return { ...state, programs, programsStatus: 'ready', activeProgramId };
+    }
+    case 'HYDRATE_PROGRAMS_ERROR':
+      return { ...state, programsStatus: 'error' };
     case 'START_WORKOUT': {
-      const program = getProgram(state.activeProgramId);
+      const program = getProgram(state.programs, state.activeProgramId);
       return { ...state, live: startSession(program, action.dayIndex) };
     }
     case 'TOGGLE_SET': {

@@ -28,13 +28,23 @@ export async function query(text: string): Promise<UnknownRow[]> {
     if (typeof url !== 'string' || url.length === 0) {
       throw new Error('DATABASE_URL is not set');
     }
-    pool = new Pool({ connectionString: url });
+    const created = new Pool({ connectionString: url });
     // pg emits 'error' on an idle client when the backend drops the connection (DO Managed
     // Postgres idle-recycle, failover, network blip). Unhandled, that event throws and would
     // crash the long-running self-hosted server; logging it lets pg discard and recycle the client.
-    pool.on('error', (err) => {
+    created.on('error', (err) => {
       console.error('pg pool error:', err);
     });
+    // Best-effort drain on shutdown. server.js's `server.close()` already finishes in-flight
+    // requests (and their queries) before `process.exit`, so this only releases idle pooled
+    // clients — strictly better than dropping them, and it never interrupts a live query.
+    process.once('SIGTERM', () => {
+      void created.end();
+    });
+    process.once('SIGINT', () => {
+      void created.end();
+    });
+    pool = created;
   }
   const result = await pool.query<UnknownRow>(text);
   return result.rows;

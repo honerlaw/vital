@@ -6,6 +6,7 @@ import Button from '@/components/Button';
 import ExerciseBlock from '@/components/ExerciseBlock';
 import ProgressBar from '@/components/ProgressBar';
 import RestTimerBar from '@/components/RestTimerBar';
+import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import { getProgram, sessionProgress } from '@/data/engine';
 import { useRestTimer } from '@/hooks/useRestTimer';
@@ -20,9 +21,12 @@ export default function WorkoutScreen() {
   const restTimer = useRestTimer(REST_SECONDS);
   const live = state.live;
 
+  // Deep-link / SSR guard: this standalone route is outside the tabs layout, so it carries its own
+  // render-gate. Both early returns sit after all hooks.
+  if (state.programsStatus !== 'ready') return <CatalogStatus status={state.programsStatus} />;
   if (!live) return null;
 
-  const program = getProgram(live.programId);
+  const program = getProgram(state.programs, live.programId);
   const day = program.days[live.dayIndex];
   const progress = sessionProgress(live);
 
