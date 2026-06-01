@@ -37,3 +37,11 @@ void test('HYDRATE_PROGRAMS_ERROR becomes error', () => {
   const next = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS_ERROR' });
   assert.equal(next.programsStatus, 'error');
 });
+
+void test('SET_ACTIVE_PROGRAM ignores an id absent from the catalog, accepts a present one', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const ignored = reducer(ready, { type: 'SET_ACTIVE_PROGRAM', id: 'nope' });
+  assert.equal(ignored.activeProgramId, ready.activeProgramId);
+  const set = reducer(ready, { type: 'SET_ACTIVE_PROGRAM', id: 'gzclp' });
+  assert.equal(set.activeProgramId, 'gzclp');
+});

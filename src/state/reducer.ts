@@ -44,7 +44,11 @@ export const reducer = (state: AppState, action: Action): AppState => {
     }
     case 'CANCEL_WORKOUT':
       return { ...state, live: null };
-    case 'SET_ACTIVE_PROGRAM':
+    case 'SET_ACTIVE_PROGRAM': {
+      // Ignore an id that isn't in the hydrated catalog — upholds the activeProgramId-in-catalog
+      // invariant HYDRATE_PROGRAMS establishes, so the trusted `getProgram` lookups can't throw.
+      if (!state.programs.some((p) => p.id === action.id)) return state;
       return { ...state, activeProgramId: action.id, cursor: 0 };
+    }
   }
 };

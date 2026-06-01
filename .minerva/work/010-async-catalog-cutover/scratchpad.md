@@ -40,6 +40,25 @@
   (test fixture replacing the retired PROGRAMS) — both within the accepted approach, not divergences.
 - Worktree needed its own `npm install` (the shared parent `node_modules` predated 009's `@types/pg`).
 
+## Review triage 2026-06-01 (panel 2/2 accept)
+
+- F2 [Med] FIXED — `reducer.ts` `SET_ACTIVE_PROGRAM` now ignores an id absent from `state.programs`
+  (inline no-op, no re-point, no new top-level fn — per Skeptic), upholding the
+  activeProgramId-in-catalog invariant so the trusted `getProgram` lookups can't throw. New reducer
+  test added (18 total).
+- F1 [Med] SUGGEST → followup: no in-app retry on a `/api/programs` fetch failure (error view says
+  "REOPEN THE APP"; mount effect won't re-run). The proposal already deferred in-app retry; recorded
+  as a followup at promote (carry the user-facing symptom: a transient failure strands until restart).
+- F3 [Low] IGNORE — false premise: `(tabs)/_layout` gate holds all tabs (incl. history) until ready;
+  history reads `state.history`, never `getProgram`.
+- F4–F9 [Low] IGNORE — unreachable getProgram-on-invalid-live-id; SIGTERM comment; empty→error copy;
+  account.tsx exempt (no getProgram); minimal fixture; fetch not AbortController-cancelled (the
+  `cancelled` flag already guards the stale dispatch).
+- K1 [knowledge] DEFER → promote: annotate 015 (its 009 drift-guard instance is retired here).
+- K2 [knowledge] DEFER → promote: fold the pool-drain lifecycle learning into 014.
+- K3 [knowledge] DEFER → promote: capture the SSR-safe hydrate-at-startup render-gate as a new
+  durable pattern (confirmed novel — 007 covers server self-host, not the client render-gate).
+
 ## Open questions
 
 ## Panel decisions 2026-06-01
