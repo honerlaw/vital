@@ -15,7 +15,10 @@ export async function GET(): Promise<Response> {
   try {
     const rows = await query(SELECT_PROGRAMS);
     return Response.json(rows.map(rowToProgram));
-  } catch {
+  } catch (error) {
+    // Server-only log: the cause (DB unreachable, an invalid row rejected by the mapper) is the
+    // only diagnostic on the self-hosted box; the client still gets an opaque 500.
+    console.error('GET /api/programs failed:', error);
     return Response.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

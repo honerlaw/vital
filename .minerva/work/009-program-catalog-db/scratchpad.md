@@ -39,6 +39,21 @@
   (mirrors `src/data/engine/`); `db.ts` inlines the pool init into `query`; the generator's helpers
   are inner arrows.
 
+## Review triage 2026-05-31 (panel 2/2 accept)
+
+- F1 [High] FIXED — `db.ts` now attaches `pool.on('error')` (idle-client backend error would
+  otherwise crash the long-running self-hosted server).
+- F2 [Med] FIXED — `programs+api.ts` now `console.error`s the caught cause before the opaque 500.
+- F6 [Low] SUGGEST — `fetchPrograms` collapses HTTP-error and malformed-JSON into one error path;
+  acceptable (both land in the screen's error state). Not changed.
+- F8 [Low] SUGGEST — `server.js` graceful shutdown never calls `pool.end()` on SIGTERM. Low impact
+  (App Platform kills the container; Postgres reaps sockets) and adding a `closePool()` would put a
+  2nd function in `db.ts` (one-function-per-file). Left as-is; revisit with the engine-cutover unit.
+- F3/F4/F5 [Low] IGNORE — Set-vs-some micro-opt; mapper messages assume the (fixed) SELECT; loading
+  flicker. All fail-closed / cosmetic.
+- F7 [Med] DEFER → promote — capture durable patterns as knowledge: lazy server pg Pool singleton;
+  generate-from-canonical-seed + offline byte-equality drift test; cast-free jsonb row narrowing.
+
 ## Open questions
 
 ## Panel decisions 2026-05-31
