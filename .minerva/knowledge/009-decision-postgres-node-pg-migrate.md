@@ -5,6 +5,9 @@
 - Work unit: 007-postgres-migrations
 - Related: [[006-decision-digitalocean-app-platform-hosting]] (the runtime that hosts it),
   [[010-pattern-do-app-platform-migrations]] (how migrations apply in prod)
+- Superseded in part by [[013-decision-doppler-local-env]] (work 008): the **`POSTGRES_PORT`
+  port override** and the **`--env-file-if-exists=.env` flow** described below were removed —
+  see the ⚠ markers. This entry stays a true record *as of work 007*.
 
 VITAL's database is **Postgres**, and schema is evolved with **`node-pg-migrate`** (plain-SQL
 migrations). Local dev runs Postgres in **Docker Compose** (`postgres:16-alpine`, container
@@ -12,6 +15,10 @@ migrations). Local dev runs Postgres in **Docker Compose** (`postgres:16-alpine`
 `POSTGRES_PORT`); production is **DO Managed Postgres** reached over an ordinary TCP `pg`
 connection with the URL as a `RUN_TIME` Doppler secret. This realized the DB deferral 005 left in
 its followups.
+
+> ⚠ Superseded by [[013-decision-doppler-local-env]] (008): the port is now **hardcoded to 5432
+> with no `POSTGRES_PORT` override** (free the port instead of overriding it), and local
+> `DATABASE_URL` comes from the Doppler `dev` config via `doppler run`, not `.env`.
 
 ## Why node-pg-migrate (not a hand-rolled runner, not an ORM)
 
@@ -36,6 +43,12 @@ its followups.
   silent local-only failure masked in prod by Doppler). `--env-file-if-exists` needs **Node ≥ 20.12**
   (pinned via `engines.node`); in prod no `.env` exists so it is a non-fatal no-op and `DATABASE_URL`
   comes from `process.env`.
+
+  > ⚠ Superseded by [[013-decision-doppler-local-env]] (008): the **`--env-file-if-exists=.env`
+  > flag was dropped** from all migrate scripts (so the Node ≥ 20.12 dependency is moot). Migrate
+  > now reads `DATABASE_URL` from `process.env` only — injected by `doppler run` locally and the
+  > native integration in prod — and a `scripts/check-database-url.js` guard fronts `up`/`down`.
+
 - Local creds are kept **alphanumeric** so the `DATABASE_URL` parses identically under Docker
   Compose interpolation and Node's `--env-file` parser.
 

@@ -6,6 +6,9 @@
 - Related: [[009-decision-postgres-node-pg-migrate]] (the tooling), 
   [[006-decision-digitalocean-app-platform-hosting]] (the substrate),
   [[007-pattern-expo-router-server-self-host]] (the buildpack/devDep-pruning facts)
+- Superseded in part by [[013-decision-doppler-local-env]] (work 008): the "Buildpack Node major /
+  `--env-file-if-exists` needs Node ≥ 20.12" caveat below is obsolete — that flag was removed. The
+  rest of the PRE_DEPLOY pattern stands. True record *as of work 007*.
 
 How VITAL applies `node-pg-migrate` migrations in production on DO App Platform so schema is
 current **before** new web containers take traffic. Each item is a non-obvious fact that shaped
@@ -56,4 +59,7 @@ not, and must be confirmed on the first real deploy (same boundary as
   moment for `DATABASE_URL` to be unset (secret not yet synced).
 - **Buildpack Node major**: `environment_slug: node-js` does not pin a major; `--env-file-if-exists`
   needs Node ≥ 20.12, so an older buildpack Node crashes the job with an unknown-flag error.
+  > ⚠ Obsolete after [[013-decision-doppler-local-env]] (008): the `--env-file-if-exists` flag was
+  > removed, so this Node-version caveat no longer applies. `DATABASE_URL` comes from `process.env`
+  > (native integration); the `scripts/check-database-url.js` guard now fronts the job's `up`.
 - Operator escape hatch: `doctl apps run <app-id> --component migrate -- npm run migrate`.

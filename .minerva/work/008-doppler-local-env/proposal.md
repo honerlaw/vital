@@ -2,7 +2,10 @@
 
 ## Status
 
-Draft
+Shipped (2026-05-31) — implementation complete and verified (all 7 success criteria met;
+completion-verification panel 3/3). Durable knowledge promoted to
+`.minerva/knowledge/013-decision-doppler-local-env.md`; 009/010 annotated with
+supersede markers. The Approach below matches shipped reality.
 
 ## Goal
 
