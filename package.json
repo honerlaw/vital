@@ -60,7 +60,6 @@
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
-    "gen:programs-seed": "node --import tsx scripts/gen-programs-seed.ts",
     "serve": "node server.js",
     "migrate": "node scripts/check-database-url.js && node node_modules/node-pg-migrate/bin/node-pg-migrate.js up",
     "migrate:create": "node node_modules/node-pg-migrate/bin/node-pg-migrate.js create -j sql",

@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * Tests the shared catalog guards offline. The canonical `PROGRAMS` (and a JSON round-trip of it,
+ * Tests the shared catalog guards offline. A representative catalog (and a JSON round-trip of it,
  * which is what the client receives from `GET /api/programs`) must pass `isProgramArray`, and
  * malformed values must be rejected — this is the validation both the client fetch and the server
  * mapper rely on to stay cast-free.
@@ -8,14 +8,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isProgram, isProgramArray, isProgramTag } from '@/data/guards';
-import { PROGRAMS } from '@/data/programs';
+import { SAMPLE_PROGRAMS } from '@/test-support/programs';
 
-void test('the canonical catalog passes its own guard', () => {
-  assert.ok(isProgramArray(PROGRAMS));
+void test('a representative catalog passes the guard', () => {
+  assert.ok(isProgramArray(SAMPLE_PROGRAMS));
 });
 
 void test('a JSON round-trip of the catalog (what the client receives) still validates', () => {
-  const roundTripped: unknown = JSON.parse(JSON.stringify(PROGRAMS));
+  const roundTripped: unknown = JSON.parse(JSON.stringify(SAMPLE_PROGRAMS));
   assert.ok(isProgramArray(roundTripped));
 });
 

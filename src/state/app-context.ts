@@ -1,5 +1,5 @@
 import { createContext, Dispatch } from 'react';
-import { DEFAULT_STATE } from '@/data/programs';
+import { DEFAULT_STATE } from '@/state/default-state';
 import { AppState } from '@/data/types';
 import { Action } from '@/state/actions';
 
