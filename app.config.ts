@@ -20,6 +20,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
   return {
     ...config,
     extra: {
+      ...(config.extra ?? {}),
       router: { origin },
     },
   };
