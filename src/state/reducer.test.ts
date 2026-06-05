@@ -38,6 +38,20 @@ void test('HYDRATE_PROGRAMS_ERROR becomes error', () => {
   assert.equal(next.programsStatus, 'error');
 });
 
+void test('RETRY_HYDRATE returns to loading from error', () => {
+  const errored = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS_ERROR' });
+  const retried = reducer(errored, { type: 'RETRY_HYDRATE' });
+  assert.equal(retried.programsStatus, 'loading');
+});
+
+void test('RETRY_HYDRATE is a no-op outside error', () => {
+  // From the initial 'loading' (e.g. a double-tap racing the first fetch): unchanged.
+  assert.equal(reducer(DEFAULT_STATE, { type: 'RETRY_HYDRATE' }), DEFAULT_STATE);
+  // From 'ready': unchanged — retry is only reachable from the error view.
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  assert.equal(reducer(ready, { type: 'RETRY_HYDRATE' }), ready);
+});
+
 void test('SET_ACTIVE_PROGRAM ignores an id absent from the catalog, accepts a present one', () => {
   const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   const ignored = reducer(ready, { type: 'SET_ACTIVE_PROGRAM', id: 'nope' });

@@ -24,6 +24,13 @@ export const reducer = (state: AppState, action: Action): AppState => {
     }
     case 'HYDRATE_PROGRAMS_ERROR':
       return { ...state, programsStatus: 'error' };
+    case 'RETRY_HYDRATE': {
+      // Only meaningful from the error view; a no-op elsewhere keeps double-taps idempotent and
+      // preserves the invariant that mount and error→loading are the only ways into 'loading'
+      // (StateProvider's status-keyed effect refetches whenever the status becomes 'loading').
+      if (state.programsStatus !== 'error') return state;
+      return { ...state, programsStatus: 'loading' };
+    }
     case 'START_WORKOUT': {
       const program = getProgram(state.programs, state.activeProgramId);
       return { ...state, live: startSession(program, action.dayIndex) };

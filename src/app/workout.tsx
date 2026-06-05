@@ -23,7 +23,14 @@ export default function WorkoutScreen() {
 
   // Deep-link / SSR guard: this standalone route is outside the tabs layout, so it carries its own
   // render-gate. Both early returns sit after all hooks.
-  if (state.programsStatus !== 'ready') return <CatalogStatus status={state.programsStatus} />;
+  if (state.programsStatus !== 'ready') {
+    return (
+      <CatalogStatus
+        status={state.programsStatus}
+        onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })}
+      />
+    );
+  }
   if (!live) return null;
 
   const program = getProgram(state.programs, live.programId);

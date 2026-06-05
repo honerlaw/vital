@@ -7,6 +7,22 @@
   panel). Pre-flight: fetched origin first (stale-main lesson from the aborted earlier run);
   main == origin/main at 724f24b; no in-flight units.
 
+## Implementation log 2026-06-05
+
+- Implemented exactly per proposal: RETRY_HYDRATE action + error-only reducer case;
+  status-keyed hydrate effect (guard reads the dep → exhaustive-deps exact); CatalogStatus
+  onRetry prop + inline Retry Button (`space['2xl']` top margin) + copy swap; all three gate
+  call sites wired ((tabs)/_layout widened to `{ state, dispatch }`).
+- Environment fix (not unit scope): parent-repo `node_modules` was stale — `@types/pg` in
+  package.json since PR #11 but never installed locally, so lint/typecheck failed on
+  pre-existing `src/server/db.ts`. `npm install` in the parent repo fixed it. Same
+  stale-local-state family as the unfetched `main` that misled the earlier aborted run.
+- Gates: lint (--max-warnings 0) ✓, typecheck ✓, test 20/20 ✓ (incl. 2 new RETRY_HYDRATE
+  cases), export:web ✓.
+- SC#2 (manual tap-through) is NOT machine-verified in this run — per proposal it is
+  reviewer-attested; evidence on record is the test-covered state transition + the
+  three-panelist trace of the effect re-fire sequence.
+
 ## Panel decisions 2026-06-05
 
 - [2/3 accept → revision round → 3/3 accept] scope check: TWO sequential units (011 retry,
