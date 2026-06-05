@@ -8,3 +8,5 @@ Promoted 2026-06-05. Durable learnings live in `.minerva/knowledge/`
 [[001-constraint-strict-eslint-guardrails]]). Forward work in `followups.md` (T1 = the SC#3
 manual attestation, steps in the PR body). Proposal reflects shipped reality incl. As-built
 notes. Working notes and the full panel-decision log are preserved in this file's git history.
+
+Synthesis: [synthesis] refreshed overview.md (watermark 016→017; 1 new entry + 4 in-place reshapes folded into themes)

@@ -1,9 +1,9 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 016 -->
+<!-- synthesis-watermark: 017 -->
 
-First synthesis (2026-06-05, work 011). Theme-grouped navigation over the corpus; the entries
-remain the source of truth.
+Synthesized 2026-06-05 (work 011, refreshed in work 012). Theme-grouped navigation over the
+corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
 
@@ -20,10 +20,13 @@ dynamic `app.config.ts` lint-clean ([[008-pattern-dynamic-app-config-strict-lint
 
 `AppState` is the serializable user domain (active program / cursor / history / live session);
 ephemeral UI like the rest timer stays out of the reducer, and full-screen flows are top-level
-routes rather than tabs ([[005-decision-vital-state-and-nav-boundaries]]). The program catalog is
-hydrated from the API at startup behind an SSR-safe render-gate with an explicit
-loading/ready/error status and, since work 011, an in-app retry primitive
-([[016-pattern-ssr-safe-startup-hydration-gate]]).
+routes rather than tabs ([[005-decision-vital-state-and-nav-boundaries]]). The program catalog
+and the per-user state are hydrated from the API at startup behind an SSR-safe render-gate with
+explicit loading/ready/error statuses (combined readiness since work 012) and, since work 011,
+an in-app retry primitive ([[016-pattern-ssr-safe-startup-hydration-gate]]). Per-user state —
+active program, cursor, workout history — persists in Postgres bound to the Clerk userId, with a
+fire-and-forget write-through over the authoritative local reducer
+([[017-pattern-per-user-state-persistence]]).
 
 ## Data layer — Postgres as the single source of truth
 
