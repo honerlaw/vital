@@ -4,7 +4,8 @@
  * state` function, so no React/network/DB is needed). These assertions are what evidences the
  * render-gate's contract: a non-empty catalog → `ready` (with a normalized active program), and an
  * empty catalog or a fetch error → `error` (so the gate shows the error view rather than letting a
- * program screen resolve an absent program). See proposal SC#2a.
+ * program screen resolve an absent program). Origin: 010-async-catalog-cutover (its proposal
+ * SC#2a); the RETRY_HYDRATE cases evidence 011-catalog-retry SC#1.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -36,6 +37,20 @@ void test('HYDRATE_PROGRAMS with an empty catalog becomes error', () => {
 void test('HYDRATE_PROGRAMS_ERROR becomes error', () => {
   const next = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS_ERROR' });
   assert.equal(next.programsStatus, 'error');
+});
+
+void test('RETRY_HYDRATE returns to loading from error', () => {
+  const errored = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS_ERROR' });
+  const retried = reducer(errored, { type: 'RETRY_HYDRATE' });
+  assert.equal(retried.programsStatus, 'loading');
+});
+
+void test('RETRY_HYDRATE is a no-op outside error', () => {
+  // From the initial 'loading' (e.g. a double-tap racing the first fetch): unchanged.
+  assert.equal(reducer(DEFAULT_STATE, { type: 'RETRY_HYDRATE' }), DEFAULT_STATE);
+  // From 'ready': unchanged — retry is only reachable from the error view.
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  assert.equal(reducer(ready, { type: 'RETRY_HYDRATE' }), ready);
 });
 
 void test('SET_ACTIVE_PROGRAM ignores an id absent from the catalog, accepts a present one', () => {

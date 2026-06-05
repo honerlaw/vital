@@ -15,7 +15,14 @@ export default function ProgramDetailScreen() {
   const router = useRouter();
 
   // Deep-link / SSR guard (standalone route, outside the tabs layout); after all hooks.
-  if (state.programsStatus !== 'ready') return <CatalogStatus status={state.programsStatus} />;
+  if (state.programsStatus !== 'ready') {
+    return (
+      <CatalogStatus
+        status={state.programsStatus}
+        onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })}
+      />
+    );
+  }
 
   // Untrusted route param → non-throwing lookup with a not-found view (vs the throwing engine
   // `getProgram`, which is reserved for trusted ids).

@@ -39,3 +39,12 @@ useEffect(() => {
 
 Putting `seconds` in the dep array (rather than a functional `setSeconds(s => s-1)`) keeps each tick
 reading the current value while satisfying the rule, and is compiler-safe under `reactCompiler`.
+
+## `react-hooks/exhaustive-deps` — a re-run-key dep must be READ inside the effect
+
+Adding a dep purely to re-trigger an effect (a `retryCount` / `hydrateAttempt` counter the body
+never reads) fires "unnecessary dependency" — a hard error under `--max-warnings 0`, like the rules
+above. **Fix:** key the re-run on a value the effect genuinely consumes — typically a status field
+the body guards on (`if (status !== 'loading') return;` with deps `[status]`), which is
+exhaustive-deps-exact by construction. First hit in 011's catalog retry, where it forced the
+status-keyed effect over a counter (see [[016-pattern-ssr-safe-startup-hydration-gate]]).

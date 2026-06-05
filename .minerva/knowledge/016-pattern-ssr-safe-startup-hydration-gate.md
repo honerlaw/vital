@@ -62,5 +62,17 @@ hydrates); on the server it's belt-and-suspenders with the Clerk splash hold ([[
 
 Web's first paint for the data screens is now a brief loading placeholder (the catalog is no longer
 in the bundle). Acceptable here because those screens are auth-gated and never carried meaningful
-SSR content. There is no in-app retry yet — a transient fetch failure strands the user on the error
-view until an app reopen (a tracked followup).
+SSR content. The pattern originally shipped with a second cost: no in-app retry, so a transient
+fetch failure stranded the user on the error view until an app reopen.
+
+> ⚠ **Retry closed in 011 (2026-06-05).** Work unit 011-catalog-retry retired the no-retry cost.
+> The primitive: a `RETRY_HYDRATE` action the reducer accepts **only** from `'error'`
+> (→ `'loading'`), and the hydrate effect became **status-keyed** — the body opens with
+> `if (state.programsStatus !== 'loading') return;` and the deps are `[state.programsStatus]`.
+> Mount and error→loading are the only edges into `'loading'`, so a refetch can never race an
+> in-flight fetch. The status guard *reads* its dep; an unread re-run-key dep (the originally
+> drafted `hydrateAttempt` counter) is a hard `react-hooks/exhaustive-deps` error under
+> `--max-warnings 0`, which is what forced status-keying over a counter — the generalized rule
+> lives in [[004-pattern-expo56-react-compiler-hook-rules]]. Reverting the effect deps to `[]`
+> is itself lint-caught (verified by mutation during 011's review), so the retry wiring carries a
+> regression guard even though the end-to-end tap-through stays a manual check.
