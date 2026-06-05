@@ -4,7 +4,9 @@
 - Date: 2026-05-31
 - Work unit: 005-digitalocean-hosting
 - Related: [[007-pattern-expo-router-server-self-host]] (the how),
-  [[008-pattern-dynamic-app-config-strict-lint]] (the origin config it needs)
+  [[008-pattern-dynamic-app-config-strict-lint]] (the origin config it needs),
+  [[018-decision-eas-ios-release-workflow]] (the iOS release pipeline whose production
+  EXPO_PUBLIC_API_URL points at this hosting)
 
 VITAL's web target (static client + Expo Router API/SSR routes) is hosted as a **single
 DigitalOcean (DO) App Platform web-service component**, built by the Node buildpack and run by

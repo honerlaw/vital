@@ -1,0 +1,25 @@
+# On every push to main, build the iOS app on EAS (production profile, production
+# EAS environment variables) and submit the resulting binary to App Store Connect.
+# Prerequisites (one-time, manual) are documented in docs/ios-release.md — until they
+# are completed, runs of this workflow are expected to fail.
+name: Build and submit iOS
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build_ios:
+    name: Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    name: Submit to App Store
+    type: submit
+    needs: [build_ios]
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production

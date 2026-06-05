@@ -1,9 +1,9 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 017 -->
+<!-- synthesis-watermark: 018 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in work 012). Theme-grouped navigation over the
-corpus; the entries remain the source of truth.
+Synthesized 2026-06-05 (work 011, refreshed in works 012 and 013). Theme-grouped navigation
+over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
 
@@ -14,7 +14,8 @@ All TypeScript is bound by an un-bypassable `eslint . --max-warnings 0` gate: no
 that conforms from the start ([[003-pattern-conforming-code-under-strict-guardrails]]), for the
 React-Compiler-era hook rules — refs in render, setState-in-effect, and re-run-key deps that must
 be read inside the effect ([[004-pattern-expo56-react-compiler-hook-rules]]) — and for keeping a
-dynamic `app.config.ts` lint-clean ([[008-pattern-dynamic-app-config-strict-lint]]).
+dynamic `app.config.ts` lint-clean ([[008-pattern-dynamic-app-config-strict-lint]]; revised by
+work 013 — the guarded `config.extra` spread is now load-bearing, not forbidden).
 
 ## App architecture — state, navigation, and startup hydration
 
@@ -38,24 +39,29 @@ catalog was originally dual-sourced (TS constant + DB seed) under a generated-se
 drift guard ([[015-pattern-generated-seed-drift-guard]]) — that window closed when work 010 made
 the DB the sole runtime source.
 
-## Hosting & delivery — DigitalOcean App Platform
+## Hosting & delivery — DigitalOcean for web/API, EAS for iOS releases
 
 The app self-hosts web + API on DO App Platform ([[006-decision-digitalocean-app-platform-hosting]])
 via an Express host around the Expo Router server build ([[007-pattern-expo-router-server-self-host]]).
 CI runs build/test/lint on every PR and needs no expo-router typegen step
-([[006-pattern-ci-no-typegen-needed]]).
+([[006-pattern-ci-no-typegen-needed]]). iOS releases are automated separately on EAS Workflows:
+every merge to main builds the production iOS app and submits it to App Store Connect — with the
+hard-won caveats that EAS builds can't see Doppler/DO env (production `EXPO_PUBLIC_*` values must
+exist as EAS environment variables or the binary is green-but-dead-on-arrival) and that submit
+lands in TestFlight, not public release ([[018-decision-eas-ios-release-workflow]]).
 
 ## Auth & environment
 
 Clerk (core-3 `@clerk/expo`) provides the auth flows, with per-route endpoint enforcement via an
 opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]). Local dev
 env vars come from the Doppler CLI, with the local Postgres hardcoded in Docker Compose
-([[013-decision-doppler-local-env]]). Unit tests run offline via `node --import tsx --test` over
-`src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
+([[013-decision-doppler-local-env]]); production iOS build-time env is the separate EAS channel
+([[018-decision-eas-ios-release-workflow]]). Unit tests run offline via `node --import tsx --test`
+over `src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 016, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 018, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
