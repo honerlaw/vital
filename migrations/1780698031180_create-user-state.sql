@@ -28,6 +28,5 @@ CREATE INDEX workout_sessions_user_finished_idx
 
 -- Down Migration
 
-DROP INDEX workout_sessions_user_finished_idx;
 DROP TABLE workout_sessions;
 DROP TABLE user_state;
