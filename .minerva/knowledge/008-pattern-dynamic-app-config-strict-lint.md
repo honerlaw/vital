@@ -5,7 +5,9 @@
 - Work unit: 005-digitalocean-hosting; revised by 013-eas-ios-release-workflow
 - Related: [[003-pattern-conforming-code-under-strict-guardrails]] (sibling: feature-code
   techniques), [[001-constraint-strict-eslint-guardrails]] (the rules this conforms to),
-  [[006-decision-digitalocean-app-platform-hosting]] (why the origin is injected)
+  [[006-decision-digitalocean-app-platform-hosting]] (why the origin is injected),
+  [[018-decision-eas-ios-release-workflow]] (the decision that added `extra.eas.projectId`
+  and forced the revision below)
 
 Adding an `app.config.ts` (dynamic Expo config, layered over `app.json`) hits two distinct
 traps: one Expo-config semantic, one strict-lint. Both bit during 005; write to them from the

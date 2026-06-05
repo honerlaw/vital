@@ -1,7 +1,10 @@
 # 013 — eas-ios-release-workflow
 
 ## Status
-Draft
+Shipped (2026-06-05). Approved + delivered via `minerva:propose-ship-auto` consensus
+panels — whole-proposal 3/3 (after one revision round adding the EAS env-var story and
+the knowledge-008 supersede), completion verification 3/3, promote partition 2/3
+(Skeptic's reciprocal-back-link concern applied as an amendment).
 
 ## Goal
 On every push to `main`, EAS Workflows builds the iOS app (production profile, with
