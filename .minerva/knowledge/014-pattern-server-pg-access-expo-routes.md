@@ -43,6 +43,26 @@ data-access layer). How an Expo Router `+api.ts` route reads Postgres under the 
   every column. Supplying `query<UnknownRow>()` to pg keeps row values `unknown` rather than the
   default `any`, so no `any` leaks into the route. `@types/pg` is required (pg ships no types) and is a
   **regular dependency** for the same reason `pg` is — see the delta below.
+- **Parameterized writes (widened in 012).** `query` is now `query(text, params?: unknown[])` —
+  the same single exported function, forwarding `params` to pg's `$1…$n` path. User-supplied
+  values are **never string-interpolated** into SQL. Existing single-arg read callers compile
+  unchanged.
+
+## Atomic multi-write without a transaction helper (added in 012)
+
+When one request must write two tables all-or-nothing (e.g. append a `workout_sessions` row AND
+upsert the `user_state` cursor), do it as **one data-modifying-CTE statement**:
+`WITH ins AS (INSERT INTO workout_sessions …) INSERT INTO user_state … ON CONFLICT … DO UPDATE`.
+A single statement runs in a single implicit transaction, so the writes cannot split — and no
+`BEGIN/COMMIT`, dedicated client, or `withTransaction` helper is needed (which would have forced
+a pool refactor against one-function-per-file). Load-bearing details: a **data-modifying CTE
+executes even when its result is unreferenced** (Postgres guarantee — leave a SQL comment saying
+so); the CTE and the main statement here touch **different tables**, dodging the same-table
+CTE-visibility hazard (an INSERT and an `ON CONFLICT` arbiter on the *same* table in one
+statement can't see each other's tuples). First applied in `POST /api/me/sessions`
+([[017-pattern-per-user-state-persistence]]). Also from 012's mappers: **pg returns
+`timestamptz` columns as JS `Date` instances** — narrow with `instanceof Date`, not
+`typeof === 'string'`.
 
 ## Cast-free row → domain mapping
 

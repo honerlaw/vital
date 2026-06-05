@@ -21,6 +21,11 @@ Discovered building the VITAL UI. Reach for these from the start rather than at 
   exempt). Callers keep importing the same free-function names; only file boundaries move. (An
   `export const obj = { fn: () => … }` object-of-arrows is also legal as a single data const, but
   the barrel preserves the free-function public API.)
+  *Extends to multi-method Expo API routes (012):* a `+api.ts` needing both `GET` and `PUT` would
+  be two declarations in one file. Same fix — the implementations live one-function-per-file in
+  `src/server/routes/<route>-<method>.ts` and the route file is pure re-exports
+  (`export { GET } from '@/server/routes/me-state-get'`), which expo-router serves identically.
+  Single-method routes stay inline (see [[017-pattern-per-user-state-persistence]]).
 
 - **Use `satisfies Record<K, V>` instead of a `: Record<K, V>` annotation when you need both the
   type-check AND the literal keys.** `theme.ts` exports a `type` presets object consumed by

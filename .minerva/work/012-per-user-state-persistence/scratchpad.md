@@ -31,6 +31,15 @@
   sign-in + the app DB on 5432 (port held by seekless). Pre-declared reviewer-attested in the
   proposal; mechanical sub-parts covered (migration, CTE, 401s, offline suite).
 
+## Provenance restoration (promote-panel M1)
+
+- The worktree relative-path gotcha WAS hit this unit (omitted from the log above): the first
+  in-worktree `DATABASE_URL=… npm run migrate` failed with Node `MODULE_NOT_FOUND` because the
+  script invokes `node node_modules/node-pg-migrate/bin/node-pg-migrate.js` by literal relative
+  path, which does not exist in a worktree (unlike import resolution, which walks up). Worked
+  around with the parent repo's absolute node_modules path; promoted to 001's operational note
+  with the contrast to 011's resolution-finds-stale mode.
+
 ## Panel decisions 2026-06-05
 
 - [3/3 accept] scope: pinned at the run's joint scope panel (see 011 scratchpad history) — two
@@ -50,3 +59,19 @@
   Logged Skeptic concerns to honor: apiFetch init extension named in-scope; honest ~11-13-file
   inventory; pg timestamptz arrives as a JS Date in the mapper guard; null-id + catalog-not-ready
   → DEFAULT_ACTIVE_PROGRAM_ID fallback; single RETRY action re-fires both effects.
+- [3/3 accept] completion verification: SC#1/4/5/6 machine-verified independently by both
+  panelists; SC#2 verified on a throwaway postgres (5432 held by an unrelated container —
+  auto-mode correctly refused to stop it); SC#3 honestly marked reviewer-attested as the
+  proposal pre-declared. Two findings adopted post-review (client-guard tests added → 39/39;
+  redundant DROP INDEX removed; edited migration re-verified up/down/up); Arbiter ruled
+  re-review unnecessary (test-only + no-op SQL).
+- [skipped — small] review triage: no open findings above low after the completion-panel fixes
+  (evidence: F1 guard tests — FIXED+verified; F2 DROP INDEX — FIXED+verified; F3 SC#3 manual —
+  IGNORE, pre-declared). No load-bearing finding → no replan-vs-FIX.
+- [1 accept + 1 revise → arbiter accept] promote partition: all Skeptic refinements adopted —
+  CTE technique homed in 014 (017 cross-refs it); SC#3 steps go in the PR body (followups T1 is
+  a pointer); 001 extension written as an explicit contrast with restored provenance (above);
+  003 merge framed as extending the existing barrel bullet; 017 states the purity-for-mirroring
+  rationale itself; 013 already carries the non-overridable-port caveat (no change).
+- [skipped — small] TODO disposition: single unambiguous home (012/followups.md T1–T5 + PR-body
+  attestation steps; 011 followups seed reduced to its pre-declared pointer).

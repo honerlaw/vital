@@ -76,3 +76,13 @@ fetch failure stranded the user on the error view until an app reopen.
 > lives in [[004-pattern-expo56-react-compiler-hook-rules]]. Reverting the effect deps to `[]`
 > is itself lint-caught (verified by mutation during 011's review), so the retry wiring carries a
 > regression guard even though the end-to-end tap-through stays a manual check.
+
+> ⚠ **Extended to combined readiness in 012 (2026-06-05).** The gate now waits for TWO startup
+> fetches — the catalog and the per-user state ([[017-pattern-per-user-state-persistence]]).
+> Each keeps its own status in `AppState`; a shared `bootStatus()` helper derives the gate value
+> (error wins over loading; ready only when both are ready), so `CatalogStatus`'s
+> `'loading' | 'error'` prop is unchanged. `RETRY_HYDRATE` resets **only** the statuses
+> currently `'error'`, and each status-keyed effect re-fires itself — one tap retries exactly
+> the failed fetch(es). The user-state effect is auth-keyed (`isLoaded && isSignedIn`), so the
+> signed-out path reduces to the original catalog-only behavior and SSR still always observes
+> `loading`. The single-status description above is preserved as the pattern's original form.

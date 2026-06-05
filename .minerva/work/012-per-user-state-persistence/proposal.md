@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft
+Shipped (2026-06-05)
 
 ## Goal
 
@@ -177,6 +177,25 @@ AsyncStorage offline cache. History pagination (v1 loads full history).
    `npm run export:web`; `pg` stays off the client bundle (unchanged 009 invariant).
 6. No change to signed-out flows or SSR behavior (gate placement untouched; effects
    client-only).
+
+## As-built notes
+
+Shipped as designed with three small, documented deltas (all panel-reviewed at completion):
+
+1. **Multi-method route = re-exports.** `GET`+`PUT` in one `state+api.ts` trips
+   `local/single-declaration`; the implementations live one-function-per-file in
+   `src/server/routes/me-state-{get,put}.ts` and the route file is pure re-exports (exempt).
+   Promoted to [[003-pattern-conforming-code-under-strict-guardrails]].
+2. **POST body carries `activeProgramId`.** The cursor upsert's INSERT arm must satisfy
+   `user_state.active_program_id NOT NULL` for a first-time user; the conflict arm still
+   updates only the cursor.
+3. **Shared `bootStatus()` helper** (`src/state/boot-status.ts`) derives the combined gate
+   status instead of duplicating the two-status conditional at the three gate sites.
+
+SC#2 was verified on a throwaway postgres:16-alpine (up→down→up + both CTE arms smoke-tested)
+because host port 5432 was held by an unrelated container; SC#3's five-scenario authed
+attestation is reviewer-attested via the PR body (followups T1). Durable learnings promoted to
+[[017-pattern-per-user-state-persistence]] and folded into 014/016/003/001.
 
 ## Open questions
 

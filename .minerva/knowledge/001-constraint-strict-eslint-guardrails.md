@@ -40,3 +40,10 @@ Operational note (hit in work 011): a git **worktree resolves `node_modules` fro
 repo**, so a stale parent install fails `lint`/`typecheck` inside the worktree on files unrelated
 to your diff (e.g. `@types/pg` declared in package.json but never installed locally). If worktree
 gates fail on untouched files, `npm install` in the parent repo first.
+
+A second, distinct worktree failure mode (hit in work 012): npm scripts that reference
+node_modules by **literal relative path** (e.g. `migrate`'s
+`node node_modules/node-pg-migrate/bin/…`) fail in a worktree with `MODULE_NOT_FOUND` — unlike
+import *resolution*, a relative path does not walk up to the parent. Workaround: invoke the bin
+via the parent repo's absolute `node_modules` path (the worktree's `migrations/` dir is still
+picked up from the cwd).
