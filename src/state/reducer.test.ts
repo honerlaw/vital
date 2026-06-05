@@ -4,7 +4,8 @@
  * state` function, so no React/network/DB is needed). These assertions are what evidences the
  * render-gate's contract: a non-empty catalog → `ready` (with a normalized active program), and an
  * empty catalog or a fetch error → `error` (so the gate shows the error view rather than letting a
- * program screen resolve an absent program). See proposal SC#2a.
+ * program screen resolve an absent program). Origin: 010-async-catalog-cutover (its proposal
+ * SC#2a); the RETRY_HYDRATE cases evidence 011-catalog-retry SC#1.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';

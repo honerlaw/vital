@@ -38,6 +38,14 @@
   (evidence: additive, single concern, no public interface, conforms to 016/004; rejected:
   retry-callback context — bypasses the action/reducer pattern, new context surface at 3 call
   sites; auto-retry with backoff — changes UX semantics, can still strand).
+- [3/3 accept] 011 completion verification: SC#1/3/4 machine-verified by both panelists
+  independently (gates re-run green); SC#2 honestly marked reviewer-attested per the proposal;
+  Skeptic's mutation test proved a deps-revert to [] is caught by exhaustive-deps under
+  --max-warnings 0 (the logged "no automated guard" concern is thereby substantially retired);
+  only defect = stale 'SC#2a' comment, fixed comment-only, Arbiter ruled no re-review needed.
+- [skipped — small] review triage: all findings low (F1 stale comment — already FIXED and
+  verified comment-only; F2 SC#2 manual-only — IGNORE, pre-declared boundary + lint-caught
+  regression path). No medium+ findings; no load-bearing finding → no replan-vs-FIX.
 - [3/3 accept] 011 whole-proposal: accepted with refinements folded in — status-keyed effect
   replaces the scope-pinned hydrateAttempt counter (lint-forced: unused counter dep trips
   exhaustive-deps under --max-warnings 0; verified by all three panelists), inline-Button-only
