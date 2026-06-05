@@ -10,6 +10,7 @@ import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import { getProgram, sessionProgress } from '@/data/engine';
 import { useRestTimer } from '@/hooks/useRestTimer';
+import { bootStatus } from '@/state/boot-status';
 import { useAppStore } from '@/state/useAppStore';
 import { colors, space } from '@/theme';
 
@@ -22,14 +23,10 @@ export default function WorkoutScreen() {
   const live = state.live;
 
   // Deep-link / SSR guard: this standalone route is outside the tabs layout, so it carries its own
-  // render-gate. Both early returns sit after all hooks.
-  if (state.programsStatus !== 'ready') {
-    return (
-      <CatalogStatus
-        status={state.programsStatus}
-        onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })}
-      />
-    );
+  // render-gate (combined: catalog + per-user state). Both early returns sit after all hooks.
+  const status = bootStatus(state);
+  if (status !== 'ready') {
+    return <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} />;
   }
   if (!live) return null;
 
@@ -44,7 +41,9 @@ export default function WorkoutScreen() {
   };
 
   const onFinish = () => {
-    dispatch({ type: 'FINISH_WORKOUT' });
+    // The timestamp is stamped HERE (event handler, single dispatch site) so the reducer and
+    // the persistence write-through compute the same deterministic finishSession result.
+    dispatch({ type: 'FINISH_WORKOUT', nowISO: new Date().toISOString() });
     router.replace('/');
   };
 

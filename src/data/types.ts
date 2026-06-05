@@ -46,10 +46,18 @@ export interface LiveSession {
 /** Catalog hydration state: loading until the first fetch resolves, then ready or error. */
 export type ProgramsStatus = 'loading' | 'ready' | 'error';
 
+/** The persisted per-user state as served by `GET /api/me/state` (null id = no row yet). */
+export interface UserStatePayload {
+  activeProgramId: string | null;
+  cursor: number;
+  history: SessionLog[];
+}
+
 /** Top-level app state (drive this from Context/reducer or a store). */
 export interface AppState {
   programs: Program[];       // the catalog, hydrated from GET /api/programs at startup
   programsStatus: ProgramsStatus;
+  userStateStatus: ProgramsStatus; // per-user state hydration, same loading/ready/error shape
   activeProgramId: string;
   cursor: number;            // index into active program's days = NEXT workout
   history: SessionLog[];

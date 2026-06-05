@@ -21,8 +21,10 @@ let pool: Pool | null = null;
 /**
  * Run a query and return its rows with every column typed `unknown`, forcing callers to narrow
  * each value at runtime (see `@/data/guards`) rather than trusting an unchecked row type.
+ * `params` are forwarded to pg's parameterized-query path ($1, $2, …) — user-supplied values are
+ * never string-interpolated into SQL.
  */
-export async function query(text: string): Promise<UnknownRow[]> {
+export async function query(text: string, params?: unknown[]): Promise<UnknownRow[]> {
   if (pool === null) {
     const url: unknown = process.env.DATABASE_URL;
     if (typeof url !== 'string' || url.length === 0) {
@@ -46,6 +48,6 @@ export async function query(text: string): Promise<UnknownRow[]> {
     });
     pool = created;
   }
-  const result = await pool.query<UnknownRow>(text);
+  const result = await pool.query<UnknownRow>(text, params);
   return result.rows;
 }

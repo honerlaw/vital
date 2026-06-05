@@ -15,7 +15,16 @@ import { apiBaseUrl } from '@/auth/api-base';
 
 type GetSessionToken = () => Promise<string | null>;
 
-export async function apiFetch(path: string, getToken: GetSessionToken): Promise<Response> {
+interface ApiFetchInit {
+  method?: 'PUT' | 'POST';
+  body?: string;
+}
+
+export async function apiFetch(
+  path: string,
+  getToken: GetSessionToken,
+  init?: ApiFetchInit,
+): Promise<Response> {
   let token: string | null = null;
   try {
     token = await getToken();
@@ -27,6 +36,9 @@ export async function apiFetch(path: string, getToken: GetSessionToken): Promise
   if (token !== null && token.length > 0) {
     headers.Authorization = `Bearer ${token}`;
   }
+  if (init?.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
-  return fetch(`${apiBaseUrl()}${path}`, { headers });
+  return fetch(`${apiBaseUrl()}${path}`, { headers, ...init });
 }

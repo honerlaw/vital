@@ -6,6 +6,7 @@ import Button from '@/components/Button';
 import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import Tag from '@/components/Tag';
+import { bootStatus } from '@/state/boot-status';
 import { useAppStore } from '@/state/useAppStore';
 import { border, colors, space } from '@/theme';
 
@@ -14,14 +15,11 @@ export default function ProgramDetailScreen() {
   const { state, dispatch } = useAppStore();
   const router = useRouter();
 
-  // Deep-link / SSR guard (standalone route, outside the tabs layout); after all hooks.
-  if (state.programsStatus !== 'ready') {
-    return (
-      <CatalogStatus
-        status={state.programsStatus}
-        onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })}
-      />
-    );
+  // Deep-link / SSR guard (standalone route, outside the tabs layout; combined catalog +
+  // per-user-state readiness); after all hooks.
+  const status = bootStatus(state);
+  if (status !== 'ready') {
+    return <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} />;
   }
 
   // Untrusted route param → non-throwing lookup with a not-found view (vs the throwing engine
