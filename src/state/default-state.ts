@@ -13,6 +13,7 @@ export const DEFAULT_ACTIVE_PROGRAM_ID = 'bbr';
 export const DEFAULT_STATE: AppState = {
   programs: [],
   programsStatus: 'loading',
+  userStateStatus: 'loading',
   activeProgramId: DEFAULT_ACTIVE_PROGRAM_ID,
   cursor: 0,
   history: [],

@@ -53,6 +53,115 @@ void test('RETRY_HYDRATE is a no-op outside error', () => {
   assert.equal(reducer(ready, { type: 'RETRY_HYDRATE' }), ready);
 });
 
+void test('HYDRATE_USER_STATE after the catalog: keeps a present id, preserves cursor', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const history = [
+    {
+      programId: 'bbr',
+      programName: 'BBR',
+      dayName: 'Workout A',
+      dateISO: '2026-06-01T10:00:00.000Z',
+    },
+  ];
+  const next = reducer(ready, {
+    type: 'HYDRATE_USER_STATE',
+    payload: { activeProgramId: 'gzclp', cursor: 3, history },
+  });
+  assert.equal(next.userStateStatus, 'ready');
+  assert.equal(next.activeProgramId, 'gzclp');
+  assert.equal(next.cursor, 3);
+  assert.equal(next.history.length, 1);
+});
+
+void test('HYDRATE_USER_STATE after the catalog: normalizes an absent id, PRESERVES cursor', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const next = reducer(ready, {
+    type: 'HYDRATE_USER_STATE',
+    payload: { activeProgramId: 'removed-program', cursor: 2, history: [] },
+  });
+  assert.equal(next.activeProgramId, SAMPLE_PROGRAMS[0].id);
+  assert.equal(next.cursor, 2); // normalization never zeroes the cursor
+});
+
+void test('HYDRATE_USER_STATE before the catalog: raw id stored, later HYDRATE normalizes', () => {
+  const next = reducer(DEFAULT_STATE, {
+    type: 'HYDRATE_USER_STATE',
+    payload: { activeProgramId: 'stale-id', cursor: 1, history: [] },
+  });
+  assert.equal(next.activeProgramId, 'stale-id'); // catalog not ready yet — stored raw
+  const then = reducer(next, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  assert.equal(then.activeProgramId, SAMPLE_PROGRAMS[0].id); // normalized by the later hydrate
+  assert.equal(then.cursor, 1);
+});
+
+void test('HYDRATE_USER_STATE null id: first program when ready, default seed when not', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const a = reducer(ready, {
+    type: 'HYDRATE_USER_STATE',
+    payload: { activeProgramId: null, cursor: 0, history: [] },
+  });
+  assert.equal(a.activeProgramId, SAMPLE_PROGRAMS[0].id);
+  const b = reducer(DEFAULT_STATE, {
+    type: 'HYDRATE_USER_STATE',
+    payload: { activeProgramId: null, cursor: 0, history: [] },
+  });
+  assert.equal(b.activeProgramId, DEFAULT_STATE.activeProgramId);
+});
+
+void test('RESET_USER_STATE resets the five per-user fields, leaves the catalog alone', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const hydrated = reducer(ready, {
+    type: 'HYDRATE_USER_STATE',
+    payload: {
+      activeProgramId: 'gzclp',
+      cursor: 2,
+      history: [
+        { programId: 'bbr', programName: 'B', dayName: 'A', dateISO: '2026-06-01T10:00:00.000Z' },
+      ],
+    },
+  });
+  const started = reducer(hydrated, { type: 'START_WORKOUT', dayIndex: 0 });
+  const reset = reducer(started, { type: 'RESET_USER_STATE' });
+  assert.equal(reset.activeProgramId, DEFAULT_STATE.activeProgramId);
+  assert.equal(reset.cursor, 0);
+  assert.equal(reset.history.length, 0);
+  assert.equal(reset.live, null);
+  assert.equal(reset.userStateStatus, 'loading');
+  // Catalog untouched:
+  assert.equal(reset.programs, started.programs);
+  assert.equal(reset.programsStatus, 'ready');
+});
+
+void test('RESET_USER_STATE is a same-reference no-op when nothing to reset', () => {
+  assert.equal(reducer(DEFAULT_STATE, { type: 'RESET_USER_STATE' }), DEFAULT_STATE);
+});
+
+void test('RETRY_HYDRATE resets ONLY the statuses currently in error', () => {
+  // Catalog errored, user state still loading → only programsStatus flips; both end 'loading'.
+  const catalogErr = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS_ERROR' });
+  const retriedA = reducer(catalogErr, { type: 'RETRY_HYDRATE' });
+  assert.equal(retriedA.programsStatus, 'loading');
+  assert.equal(retriedA.userStateStatus, 'loading');
+  // Catalog ready, user state errored → catalog must NOT be refetched.
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const userErr = reducer(ready, { type: 'HYDRATE_USER_STATE_ERROR' });
+  const retriedB = reducer(userErr, { type: 'RETRY_HYDRATE' });
+  assert.equal(retriedB.programsStatus, 'ready');
+  assert.equal(retriedB.userStateStatus, 'loading');
+});
+
+void test('FINISH_WORKOUT uses the injected nowISO for the history entry', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const started = reducer(ready, { type: 'START_WORKOUT', dayIndex: 0 });
+  const finished = reducer(started, {
+    type: 'FINISH_WORKOUT',
+    nowISO: '2026-06-05T12:00:00.000Z',
+  });
+  assert.equal(finished.history[0].dateISO, '2026-06-05T12:00:00.000Z');
+  assert.equal(finished.live, null);
+  assert.equal(finished.cursor, 1); // active program finished → cursor advanced
+});
+
 void test('SET_ACTIVE_PROGRAM ignores an id absent from the catalog, accepts a present one', () => {
   const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   const ignored = reducer(ready, { type: 'SET_ACTIVE_PROGRAM', id: 'nope' });

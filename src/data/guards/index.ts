@@ -1,9 +1,10 @@
 /**
- * Runtime type guards for the program catalog. Values cross two trust boundaries typed `unknown`
- * — the `jsonb` `days` column read back from Postgres (server) and the parsed JSON body of
- * `GET /api/programs` (client) — and narrow through these predicates rather than asserting a
- * shape, keeping the code cast-free under the strict guardrails. Type-only domain imports, so the
- * guards run on both client and server with no runtime dependency.
+ * Runtime type guards for the program catalog and the per-user state. Values cross two trust
+ * boundaries typed `unknown` — columns read back from Postgres (server) and the parsed JSON
+ * bodies of `GET /api/programs` / `GET /api/me/state` (client) — and narrow through these
+ * predicates rather than asserting a shape, keeping the code cast-free under the strict
+ * guardrails. Type-only domain imports, so the guards run on both client and server with no
+ * runtime dependency.
  */
 export { isProgramTag } from '@/data/guards/isProgramTag';
 export { isExercise } from '@/data/guards/isExercise';
@@ -11,3 +12,6 @@ export { isWorkoutDay } from '@/data/guards/isWorkoutDay';
 export { isWorkoutDayArray } from '@/data/guards/isWorkoutDayArray';
 export { isProgram } from '@/data/guards/isProgram';
 export { isProgramArray } from '@/data/guards/isProgramArray';
+export { isSessionLog } from '@/data/guards/isSessionLog';
+export { isSessionLogArray } from '@/data/guards/isSessionLogArray';
+export { isUserStatePayload } from '@/data/guards/isUserStatePayload';
