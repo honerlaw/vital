@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft
+Shipped (2026-06-05)
 
 ## Goal
 

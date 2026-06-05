@@ -35,3 +35,8 @@ write code to them from the start rather than discovering them at lint time:
 The local rule ships with `RuleTester` fixtures: `npm run lint:rules-test`. Strict rules are
 currently scoped to `.ts`/`.tsx`; the config and rule `.js` files get base expo +
 `disableTypeChecked` only (see followups.md).
+
+Operational note (hit in work 011): a git **worktree resolves `node_modules` from the parent
+repo**, so a stale parent install fails `lint`/`typecheck` inside the worktree on files unrelated
+to your diff (e.g. `@types/pg` declared in package.json but never installed locally). If worktree
+gates fail on untouched files, `npm install` in the parent repo first.
