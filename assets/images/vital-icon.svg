@@ -9,9 +9,9 @@
   <g id="bg">
     <defs>
       <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#3FA8F8"/>
-        <stop offset="0.5" stop-color="#208AEF"/>
-        <stop offset="1" stop-color="#1463C9"/>
+        <stop offset="0" stop-color="#1AA862"/>
+        <stop offset="0.5" stop-color="#0D8348"/>
+        <stop offset="1" stop-color="#06542D"/>
       </linearGradient>
     </defs>
     <rect width="1024" height="1024" fill="url(#bgGrad)"/>
