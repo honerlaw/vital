@@ -15,3 +15,8 @@ stated trigger condition arrives, not before:
   current line-based `grep '^EXPO_PUBLIC_'` silently truncates multiline values. Adopt
   the moment any multiline `EXPO_PUBLIC_*` value (e.g. a PEM) enters the Doppler prd
   config.
+- **Relocate `EXPO_TOKEN` out of the Doppler `prd` config** — explicit single-home-
+  for-secrets preference (2026-06-06) parked an EAS publishing credential in prd, which
+  wholesale-syncs into the DigitalOcean production server env that has no use for it.
+  Adopt (move to a GitHub secret or a separate non-synced Doppler config) when
+  least-privilege hardening becomes a priority.

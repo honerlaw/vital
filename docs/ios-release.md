@@ -46,35 +46,40 @@ supersede one already in review. At single-developer cadence this is a non-issue
 ## One-time manual setup (required before the workflow can succeed)
 
 Until ALL of these are done, every push to `main` produces a **failing run** — in
-GitHub Actions if the secrets (step 2) are missing, otherwise in the EAS workflow it
-triggers. That first red run is expected — it is not a regression.
+GitHub Actions if the secret (step 2) or Doppler values (step 3) are missing, otherwise
+in the EAS workflow it triggers. That first red run is expected — it is not a
+regression.
 
 1. **Apple Developer Program membership** — an active (paid) membership for the
    Apple account that will own the app.
 
-2. **Create the two GitHub repo secrets** (repo → Settings → Secrets and variables →
-   Actions). Without these, the `Release iOS` GitHub Actions run fails before
-   reaching EAS:
+2. **Create the single GitHub repo secret** (repo → Settings → Secrets and variables →
+   Actions). This is the bootstrap credential — every other secret lives in Doppler:
 
-   - `EXPO_TOKEN` — an EAS access token, created at
-     [expo.dev → account settings → Access tokens](https://expo.dev/settings/access-tokens).
    - `DOPPLER_TOKEN` — a **read-only Doppler service token** scoped to the `vital`
      project's `prd` config (Doppler dashboard → vital → prd → Access → Service
      Tokens).
 
-3. **Add the production client env vars to the Doppler `prd` config** — the app
-   inlines these at bundle build time; the workflow mirrors every `EXPO_PUBLIC_*`
-   var from Doppler into EAS before each build:
+3. **Add the release values to the Doppler `prd` config** — Doppler is the single
+   home for all secrets and env vars; the workflow pulls everything else from it:
 
+   - `EXPO_TOKEN` — an EAS access token, created at
+     [expo.dev → account settings → Access tokens](https://expo.dev/settings/access-tokens).
+     Used by the workflow to authenticate eas-cli. *Accepted tradeoff*: `prd`
+     wholesale-syncs to DigitalOcean, so this token also lands in the production
+     server env it doesn't need — fine for now, harden later if it ever matters.
    - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — production Clerk publishable key
    - `EXPO_PUBLIC_API_URL` — DigitalOcean app origin, e.g. `https://…ondigitalocean.app`
 
-   **Skipping this ships a dead-on-arrival binary**: a blank Clerk key makes
-   `ClerkProvider` error at launch, and a blank API URL leaves native clients with a
-   relative origin (every API call fails). The GitHub Actions run fails loudly if
-   either of these two required vars is missing from prd; any additional
-   `EXPO_PUBLIC_*` vars added later are synced automatically but not individually
-   asserted.
+   The app inlines the `EXPO_PUBLIC_*` vars at bundle build time; the workflow mirrors
+   every `EXPO_PUBLIC_*` var from Doppler into EAS before each build.
+
+   **Skipping the `EXPO_PUBLIC_*` vars ships a dead-on-arrival binary**: a blank Clerk
+   key makes `ClerkProvider` error at launch, and a blank API URL leaves native clients
+   with a relative origin (every API call fails). The GitHub Actions run fails loudly
+   if `EXPO_TOKEN` or either of the two required client vars is missing from prd; any
+   additional `EXPO_PUBLIC_*` vars added later are synced automatically but not
+   individually asserted.
 
 4. **Provision iOS credentials with one interactive build** —
 

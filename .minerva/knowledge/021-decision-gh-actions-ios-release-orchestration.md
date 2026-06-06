@@ -43,15 +43,22 @@ Operational facts that will bite again:
   vars sync automatically but must be added to the assert list to get the dead-on-arrival
   guard. The filter is line-based: a multiline `EXPO_PUBLIC_*` value would be silently
   truncated (switch to `--format json` + jq parsing then).
-- **Secrets model**: two GitHub repo secrets — `EXPO_TOKEN` (EAS access token) and
-  `DOPPLER_TOKEN` (read-only service token scoped to `vital`/`prd`). The transient
-  `.env.eas` is EXIT-trap-removed and gitignored; only `EXPO_PUBLIC_*` values ever leave
-  Doppler (server secrets are filtered out before any file is written).
+- **Secrets model** (revised 2026-06-06, same day): ONE GitHub repo secret —
+  `DOPPLER_TOKEN` (read-only service token scoped to `vital`/`prd`), the irreducible
+  bootstrap. Everything else, including `EXPO_TOKEN` (EAS access token), lives in Doppler
+  prd; the workflow fetches it via `doppler secrets get EXPO_TOKEN --plain`, masks it
+  (`::add-mask::`), and exports it through `GITHUB_ENV`. *Accepted tradeoff (explicit
+  user call — single secret home over least-privilege)*: prd wholesale-syncs to
+  DigitalOcean, so `EXPO_TOKEN` also lands in the production server env it doesn't need;
+  harden later by relocating it if it ever matters. The transient `.env.eas` is
+  EXIT-trap-removed and gitignored; only `EXPO_PUBLIC_*` values ever reach EAS env
+  (server secrets are filtered out before any file is written).
 - **The Doppler CLI lives in CI only.** `package.json` scripts stay Doppler-CLI-free,
   preserving [[013-decision-doppler-local-env]]'s prod-scripts invariant.
 
-The one-time manual setup (docs/ios-release.md) is now: Apple membership, the two GitHub
-secrets, Doppler prd values, interactive credential build, ASC API key, ASC app record.
+The one-time manual setup (docs/ios-release.md) is now: Apple membership, the single
+`DOPPLER_TOKEN` GitHub secret, Doppler prd values (incl. `EXPO_TOKEN`), interactive
+credential build, ASC API key, ASC app record.
 018's remaining operational facts — EAS builds can't see Doppler/DO env; submit ≠ public
 release; remote `autoIncrement` bumps only the build number; one prior completed build
 with the same platform+profile; EAS-hosted ASC key for headless submit; strict submit-job
