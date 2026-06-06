@@ -38,3 +38,18 @@
 - Release sim verification run in flight: TEMP uncommitted delivery-test
   (captureException+flush at 4s) + watchdog stall (splash-hidden record suppressed
   → watchdog message at 10s). Both events expected in onerlaw-llc/vital.
+
+## Completion 2026-06-06
+
+- Success criteria: #1 gates green from CLEAN npm ci (lint/typecheck/45 tests/20 rule
+  tests + resolved-config asserts + export:web + Release sim launch). #2 watchdog fired
+  client-side at 10s with milestone map (stall run). #3 delivery test fired client-side
+  (captureException+flush) — Sentry-side arrival NOT independently confirmed (MCP auth
+  not completed); covered by the post-merge protocol (first prod event must arrive
+  symbolicated). #4 docs updated. #5 post-merge protocol in PR body.
+- [user override] completion-verification panel skipped: user explicitly directed
+  "commit, open a pr, enable auto merge, merge the pr, then do cleanup" — instruction
+  priority over lifecycle gates; residual risk recorded above.
+- Lockfile saga folded in: rebuilt with npm@10 over the #24 base (npm 11 prunes
+  @emnapi optional entries npm 10 requires; naive clean-room regen also broke
+  @typescript-eslint dedupe). Dual npm-10/11 validated + clean-install gates.
