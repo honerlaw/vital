@@ -28,3 +28,16 @@
   holds only inside an event handler — pin with a code comment.
 - (proposal Skeptic, logged) reducer.test.ts:22 and :103 assert the old laundering
   behavior and must be rewritten, not just supplemented.
+
+## Implementation log 2026-06-06
+
+- Implemented per proposal Approach 1–8 in commit `feat: first-run program selection +
+  switch-on-workout-start`. No divergences from the proposal — every edit landed where the
+  panels' code-verification predicted (the four sentinel sites, the two persist branches,
+  the two throwing-getProgram sinks).
+- Gates: `npm test` 41/41 pass (revised: keeps-a-present-id now seeds 'bbr' explicitly;
+  null-id hydration asserts null in both orders; RESET asserts null; FINISH setup gains a
+  SET_ACTIVE_PROGRAM step. New: HYDRATE_PROGRAMS null-stays-null; START_WORKOUT null
+  no-op contract). `tsc --noEmit` clean. `eslint --max-warnings 0` clean.
+- SC#5 verified: diff touches exactly 7 client files — no src/server/, src/app/api/, or
+  migrations/ paths.
