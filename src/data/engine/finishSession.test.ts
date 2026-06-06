@@ -18,27 +18,41 @@ const liveState: AppState = {
   programs: SAMPLE_PROGRAMS,
   programsStatus: 'ready',
   activeProgramId: SAMPLE_PROGRAMS[0].id,
-  cursor: 4,
-  live: { programId: SAMPLE_PROGRAMS[0].id, dayIndex: 0, completed: [[true]] },
+  cursors: { [SAMPLE_PROGRAMS[0].id]: 4 },
+  live: {
+    programId: SAMPLE_PROGRAMS[0].id,
+    dayIndex: 0,
+    completed: [[true]],
+    switchedFrom: null,
+  },
 };
 
 void test('finishSession is deterministic: same args twice → deep-equal results', () => {
   assert.deepEqual(finishSession(liveState, NOW), finishSession(liveState, NOW));
 });
 
-void test('finishSession stamps the injected nowISO and advances the active cursor', () => {
+void test('finishSession stamps the injected nowISO and advances the live program cursor', () => {
   const { log, nextCursor } = finishSession(liveState, NOW);
   assert.equal(log.dateISO, NOW);
   assert.equal(log.programId, SAMPLE_PROGRAMS[0].id);
   // advanceCursor wraps around the rotation: (4 + 1) % days.length.
-  assert.equal(nextCursor, (liveState.cursor + 1) % SAMPLE_PROGRAMS[0].days.length);
+  assert.equal(nextCursor, (4 + 1) % SAMPLE_PROGRAMS[0].days.length);
 });
 
-void test('finishSession leaves the cursor unchanged for an ad-hoc (non-active) program', () => {
+void test('finishSession advances the FINISHED program own pointer only (015)', () => {
+  // The new contract's load-bearing case: a non-active live session advances its own
+  // per-program cursor (from a missing key = 0 here), independent of the active program.
   const adHoc: AppState = {
     ...liveState,
-    live: { programId: SAMPLE_PROGRAMS[1].id, dayIndex: 0, completed: [[true]] },
+    live: {
+      programId: SAMPLE_PROGRAMS[1].id,
+      dayIndex: 0,
+      completed: [[true]],
+      switchedFrom: null,
+    },
   };
   const { nextCursor } = finishSession(adHoc, NOW);
-  assert.equal(nextCursor, liveState.cursor);
+  assert.equal(nextCursor, 1 % SAMPLE_PROGRAMS[1].days.length);
+  // The active program's stored position is untouched by computing another program's next.
+  assert.equal(adHoc.cursors[SAMPLE_PROGRAMS[0].id], 4);
 });

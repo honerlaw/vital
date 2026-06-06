@@ -12,4 +12,5 @@ export type Action =
   | { type: 'TOGGLE_SET'; ei: number; si: number }
   | { type: 'FINISH_WORKOUT'; nowISO: string }
   | { type: 'CANCEL_WORKOUT' }
-  | { type: 'SET_ACTIVE_PROGRAM'; id: string };
+  | { type: 'SET_ACTIVE_PROGRAM'; id: string }
+  | { type: 'SWITCH_AND_START_WORKOUT'; id: string };

@@ -23,10 +23,10 @@ export const finishSession = (
     dayName: day.name,
     dateISO: nowISO,
   };
-  // Only advance the active program's pointer (you can train a non-active program ad hoc).
-  const nextCursor =
-    program.id === state.activeProgramId
-      ? advanceCursor(getProgram(state.programs, state.activeProgramId), state.cursor)
-      : state.cursor;
+  // Per-program pointers (015): finishing a session advances the FINISHED program's own
+  // cursor unconditionally — `nextCursor` is the new value for `cursors[live.programId]`.
+  // (The old active-vs-live gate is gone; with a per-program map there is no other pointer
+  // a finish could legitimately advance.)
+  const nextCursor = advanceCursor(program, state.cursors[state.live.programId] ?? 0);
   return { log, nextCursor };
 };

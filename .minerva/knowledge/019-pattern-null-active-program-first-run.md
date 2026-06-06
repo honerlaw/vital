@@ -7,7 +7,8 @@
   claim this supersedes), [[016-pattern-ssr-safe-startup-hydration-gate]] (the re-point rule this
   narrows to non-null ids), [[005-decision-vital-state-and-nav-boundaries]] (what belongs in
   `AppState`), [[004-pattern-expo56-react-compiler-hook-rules]] (why the Today fork sits after the
-  hooks).
+  hooks).,
+  [[020-pattern-per-program-cursors]] (the per-program cursor map + composite switch that upgraded these semantics, 015)
 
 How VITAL stopped silently enrolling new users in the first program: `AppState.activeProgramId`
 is `string | null`, where **null is a semantic signal — "the user has never chosen a program"** —
@@ -47,12 +48,13 @@ tsc-compulsory because the trusted `getProgram` takes a `string`).
   throwing engine calls.
 - Program detail has ONE context-dependent CTA: "Choose this program" (null — saves without
   starting a workout), "Begin workout" (active), "Switch & begin workout" (different program —
-  switching is gated on starting a workout; there is no standalone "set active" tap).
-- The switch pair (`SET_ACTIVE_PROGRAM` then `START_WORKOUT(dayIndex 0)`) **must stay synchronous
-  and adjacent in one event handler** — `useReducer` drains the queue in order and the hardcoded
-  0 is bound to SET_ACTIVE_PROGRAM's cursor-zeroing. The batching guarantee holds only inside an
-  event handler; revisit if dispatch batching semantics ever change (same caveat family as 017's
-  FINISH determinism note).
-- The switch **commits at the Begin tap**: cancelling the workout keeps the new program active at
-  cursor 0 (whether cancel should revert is a logged followup in work 014, paired with the
-  per-program-cursor migration anticipated in [[017-pattern-per-user-state-persistence]]).
+  switching is gated on starting a workout; there is no standalone "set active" tap). Since 015
+  the switch CTA dispatches the composite `SWITCH_AND_START_WORKOUT` action.
+- The original switch mechanism here was an adjacent `SET_ACTIVE_PROGRAM` + `START_WORKOUT`
+  dispatch pair whose correctness depended on event-handler batching. **015 retired it**: the
+  composite reducer case can't race itself, resumes the target program's own per-program
+  position, and records `switchedFrom` on the session — see
+  [[020-pattern-per-program-cursors]].
+- The switch **commits at the Begin tap**, and since 015 **cancelling REVERTS it** — losslessly,
+  because each program keeps its own cursor and switching never mutates the map
+  ([[020-pattern-per-program-cursors]]).

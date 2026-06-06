@@ -30,13 +30,13 @@ export const reducer = (state: AppState, action: Action): AppState => {
     case 'HYDRATE_PROGRAMS_ERROR':
       return { ...state, programsStatus: 'error' };
     case 'HYDRATE_USER_STATE': {
-      const { activeProgramId, cursor, history } = action.payload;
+      const { activeProgramId, cursors, history } = action.payload;
       const catalogReady = state.programsStatus === 'ready';
       // Mirror HYDRATE_PROGRAMS' normalization so the two fetches can land in either order:
       // a STALE server id (absent from a ready catalog) re-points to the first program; with
       // the catalog not yet ready, the raw server id is stored and HYDRATE_PROGRAMS normalizes
       // later. A null id (no row — the user never chose) STAYS null so the Today chooser shows
-      // (014). Normalization PRESERVES cursor — only SET_ACTIVE_PROGRAM zeroes it.
+      // (014). Normalization PRESERVES the cursor map — switching never mutates it (015).
       let nextActiveId: string | null;
       if (activeProgramId !== null) {
         nextActiveId =
@@ -50,7 +50,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
         ...state,
         userStateStatus: 'ready',
         activeProgramId: nextActiveId,
-        cursor,
+        cursors,
         history,
       };
     }
@@ -63,7 +63,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
       // (React bails out), so a mount-time dispatch while signed out is a no-op.
       const nothingToReset =
         state.activeProgramId === null &&
-        state.cursor === 0 &&
+        Object.keys(state.cursors).length === 0 &&
         state.history.length === 0 &&
         state.live === null &&
         state.userStateStatus === 'loading';
@@ -71,7 +71,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         activeProgramId: null,
-        cursor: 0,
+        cursors: {},
         history: [],
         live: null,
         userStateStatus: 'loading',
@@ -107,17 +107,42 @@ export const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         history: [log, ...state.history],
-        cursor: nextCursor,
+        cursors: { ...state.cursors, [state.live.programId]: nextCursor },
         live: null,
       };
     }
-    case 'CANCEL_WORKOUT':
-      return { ...state, live: null };
+    case 'CANCEL_WORKOUT': {
+      if (!state.live) return state;
+      // Revert a switch committed at the Begin tap (015): the session carries the previously
+      // active id; restoring it is lossless because a switch never mutates the cursor map.
+      const activeProgramId =
+        state.live.switchedFrom !== null ? state.live.switchedFrom : state.activeProgramId;
+      return { ...state, activeProgramId, live: null };
+    }
     case 'SET_ACTIVE_PROGRAM': {
       // Ignore an id that isn't in the hydrated catalog — upholds the activeProgramId-in-catalog
       // invariant HYDRATE_PROGRAMS establishes, so the trusted `getProgram` lookups can't throw.
       if (!state.programs.some((p) => p.id === action.id)) return state;
-      return { ...state, activeProgramId: action.id, cursor: 0 };
+      // Only the id changes — each program keeps its place in the cursor map (015).
+      return { ...state, activeProgramId: action.id };
+    }
+    case 'SWITCH_AND_START_WORKOUT': {
+      // Switch + start as ONE reducer case (015) — replaces 014's adjacent-dispatch pair, whose
+      // correctness depended on event-handler batching. Same in-catalog guard as
+      // SET_ACTIVE_PROGRAM; resumes the target program's own position (missing key = day 0) and
+      // records the previous id on the session so CANCEL can revert the committed switch.
+      // Same-id no-op: only reachable via a double-tap race (the detail screen dispatches this
+      // from the !active branch) — without it the second dispatch would clobber `switchedFrom`
+      // with the just-switched id and CANCEL would "revert" forward.
+      if (action.id === state.activeProgramId) return state;
+      if (!state.programs.some((p) => p.id === action.id)) return state;
+      const program = getProgram(state.programs, action.id);
+      const dayIndex = (state.cursors[action.id] ?? 0) % program.days.length;
+      return {
+        ...state,
+        activeProgramId: action.id,
+        live: { ...startSession(program, dayIndex), switchedFrom: state.activeProgramId },
+      };
     }
   }
 };
