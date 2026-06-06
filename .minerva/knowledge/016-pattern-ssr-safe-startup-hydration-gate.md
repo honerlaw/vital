@@ -7,7 +7,8 @@
   with), [[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] (the Clerk splash hold it
   layers under), [[005-decision-vital-state-and-nav-boundaries]] (what belongs in `AppState`),
   [[014-pattern-server-pg-access-expo-routes]] (the route this hydrates from),
-  [[015-pattern-generated-seed-drift-guard]] (the dual-source window this cutover closed).
+  [[015-pattern-generated-seed-drift-guard]] (the dual-source window this cutover closed).,
+  [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014)
 
 How VITAL moved the program catalog from a synchronous in-memory constant to data fetched from
 `GET /api/programs` at startup, **without** an SSR 500 and without making the pure reducer async.
@@ -53,7 +54,10 @@ hydrates); on the server it's belt-and-suspenders with the Clerk splash hold ([[
   item and throwing. (A working server that returns `[]` is a misconfiguration, not a UX state.)
 - **Keep the active-selection id in the catalog.** `HYDRATE_PROGRAMS` re-points `activeProgramId` to
   the first item if the persisted id isn't present, and `SET_ACTIVE_PROGRAM` **no-ops** on an id absent
-  from the catalog (it rejects, it does not re-point — re-pointing would silently override a valid
+  from the catalog
+  > ⚠ Narrowed by [[019-pattern-null-active-program-first-run]] (014): the re-point applies to stale
+  > **non-null** ids only — a null id ("never chose") is special-cased BEFORE the membership check and
+  > survives hydration so the first-run chooser shows. (it rejects, it does not re-point — re-pointing would silently override a valid
   user choice). Together these guarantee the trusted `getProgram(programs, id)` (which throws on miss)
   is never called with an absent id on a `ready` catalog. Untrusted ids (a route param) use a
   non-throwing `programs.find(...)` + a not-found view instead.

@@ -2,7 +2,12 @@
 
 ## Status
 
-Draft
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on merge).
+Approved + delivered via `minerva:propose-ship-auto` consensus panels — scope 3/3 (after one
+revision round), approach B′ 3/3 (after one revision round with four binding amendments),
+whole-proposal 3/3, completion verification 3/3, review triage 2/3, promote partition 2/3.
+Durable knowledge promoted to `.minerva/knowledge/019-pattern-null-active-program-first-run.md`;
+forward work in `followups.md`.
 
 ## Goal
 
@@ -48,7 +53,10 @@ changes.
    via the `program.id === state.activeProgramId` equality narrowing on line 28.
 5. **Today screen render-fork.** When `activeProgramId === null`, return an inline
    chooser ("Choose your program" + the existing `ProgramCard` list; tapping routes to
-   `/program/[id]`). The fork sits between the hooks and the three engine calls;
+   `/program/[id]`). The chooser also renders the session view's header row (date eyebrow +
+   Account link) — the Account link is the sole path to `/account`/Sign out and must stay
+   reachable on first run (review F1). The fork sits between the hooks and the three engine
+   calls;
    `index.tsx:24-27` (`getProgram`/`getNextWorkout`/`getUpcoming`) physically relocate
    below it — they are unconditional expressions that would throw on null.
 6. **Program detail: single context-dependent CTA** (replaces "Set as my program"):
