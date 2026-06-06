@@ -63,9 +63,11 @@ export default function TodayScreen() {
   }
 
   const program = getProgram(state.programs, state.activeProgramId);
-  const dayIndex = state.cursor % program.days.length;
-  const day = getNextWorkout(program, state.cursor);
-  const upcoming = getUpcoming(program, state.cursor, 3);
+  // Per-program position (015): a missing key means the program was never trained — day 0.
+  const cursor = state.cursors[program.id] ?? 0;
+  const dayIndex = cursor % program.days.length;
+  const day = getNextWorkout(program, cursor);
+  const upcoming = getUpcoming(program, cursor, 3);
 
   const onBegin = () => {
     dispatch({ type: 'START_WORKOUT', dayIndex });
@@ -113,7 +115,7 @@ export default function TodayScreen() {
         {upcoming.map((d, i) => (
           <RowItem
             key={`${d.name}-${i}`}
-            index={String(((state.cursor + i + 1) % program.days.length) + 1).padStart(2, '0')}
+            index={String(((cursor + i + 1) % program.days.length) + 1).padStart(2, '0')}
             title={d.name}
             subtitle={`${d.exercises.length} exercises`}
             trailing={cadenceDayLabel(program.perWeek, i + 1)}

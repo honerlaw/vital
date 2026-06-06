@@ -9,14 +9,16 @@ import { test } from 'node:test';
 import { rowToSessionLog } from '@/server/session-log-mapper';
 import { rowToUserStateMeta } from '@/server/user-state-mapper';
 
-void test('rowToUserStateMeta maps a valid row', () => {
-  const meta = rowToUserStateMeta({ active_program_id: 'bbr', cursor: 3 });
-  assert.deepEqual(meta, { activeProgramId: 'bbr', cursor: 3 });
+void test('rowToUserStateMeta maps a valid row (jsonb cursors arrives as a JS object)', () => {
+  const meta = rowToUserStateMeta({ active_program_id: 'bbr', cursors: { bbr: 3, gzclp: 1 } });
+  assert.deepEqual(meta, { activeProgramId: 'bbr', cursors: { bbr: 3, gzclp: 1 } });
 });
 
 void test('rowToUserStateMeta throws on an invalid row', () => {
-  assert.throws(() => rowToUserStateMeta({ active_program_id: 7, cursor: 3 }));
-  assert.throws(() => rowToUserStateMeta({ active_program_id: 'bbr', cursor: 'x' }));
+  assert.throws(() => rowToUserStateMeta({ active_program_id: 7, cursors: {} }));
+  // Non-number map values must throw, not flow into day arithmetic as NaN (015).
+  assert.throws(() => rowToUserStateMeta({ active_program_id: 'bbr', cursors: { bbr: 'x' } }));
+  assert.throws(() => rowToUserStateMeta({ active_program_id: 'bbr', cursors: 3 }));
 });
 
 void test('rowToSessionLog maps a Date finished_at to an ISO string', () => {

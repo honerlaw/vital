@@ -48,18 +48,18 @@ export default function ProgramDetailScreen() {
   };
 
   // Begin a workout here. For the active program this is Today's Begin (same cursor arithmetic).
-  // For a DIFFERENT program, starting a workout in it is what makes it the active program (014):
-  // SET_ACTIVE_PROGRAM (persists the id, zeroes the cursor) then START_WORKOUT at day 0 — the
-  // hardcoded 0 is bound to SET_ACTIVE_PROGRAM's cursor-zeroing. The two dispatches MUST stay
-  // synchronous and adjacent (no await between them): useReducer drains the queue in order, so
-  // START_WORKOUT's reducer case sees the just-set program; this batching only holds inside an
-  // event handler like this onPress.
+  // For a DIFFERENT program, starting a workout in it is what makes it the active program (014).
+  // Since 015 that is ONE composite action — SWITCH_AND_START_WORKOUT switches the id, resumes
+  // the target program's own position (per-program cursors; switching never zeroes progress),
+  // and records the previous id on the session so cancelling reverts the switch.
   const onBegin = () => {
     if (!active) {
-      dispatch({ type: 'SET_ACTIVE_PROGRAM', id: program.id });
-      dispatch({ type: 'START_WORKOUT', dayIndex: 0 });
+      dispatch({ type: 'SWITCH_AND_START_WORKOUT', id: program.id });
     } else {
-      dispatch({ type: 'START_WORKOUT', dayIndex: state.cursor % program.days.length });
+      dispatch({
+        type: 'START_WORKOUT',
+        dayIndex: (state.cursors[program.id] ?? 0) % program.days.length,
+      });
     }
     router.push('/workout');
   };
@@ -103,9 +103,9 @@ export default function ProgramDetailScreen() {
 
       {/* One CTA per context (014): choose (first run, saves without starting a workout),
           begin (this program is active), or switch & begin (starting a workout in a different
-          program is what makes it active — there is no standalone "set active" tap). Note the
-          switch commits at the Begin tap: cancelling the workout afterwards keeps the new
-          program active at cursor 0 (whether cancel should revert is a logged followup). */}
+          program is what makes it active — there is no standalone "set active" tap). The switch
+          commits at the Begin tap and CANCEL reverts it (015) — losslessly, since each program
+          keeps its own cursor and switching never mutates the map. */}
       <View style={styles.cta}>
         {neverChose ? (
           <Button label="Choose this program" onPress={onChoose} />

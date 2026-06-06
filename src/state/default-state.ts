@@ -13,7 +13,7 @@ export const DEFAULT_STATE: AppState = {
   programsStatus: 'loading',
   userStateStatus: 'loading',
   activeProgramId: null,
-  cursor: 0,
+  cursors: {},
   history: [],
   live: null,
 };
