@@ -6,7 +6,6 @@ import {
 } from '@/data/engine';
 import { AppState } from '@/data/types';
 import { Action } from '@/state/actions';
-import { DEFAULT_ACTIVE_PROGRAM_ID } from '@/state/default-state';
 
 export const reducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
@@ -17,10 +16,15 @@ export const reducer = (state: AppState, action: Action): AppState => {
       if (programs.length === 0) {
         return { ...state, programs, programsStatus: 'error' };
       }
-      // Re-point activeProgramId if the persisted id isn't in the hydrated catalog.
-      const activeProgramId = programs.some((p) => p.id === state.activeProgramId)
-        ? state.activeProgramId
-        : programs[0].id;
+      // null = "never chose" and MUST stay null so the Today chooser shows (014). The check sits
+      // BEFORE the `.some()` re-point: `.some(p => p.id === null)` is false, so falling through
+      // would silently re-point a never-chose user to the first program — the exact bug 014 fixes.
+      // A stale NON-null id (program removed from the catalog) still re-points to the first
+      // program: that user already chose once, so we converge rather than re-ask.
+      const activeProgramId =
+        state.activeProgramId === null || programs.some((p) => p.id === state.activeProgramId)
+          ? state.activeProgramId
+          : programs[0].id;
       return { ...state, programs, programsStatus: 'ready', activeProgramId };
     }
     case 'HYDRATE_PROGRAMS_ERROR':
@@ -29,18 +33,18 @@ export const reducer = (state: AppState, action: Action): AppState => {
       const { activeProgramId, cursor, history } = action.payload;
       const catalogReady = state.programsStatus === 'ready';
       // Mirror HYDRATE_PROGRAMS' normalization so the two fetches can land in either order:
-      // a server id absent from a ready catalog re-points to the first program; with the
-      // catalog not yet ready, the raw server id is stored and HYDRATE_PROGRAMS normalizes
-      // later. A null id (no row yet) falls back to the first program / the default seed.
-      // Normalization PRESERVES cursor — only SET_ACTIVE_PROGRAM zeroes it.
-      let nextActiveId: string;
+      // a STALE server id (absent from a ready catalog) re-points to the first program; with
+      // the catalog not yet ready, the raw server id is stored and HYDRATE_PROGRAMS normalizes
+      // later. A null id (no row — the user never chose) STAYS null so the Today chooser shows
+      // (014). Normalization PRESERVES cursor — only SET_ACTIVE_PROGRAM zeroes it.
+      let nextActiveId: string | null;
       if (activeProgramId !== null) {
         nextActiveId =
           !catalogReady || state.programs.some((p) => p.id === activeProgramId)
             ? activeProgramId
             : state.programs[0].id;
       } else {
-        nextActiveId = catalogReady ? state.programs[0].id : DEFAULT_ACTIVE_PROGRAM_ID;
+        nextActiveId = null;
       }
       return {
         ...state,
@@ -58,7 +62,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
       // the gate doesn't re-error. Idempotent: same reference back when nothing to reset
       // (React bails out), so a mount-time dispatch while signed out is a no-op.
       const nothingToReset =
-        state.activeProgramId === DEFAULT_ACTIVE_PROGRAM_ID &&
+        state.activeProgramId === null &&
         state.cursor === 0 &&
         state.history.length === 0 &&
         state.live === null &&
@@ -66,7 +70,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
       if (nothingToReset) return state;
       return {
         ...state,
-        activeProgramId: DEFAULT_ACTIVE_PROGRAM_ID,
+        activeProgramId: null,
         cursor: 0,
         history: [],
         live: null,
@@ -86,6 +90,10 @@ export const reducer = (state: AppState, action: Action): AppState => {
       };
     }
     case 'START_WORKOUT': {
+      // Null guard: compulsory for the type system (the trusted `getProgram` takes a string) and
+      // unreachable via UI (the chooser replaces every Begin affordance while null). It also
+      // transitively keeps finishSession safe: `live` only ever exists after a non-null start.
+      if (state.activeProgramId === null) return state;
       const program = getProgram(state.programs, state.activeProgramId);
       return { ...state, live: startSession(program, action.dayIndex) };
     }

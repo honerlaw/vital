@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from '@/components/AppText';
 import Button from '@/components/Button';
 import CornerCard from '@/components/CornerCard';
+import ProgramCard from '@/components/ProgramCard';
 import RowItem from '@/components/RowItem';
 import Screen from '@/components/Screen';
 import StatRow from '@/components/StatRow';
@@ -21,6 +22,37 @@ import { colors, space } from '@/theme';
 export default function TodayScreen() {
   const { state, dispatch } = useAppStore();
   const router = useRouter();
+
+  // First-run chooser (014): null = the user has never chosen a program. The fork sits between
+  // the hooks (order-safe) and the engine calls below — `getProgram` is the throwing trusted
+  // lookup, so the null branch must return before it. The render-gate guarantees a non-empty,
+  // ready catalog here (an empty catalog resolves to 'error', not 'ready').
+  if (state.activeProgramId === null) {
+    return (
+      <Screen>
+        <AppText variant="label" style={styles.chooserEyebrow}>
+          {dateEyebrow(new Date())}
+        </AppText>
+        <AppText variant="screenTitle" style={styles.title}>
+          Choose your program
+        </AppText>
+        <AppText variant="body" style={styles.chooserBlurb}>
+          Pick a routine to train with — your next session will always be ready here.
+        </AppText>
+        <View style={styles.chooserList}>
+          {state.programs.map((p) => (
+            <ProgramCard
+              key={p.id}
+              program={p}
+              active={false}
+              onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+            />
+          ))}
+        </View>
+      </Screen>
+    );
+  }
+
   const program = getProgram(state.programs, state.activeProgramId);
   const dayIndex = state.cursor % program.days.length;
   const day = getNextWorkout(program, state.cursor);
@@ -91,6 +123,9 @@ const styles = StyleSheet.create({
     marginTop: space.lg,
   },
   eyebrow: {},
+  chooserEyebrow: { marginTop: space.lg },
+  chooserBlurb: { marginTop: space.md },
+  chooserList: { marginTop: space.lg },
   title: { marginTop: space.sm },
   hero: { marginTop: space.lg },
   day: { marginTop: space.sm },

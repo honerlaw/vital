@@ -39,10 +39,29 @@ export default function ProgramDetailScreen() {
     );
   }
   const active = program.id === state.activeProgramId;
+  const neverChose = state.activeProgramId === null;
 
-  const onSetActive = () => {
+  // First run (014): selecting saves the choice as the active program — no forced workout.
+  const onChoose = () => {
     dispatch({ type: 'SET_ACTIVE_PROGRAM', id: program.id });
     router.replace('/');
+  };
+
+  // Begin a workout here. For the active program this is Today's Begin (same cursor arithmetic).
+  // For a DIFFERENT program, starting a workout in it is what makes it the active program (014):
+  // SET_ACTIVE_PROGRAM (persists the id, zeroes the cursor) then START_WORKOUT at day 0 — the
+  // hardcoded 0 is bound to SET_ACTIVE_PROGRAM's cursor-zeroing. The two dispatches MUST stay
+  // synchronous and adjacent (no await between them): useReducer drains the queue in order, so
+  // START_WORKOUT's reducer case sees the just-set program; this batching only holds inside an
+  // event handler like this onPress.
+  const onBegin = () => {
+    if (!active) {
+      dispatch({ type: 'SET_ACTIVE_PROGRAM', id: program.id });
+      dispatch({ type: 'START_WORKOUT', dayIndex: 0 });
+    } else {
+      dispatch({ type: 'START_WORKOUT', dayIndex: state.cursor % program.days.length });
+    }
+    router.push('/workout');
   };
 
   return (
@@ -82,12 +101,18 @@ export default function ProgramDetailScreen() {
         </View>
       ))}
 
+      {/* One CTA per context (014): choose (first run, saves without starting a workout),
+          begin (this program is active), or switch & begin (starting a workout in a different
+          program is what makes it active — there is deliberately no switch-without-workout). */}
       <View style={styles.cta}>
-        <Button
-          label={active ? 'Currently active' : 'Set as my program'}
-          onPress={onSetActive}
-          disabled={active}
-        />
+        {neverChose ? (
+          <Button label="Choose this program" onPress={onChoose} />
+        ) : (
+          <Button
+            label={active ? 'Begin workout →' : 'Switch & begin workout →'}
+            onPress={onBegin}
+          />
+        )}
       </View>
     </Screen>
   );

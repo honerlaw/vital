@@ -58,7 +58,7 @@ export interface AppState {
   programs: Program[];       // the catalog, hydrated from GET /api/programs at startup
   programsStatus: ProgramsStatus;
   userStateStatus: ProgramsStatus; // per-user state hydration, same loading/ready/error shape
-  activeProgramId: string;
+  activeProgramId: string | null; // null = the user has never chosen a program (014)
   cursor: number;            // index into active program's days = NEXT workout
   history: SessionLog[];
   live: LiveSession | null;
