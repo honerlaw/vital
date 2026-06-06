@@ -93,14 +93,37 @@ jobs:
           printf '%s\n' "$env_dump" | grep '^EXPO_PUBLIC_' > .env.eas || true
           unset env_dump
           # A blank Clerk key or API URL still builds green but ships a dead-on-arrival
-          # binary, so require the two keys the app cannot run without.
-          for key in EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY EXPO_PUBLIC_API_URL; do
+          # binary, so require the keys the app cannot run without. The Sentry DSN is
+          # in the list deliberately: the startup watchdog is the mitigation for the
+          # proven boot-hang failure class (TestFlight build 5), and a DSN-less Release
+          # build is green-but-blind by construction. The SENTRY_AUTH_TOKEN below is
+          # only a warn — token-less builds ship UNSYMBOLICATED, not dead.
+          for key in EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY EXPO_PUBLIC_API_URL EXPO_PUBLIC_SENTRY_DSN; do
             if ! grep -q "^${key}=" .env.eas; then
               echo "::error::${key} is missing from the Doppler prd config — the build would produce a dead-on-arrival binary." >&2
               exit 1
             fi
           done
           eas env:push production --path .env.eas --force
+
+      # Sentry source-map upload credential. NOT EXPO_PUBLIC_: it must reach the EAS
+      # BUILD environment (the upload runs on EAS infra during the native build) while
+      # never entering the client bundle, so it bypasses the ^EXPO_PUBLIC_ mirror above
+      # via its own sensitive-visibility upsert — do NOT widen that filter instead.
+      # Missing token is a warn, not a failure: events still flow, stacks just arrive
+      # unsymbolicated (the deliberate asymmetry with the DSN guard above).
+      - name: Sync SENTRY_AUTH_TOKEN to EAS (sensitive)
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          if sentry_token="$(doppler secrets get SENTRY_AUTH_TOKEN --plain 2>/dev/null)" \
+            && [ -n "$sentry_token" ]; then
+            echo "::add-mask::$sentry_token"
+            eas env:create production --name SENTRY_AUTH_TOKEN --value "$sentry_token" \
+              --visibility sensitive --force --non-interactive
+          else
+            echo "::warning::SENTRY_AUTH_TOKEN is missing from the Doppler prd config — Release builds will ship unsymbolicated stack traces."
+          fi
 
       - name: Trigger EAS build & submit
         run: eas workflow:run .eas/workflows/build-and-submit-ios.yml --non-interactive

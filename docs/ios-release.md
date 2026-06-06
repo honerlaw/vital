@@ -70,6 +70,17 @@ regression.
      server env it doesn't need — fine for now, harden later if it ever matters.
    - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — production Clerk publishable key
    - `EXPO_PUBLIC_API_URL` — DigitalOcean app origin, e.g. `https://…ondigitalocean.app`
+   - `EXPO_PUBLIC_SENTRY_DSN` — the `onerlaw-llc/vital` Sentry project DSN
+     (**required** — the workflow hard-fails without it; a DSN-less Release build
+     would be green-but-blind, recreating the failure class the startup watchdog
+     exists to catch)
+   - `SENTRY_AUTH_TOKEN` — a Sentry org auth token with `project:releases` +
+     `org:read` scopes (sentry.io → Settings → Auth Tokens), used by the EAS build
+     to upload source maps (**recommended, warn-only**: without it the run prints a
+     warning and Release builds report crashes with unsymbolicated stack traces).
+     It is NOT `EXPO_PUBLIC_*` — the workflow pushes it to EAS separately with
+     sensitive visibility so it reaches the build environment without ever entering
+     the client bundle.
 
    The app inlines the `EXPO_PUBLIC_*` vars at bundle build time; the workflow mirrors
    every `EXPO_PUBLIC_*` var from Doppler into EAS before each build.
@@ -77,9 +88,16 @@ regression.
    **Skipping the `EXPO_PUBLIC_*` vars ships a dead-on-arrival binary**: a blank Clerk
    key makes `ClerkProvider` error at launch, and a blank API URL leaves native clients
    with a relative origin (every API call fails). The GitHub Actions run fails loudly
-   if `EXPO_TOKEN` or either of the two required client vars is missing from prd; any
+   if `EXPO_TOKEN` or any of the three required client vars is missing from prd; any
    additional `EXPO_PUBLIC_*` vars added later are synced automatically but not
    individually asserted.
+
+   **Verifying Sentry after a release (post-merge protocol)**: when the first real
+   production event arrives (a crash or a `startup watchdog` message), confirm the
+   stack trace is symbolicated. If it isn't: check that `SENTRY_AUTH_TOKEN` exists in
+   the EAS production environment (`eas env:list production`) and that the
+   `@sentry/react-native/expo` plugin's `organization`/`project` slugs in `app.json`
+   match the Sentry project the DSN points at.
 
 4. **Provision iOS credentials with one interactive build** —
 

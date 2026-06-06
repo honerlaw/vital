@@ -5,6 +5,7 @@ import { fetchPrograms } from '@/data/programs-api';
 import { fetchUserState } from '@/data/fetch-user-state';
 import { postSession } from '@/data/post-session';
 import { putUserState } from '@/data/put-user-state';
+import { recordBootMilestone } from '@/observability/record-boot-milestone';
 import { AppContext } from '@/state/app-context';
 import { Action } from '@/state/actions';
 import { DEFAULT_STATE } from '@/state/default-state';
@@ -52,6 +53,15 @@ export default function StateProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [isLoaded, isSignedIn, getToken, state.userStateStatus]);
+
+  // Watchdog milestone: boot-ready when BOTH startup fetches have landed — recorded
+  // here from a transition-observing effect because bootStatus() is a pure selector
+  // re-evaluated every render and must stay side-effect-free.
+  useEffect(() => {
+    if (state.programsStatus === 'ready' && state.userStateStatus === 'ready') {
+      recordBootMilestone('boot-ready');
+    }
+  }, [state.programsStatus, state.userStateStatus]);
 
   // Sign-out: clear the per-user fields so they can't leak into the next account's session.
   // Transition-keyed (effects fire on dep change, not every render); the dispatch is deferred
