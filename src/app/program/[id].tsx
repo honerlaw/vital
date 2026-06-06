@@ -103,7 +103,9 @@ export default function ProgramDetailScreen() {
 
       {/* One CTA per context (014): choose (first run, saves without starting a workout),
           begin (this program is active), or switch & begin (starting a workout in a different
-          program is what makes it active — there is deliberately no switch-without-workout). */}
+          program is what makes it active — there is no standalone "set active" tap). Note the
+          switch commits at the Begin tap: cancelling the workout afterwards keeps the new
+          program active at cursor 0 (whether cancel should revert is a logged followup). */}
       <View style={styles.cta}>
         {neverChose ? (
           <Button label="Choose this program" onPress={onChoose} />

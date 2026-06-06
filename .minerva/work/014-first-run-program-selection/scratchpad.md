@@ -41,3 +41,26 @@
   no-op contract). `tsc --noEmit` clean. `eslint --max-warnings 0` clean.
 - SC#5 verified: diff touches exactly 7 client files — no src/server/, src/app/api/, or
   migrations/ paths.
+
+## Panel decisions 2026-06-06 (cont.)
+
+- [3/3 accept] completion verification: all three agents independently ran the gates
+  (41/41 tests, tsc clean, eslint --max-warnings 0 clean) and spot-checked the null
+  guards, persist guards, FINISH narrowing, fork placement, and diff boundary. Zero
+  falsifications; all findings low.
+
+## Panel decisions 2026-06-06 (review)
+
+- [2/3 accept (quorum met at 2 accepts; arbiter not convened)] review triage: F1 FIX
+  (header row + Account link in chooser branch — sole sign-out path was unreachable on
+  first run), F2 FIX-comment + behavioral followup, F3 FIX (p→program), F4 IGNORE
+  (subsumed by F1), F5 folded into F2. Gates re-run green after fixes (41/41, tsc, lint).
+
+## Review finding 2026-06-06
+
+- FOLLOWUP (product decision, deferred): should CANCEL_WORKOUT revert a
+  switch-committed-at-Begin? Today "Switch & begin" persists SET_ACTIVE_PROGRAM (new id,
+  cursor 0) at the tap; cancelling the workout keeps the new program active at cursor 0
+  and the previous program's cursor position is lost (single global cursor). A revert
+  would need remember-previous-{programId, cursor} machinery — pairs naturally with the
+  per-program-cursor followup from knowledge 017.

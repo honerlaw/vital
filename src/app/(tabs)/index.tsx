@@ -30,9 +30,16 @@ export default function TodayScreen() {
   if (state.activeProgramId === null) {
     return (
       <Screen>
-        <AppText variant="label" style={styles.chooserEyebrow}>
-          {dateEyebrow(new Date())}
-        </AppText>
+        {/* Same header row as the session view — the Account link must stay reachable on first
+            run (it is the only path to /account and Sign out). */}
+        <View style={styles.headerRow}>
+          <AppText variant="label" style={styles.eyebrow}>
+            {dateEyebrow(new Date())}
+          </AppText>
+          <TouchableOpacity onPress={() => router.push('/account')} accessibilityRole="button">
+            <AppText variant="backLink">Account</AppText>
+          </TouchableOpacity>
+        </View>
         <AppText variant="screenTitle" style={styles.title}>
           Choose your program
         </AppText>
@@ -40,12 +47,14 @@ export default function TodayScreen() {
           Pick a routine to train with — your next session will always be ready here.
         </AppText>
         <View style={styles.chooserList}>
-          {state.programs.map((p) => (
+          {state.programs.map((program) => (
             <ProgramCard
-              key={p.id}
-              program={p}
+              key={program.id}
+              program={program}
               active={false}
-              onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
+              onPress={() =>
+                router.push({ pathname: '/program/[id]', params: { id: program.id } })
+              }
             />
           ))}
         </View>
@@ -123,7 +132,6 @@ const styles = StyleSheet.create({
     marginTop: space.lg,
   },
   eyebrow: {},
-  chooserEyebrow: { marginTop: space.lg },
   chooserBlurb: { marginTop: space.md },
   chooserList: { marginTop: space.lg },
   title: { marginTop: space.sm },
