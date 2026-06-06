@@ -14,4 +14,5 @@ export { isProgram } from '@/data/guards/isProgram';
 export { isProgramArray } from '@/data/guards/isProgramArray';
 export { isSessionLog } from '@/data/guards/isSessionLog';
 export { isSessionLogArray } from '@/data/guards/isSessionLogArray';
+export { isCursorMap } from '@/data/guards/isCursorMap';
 export { isUserStatePayload } from '@/data/guards/isUserStatePayload';

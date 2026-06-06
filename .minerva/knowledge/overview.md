@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 020 -->
+<!-- synthesis-watermark: 021 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012, 013, 014, and 016). Theme-grouped
+Synthesized 2026-06-05 (work 011, refreshed in works 012, 013, 014, 015, and 016). Theme-grouped
 navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -19,15 +19,20 @@ work 013 — the guarded `config.extra` spread is now load-bearing, not forbidde
 
 ## App architecture — state, navigation, and startup hydration
 
-`AppState` is the serializable user domain (active program / cursor / history / live session);
+`AppState` is the serializable user domain (active program / per-program cursors / history / live session);
 ephemeral UI like the rest timer stays out of the reducer, and full-screen flows are top-level
 routes rather than tabs ([[005-decision-vital-state-and-nav-boundaries]]). The program catalog
 and the per-user state are hydrated from the API at startup behind an SSR-safe render-gate with
 explicit loading/ready/error statuses (combined readiness since work 012) and, since work 011,
 an in-app retry primitive ([[016-pattern-ssr-safe-startup-hydration-gate]]). Per-user state —
-active program, cursor, workout history — persists in Postgres bound to the Clerk userId, with a
-fire-and-forget write-through over the authoritative local reducer
-([[017-pattern-per-user-state-persistence]]). Since work 014, a null active program is a
+active program, per-program cursors, workout history — persists in Postgres bound to the Clerk
+userId, with a fire-and-forget write-through over the authoritative local reducer
+([[017-pattern-per-user-state-persistence]]). Since work 015 each program keeps its own rotation
+position in a `cursors` jsonb map (switching never zeroes progress, and cancelling a workout that
+committed a switch reverts it losslessly), shipped as an additive-then-cutover migration with a
+one-release tolerant-reader wire contract ([[020-pattern-per-program-cursors]]); 017's
+scalar-cursor schema/contract passages and 019's adjacent-dispatch switch mechanism were
+rewritten accordingly. Since work 014, a null active program is a
 first-class "never chose" signal that survives hydration — the Today screen renders a first-run
 chooser, switching programs is gated on starting a workout, and null must short-circuit BEFORE
 every catalog-membership check ([[019-pattern-null-active-program-first-run]]); the re-point /
@@ -72,7 +77,7 @@ auto-mirrored from Doppler prd on every release
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 020, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 021, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a

@@ -36,20 +36,32 @@ export interface SessionLog {
   dateISO: string;
 }
 
-/** An in-progress workout. completed[exerciseIndex][setIndex] = logged?. */
+/**
+ * An in-progress workout. completed[exerciseIndex][setIndex] = logged?.
+ * `switchedFrom` (015): the previously-active program id when this session was started via
+ * "Switch & begin" (the switch commits at the Begin tap); null for a plain start. CANCEL
+ * restores it as the active program — the revert is lossless because a switch never mutates
+ * the cursor map.
+ */
 export interface LiveSession {
   programId: string;
   dayIndex: number;
   completed: boolean[][];
+  switchedFrom: string | null;
 }
 
 /** Catalog hydration state: loading until the first fetch resolves, then ready or error. */
 export type ProgramsStatus = 'loading' | 'ready' | 'error';
 
-/** The persisted per-user state as served by `GET /api/me/state` (null id = no row yet). */
+/**
+ * The persisted per-user state as served by `GET /api/me/state` (null id = no row yet).
+ * `cursors` (015): per-program rotation positions keyed by program id; a missing key reads
+ * as 0. (The route also serves a legacy scalar `cursor` for pre-015 builds — one release —
+ * which this guard/type deliberately ignores.)
+ */
 export interface UserStatePayload {
   activeProgramId: string | null;
-  cursor: number;
+  cursors: Record<string, number>;
   history: SessionLog[];
 }
 
@@ -59,7 +71,9 @@ export interface AppState {
   programsStatus: ProgramsStatus;
   userStateStatus: ProgramsStatus; // per-user state hydration, same loading/ready/error shape
   activeProgramId: string | null; // null = the user has never chosen a program (014)
-  cursor: number;            // index into active program's days = NEXT workout
+  // Per-program rotation positions (015): cursors[id] = that program's NEXT workout day
+  // index; a missing key reads as 0. Switching the active program never mutates this map.
+  cursors: Record<string, number>;
   history: SessionLog[];
   live: LiveSession | null;
 }

@@ -75,10 +75,19 @@ export default function StateProvider({ children }: { children: ReactNode }) {
       const warn = (err: unknown) => {
         console.warn('persist failed:', err);
       };
-      if (action.type === 'SET_ACTIVE_PROGRAM') {
-        // Mirror the reducer's in-catalog guard so a no-op dispatch doesn't PUT.
+      if (action.type === 'SET_ACTIVE_PROGRAM' || action.type === 'SWITCH_AND_START_WORKOUT') {
+        // Mirror the reducer's in-catalog guard so a no-op dispatch doesn't PUT. Both actions
+        // change ONLY the active id — the pre-reduce cursor map is forwarded verbatim (015:
+        // switching never mutates it; SWITCH's session start doesn't advance anything).
         if (state.programs.some((p) => p.id === action.id)) {
-          void putUserState(getToken, action.id, 0).catch(warn);
+          void putUserState(getToken, action.id, state.cursors).catch(warn);
+        }
+      } else if (action.type === 'CANCEL_WORKOUT') {
+        // Revert-a-switch persist (015). MUST read the PRE-reduce snapshot: post-reduce `live`
+        // is null, so `switchedFrom` would be unrecoverable. Guard mirrors the reducer — only a
+        // session that committed a switch at Begin reverts; a plain cancel persists nothing.
+        if (state.live !== null && state.live.switchedFrom !== null) {
+          void putUserState(getToken, state.live.switchedFrom, state.cursors).catch(warn);
         }
       } else if (action.type === 'FINISH_WORKOUT') {
         // Mirror the reducer's live!==null guard (a double-tap must not POST a spurious
@@ -87,8 +96,9 @@ export default function StateProvider({ children }: { children: ReactNode }) {
         // stores. (Holds because FINISH_WORKOUT is a single user tap — no concurrent dispatch.)
         if (state.live !== null) {
           const { log, nextCursor } = finishSession(state, action.nowISO);
-          // `live.programId` (not the nullable `activeProgramId`): inside the live guard it's a
-          // guaranteed string, and live is only ever created from a non-null active program.
+          // `cursor` is the NEW value for cursors[log.programId] (015) — the server merges it
+          // into the map. `live.programId` (not the nullable `activeProgramId`): inside the live
+          // guard it's a guaranteed string, and live only exists after a non-null start.
           void postSession(getToken, {
             ...log,
             cursor: nextCursor,
@@ -97,27 +107,30 @@ export default function StateProvider({ children }: { children: ReactNode }) {
         }
       } else if (action.type === 'HYDRATE_USER_STATE') {
         // Persist-after-normalize: the server returned an id the ready catalog no longer has —
-        // the reducer re-points to the first program; converge the server too (preserving the
-        // server-sent cursor — normalization never zeroes it).
+        // the reducer re-points to the first program; converge the server too. Forwards
+        // `action.payload.cursors` (the just-arrived server map) — pre-reduce `state.cursors`
+        // is the stale boot seed `{}` here and would wipe the user's rotation map (015).
         const serverId = action.payload.activeProgramId;
         if (
           state.programsStatus === 'ready' &&
           serverId !== null &&
           !state.programs.some((p) => p.id === serverId)
         ) {
-          void putUserState(getToken, state.programs[0].id, action.payload.cursor).catch(warn);
+          void putUserState(getToken, state.programs[0].id, action.payload.cursors).catch(warn);
         }
       } else if (action.type === 'HYDRATE_PROGRAMS') {
-        // Symmetric persist-after-normalize for the other landing order (preserved cursor).
-        // Null-guarded (014): a never-chose user must NOT be auto-PUT to the first program —
-        // `.some(p => p.id === null)` is false, so without the guard this branch would fire.
+        // Symmetric persist-after-normalize for the other landing order. Here pre-reduce
+        // `state.cursors` IS the hydrated map: the `userStateStatus === 'ready'` guard can only
+        // be true after the user-state reduction stored it (015). Null-guarded (014): a
+        // never-chose user must NOT be auto-PUT to the first program — `.some(p => p.id ===
+        // null)` is false, so without the guard this branch would fire.
         if (
           state.userStateStatus === 'ready' &&
           state.activeProgramId !== null &&
           action.programs.length > 0 &&
           !action.programs.some((p) => p.id === state.activeProgramId)
         ) {
-          void putUserState(getToken, action.programs[0].id, state.cursor).catch(warn);
+          void putUserState(getToken, action.programs[0].id, state.cursors).catch(warn);
         }
       }
     };
