@@ -81,6 +81,17 @@ module.exports = defineConfig([
     },
   },
 
+  // generate-icons.mjs dynamically imports @resvg/resvg-js, which is
+  // deliberately installed with --no-save (npm/cli#4828 — see the script's
+  // header comment), so the resolver can't see it. Exempt only that specifier
+  // in only that file; everything else there still resolves normally.
+  {
+    files: ['scripts/generate-icons.mjs'],
+    rules: {
+      'import/no-unresolved': ['error', { ignore: ['^@resvg/resvg-js$'] }],
+    },
+  },
+
   // JS config / rule files are CommonJS and not in the TS program; disable
   // type-aware rules for them and give them Node globals.
   {
