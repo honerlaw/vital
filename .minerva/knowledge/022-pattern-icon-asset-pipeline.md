@@ -44,10 +44,18 @@ Load-bearing details:
   EAS build. The flat top-level 1024² `icon.png` is the locally-validated source for the
   standard asset catalog instead.
 - Android adaptive layering: the brand gradient lives in the **background** layer PNG
-  (`adaptiveIcon.backgroundColor #208AEF` is only a fallback, inert while
-  `backgroundImage` is set); the foreground is the white glyph alone, inside the central
-  676px (66%) safe zone; monochrome is byte-identical to the foreground by design —
-  Android tints it itself.
+  (`adaptiveIcon.backgroundColor #0D8348` is only a fallback, inert while
+  `backgroundImage` is set; recolored from `#208AEF` in unit 018); the foreground is
+  the white glyph alone, inside the central 676px (66%) safe zone; monochrome is
+  byte-identical to the foreground by design — Android tints it itself.
+- **Zero-diff tripwire for recolor-only changes** (learned in 018): with the rasterizer
+  pinned (`@resvg/resvg-js@2.6.2`) and the `pulse` group untouched, the three glyph-only
+  PNGs (foreground, monochrome, splash) regenerate **byte-identical** — `git status`
+  shows zero diff for them even though the script rewrites all 6 files. Verified twice
+  by independent runs. When changing only the gradient, treat any diff on a glyph-only
+  PNG as a red flag (wrong resvg version or an accidental glyph change), not noise.
+  This is a manual implementer-side check — the generator stays local-only; CI never
+  runs it.
 
 When to reach for this: any icon/branding rework, any change that adds a
 platform-binary dev tool for a local-only script, and any pre-merge validation of

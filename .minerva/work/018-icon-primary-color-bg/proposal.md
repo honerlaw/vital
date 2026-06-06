@@ -2,7 +2,8 @@
 
 ## Status
 
-Draft
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on
+merge). Approach matched reality exactly: no divergence, no replan.
 
 ## Goal
 
