@@ -5,7 +5,8 @@
   "build": {
     "production": {
       "environment": "production",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "node": "24.13.0"
     }
   },
   "submit": {
