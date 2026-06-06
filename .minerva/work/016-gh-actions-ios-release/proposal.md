@@ -2,9 +2,10 @@
 
 ## Status
 
-Draft — approved via `minerva:propose-ship-auto` consensus panels (scope 3/3; approach
-accepted after one revision round with in-tree hardening; whole-proposal 3/3 with
-required amendments folded in below).
+Shipped (2026-06-06). Approved + delivered via `minerva:propose-ship-auto` consensus
+panels (scope 3/3; approach accepted after one revision round with in-tree hardening;
+whole-proposal 3/3; completion 3/3; review triage 2/3 as amended; promote partition 2/3
+as amended). Durable record: [[020-decision-gh-actions-ios-release-orchestration]].
 
 ## Goal
 
@@ -54,7 +55,11 @@ now obsolete) all contradict this unit and must be superseded or rewritten.
    `eas workflow:run .eas/workflows/build-and-submit-ios.yml --non-interactive`.
    GH-side runs serialized (workflow-scoped concurrency group,
    `cancel-in-progress: false`); EAS builds may overlap, which is safe via remote
-   `autoIncrement` build numbers.
+   `autoIncrement` build numbers. Review fixes folded in: header + docs state that the
+   sync is upsert-only (stale Doppler-removed keys must be pruned with
+   `eas env:delete`), that a green run means "synced + queued" with EAS notifications
+   as the build-failure red signal (`--wait` recorded as the alternative), and the
+   filter's single-line-value assumption is commented at the grep site.
 3. `.gitignore` — add `.env.eas`.
 4. `docs/ios-release.md` — rewritten: GH Actions flow; one-time setup now requires
    GitHub repo secrets `EXPO_TOKEN` + `DOPPLER_TOKEN` (read-only, scoped to
