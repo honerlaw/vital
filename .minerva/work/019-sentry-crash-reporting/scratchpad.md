@@ -23,3 +23,18 @@
 - Verify @sentry/react-native types are clean under recommendedTypeChecked (was
   uninstalled at proposal time) — covered by the typecheck gate.
 - eas-cli env verb verified at implementation against pinned eas-cli@^20.
+
+## Work log 2026-06-06
+
+- @sentry/react-native 7.11.0 via `npx expo install` (SDK-56 pin) — types clean under
+  recommendedTypeChecked (typecheck gate green, panel concern retired).
+- `eas env:create` verified against pinned eas-cli@^20: `--visibility sensitive`
+  + `--force` (overwrite) + positional environment all exist. Panel concern retired.
+- Gates: lint / typecheck / test (45) / lint:rules-test (20) all green first pass.
+- Resolved-config asserts green: sentry plugin {onerlaw-llc, vital} present,
+  extra.eas.projectId intact, reactCompiler true, extra.router intact.
+- export:web green through getSentryExpoConfig (SSR clean).
+- Sentry.wrap default export passed lint as predicted (no rule extension).
+- Release sim verification run in flight: TEMP uncommitted delivery-test
+  (captureException+flush at 4s) + watchdog stall (splash-hidden record suppressed
+  → watchdog message at 10s). Both events expected in onerlaw-llc/vital.

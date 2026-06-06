@@ -2,6 +2,7 @@ import { useAuth } from '@clerk/expo';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { recordBootMilestone } from '@/observability/record-boot-milestone';
 
 /**
  * Auth-gated root navigator. Mounted under `ClerkProvider`, so it can read `useAuth()`. Holds
@@ -16,7 +17,15 @@ export default function RootNavigator() {
   const auth = useAuth();
 
   useEffect(() => {
-    if (auth.isLoaded) void SplashScreen.hideAsync();
+    if (auth.isLoaded) {
+      // Watchdog milestones: clerk-loaded marks this gate releasing; splash-hidden
+      // (recorded only after hideAsync resolves) is the watchdog's all-clear — a boot
+      // that never reaches it produces a Sentry message naming how far boot got.
+      recordBootMilestone('clerk-loaded');
+      void SplashScreen.hideAsync().then(() => {
+        recordBootMilestone('splash-hidden');
+      });
+    }
   }, [auth.isLoaded]);
 
   if (!auth.isLoaded) return null;
