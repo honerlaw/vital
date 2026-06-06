@@ -3,7 +3,7 @@
 - Type: decision
 - Date: 2026-06-05
 - Work unit: 013-eas-ios-release-workflow
-- Superseded (in part, 2026-06-06): [[020-decision-gh-actions-ios-release-orchestration]]
+- Superseded (in part, 2026-06-06): [[021-decision-gh-actions-ios-release-orchestration]]
   — the trigger arrangement (push-triggered via the GitHub-app link), the "no `EXPO_TOKEN`
   secret, no GH-runner orchestration" claim, and setup step 2 (the GitHub↔EAS link). The
   operational facts below remain valid.

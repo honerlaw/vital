@@ -53,7 +53,7 @@ CI runs build/test/lint on every PR and needs no expo-router typegen step
 work 016: every merge to main first mirrors the `EXPO_PUBLIC_*` vars from Doppler prd into the
 EAS production environment (upsert-only — stale keys need manual pruning), then triggers the
 EAS build+submit workflow via `eas workflow:run`, which uploads the checkout so the EAS
-GitHub-app link is unnecessary ([[020-decision-gh-actions-ios-release-orchestration]],
+GitHub-app link is unnecessary ([[021-decision-gh-actions-ios-release-orchestration]],
 superseding in part [[018-decision-eas-ios-release-workflow]]). 018's caveats still bite: EAS
 builds can't see Doppler/DO env (a missing `EXPO_PUBLIC_*` value means a green-but-dead-on-arrival
 binary — the sync's two-key assert guards this), and submit lands in TestFlight, not public
@@ -67,7 +67,7 @@ opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforceme
 env vars come from the Doppler CLI, with the local Postgres hardcoded in Docker Compose
 ([[013-decision-doppler-local-env]]); production iOS build-time env lives in EAS but is
 auto-mirrored from Doppler prd on every release
-([[020-decision-gh-actions-ios-release-orchestration]]). Unit tests run offline via
+([[021-decision-gh-actions-ios-release-orchestration]]). Unit tests run offline via
 `node --import tsx --test` over `src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
 
 ## Limitations

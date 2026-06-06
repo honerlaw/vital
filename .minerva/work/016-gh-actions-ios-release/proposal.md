@@ -5,7 +5,7 @@
 Shipped (2026-06-06). Approved + delivered via `minerva:propose-ship-auto` consensus
 panels (scope 3/3; approach accepted after one revision round with in-tree hardening;
 whole-proposal 3/3; completion 3/3; review triage 2/3 as amended; promote partition 2/3
-as amended). Durable record: [[020-decision-gh-actions-ios-release-orchestration]].
+as amended). Durable record: [[021-decision-gh-actions-ios-release-orchestration]].
 
 ## Goal
 
