@@ -6,9 +6,12 @@
 # manually with `eas env:delete`, or the stale value keeps shipping in client bundles.
 #
 # `eas workflow:run` packages and uploads this checkout, so the EAS GitHub app
-# integration is NOT required. Required GitHub repo secrets (see docs/ios-release.md):
-#   EXPO_TOKEN    — EAS access token (expo.dev → account settings → Access tokens)
+# integration is NOT required. Doppler is the single home for ALL secrets: the only
+# GitHub repo secret is the bootstrap credential (see docs/ios-release.md):
 #   DOPPLER_TOKEN — read-only Doppler service token scoped to the vital/prd config
+# EAS authentication (EXPO_TOKEN) is fetched FROM Doppler prd at run time. Accepted
+# tradeoff (explicit, 2026-06-06): prd wholesale-syncs to DigitalOcean, so EXPO_TOKEN
+# also lands in the production server env it doesn't need — revisit if hardening matters.
 #
 # A green run here means "env synced + EAS workflow queued" — NOT that the build or
 # App Store submission succeeded. EAS's own build-failure notifications (email) are
@@ -55,6 +58,20 @@ jobs:
       - name: Install Doppler CLI
         uses: dopplerhq/cli-action@v4
 
+      # Doppler is the single source for ALL secrets, including the EAS token the two
+      # eas-cli steps below need. Masked, then exported via GITHUB_ENV so later steps
+      # see it as a normal env var.
+      - name: Fetch EAS token from Doppler
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          if ! expo_token="$(doppler secrets get EXPO_TOKEN --plain)"; then
+            echo '::error::EXPO_TOKEN is missing from the Doppler prd config (or DOPPLER_TOKEN is invalid) — eas-cli cannot authenticate.' >&2
+            exit 1
+          fi
+          echo "::add-mask::$expo_token"
+          echo "EXPO_TOKEN=$expo_token" >> "$GITHUB_ENV"
+
       # The service token pins the project/config, so no -p/-c flags are needed.
       # Only EXPO_PUBLIC_ vars are mirrored — server-side secrets in the prd config
       # (database URL, Clerk secret key, …) must never reach the client bundle.
@@ -63,7 +80,6 @@ jobs:
       - name: Sync EXPO_PUBLIC_ env vars from Doppler to EAS
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           trap 'rm -f .env.eas' EXIT
           # Download separately from filtering so a Doppler failure (bad/unscoped token,
@@ -87,6 +103,4 @@ jobs:
           eas env:push production --path .env.eas --force
 
       - name: Trigger EAS build & submit
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas workflow:run .eas/workflows/build-and-submit-ios.yml --non-interactive
