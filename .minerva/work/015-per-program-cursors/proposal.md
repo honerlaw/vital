@@ -2,7 +2,14 @@
 
 ## Status
 
-Draft
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on merge).
+Approved + delivered via `minerva:propose-ship-auto` consensus panels — scope 2/3 (single-unit
+affirmed unanimously in prose across two rounds), approach [skipped — small, A′ strictly
+dominant], whole-proposal accepted after one revision round (the HYDRATE-forwards-payload-map
+blocking catch), completion verification 3/3, review triage 2/3, promote partition 2/3 (five
+Skeptic fold-ins applied). Durable knowledge promoted to
+`.minerva/knowledge/020-pattern-per-program-cursors.md` (017/019 bodies rewritten in the same
+pass); forward work in `followups.md` (tolerant-reader removal next release).
 
 ## Goal
 
@@ -46,8 +53,9 @@ break, and leaves dead columns.)
    full-replace of the column; or legacy `{activeProgramId, cursor}` → SQL merge
    `cursors = user_state.cursors || jsonb_build_object($id, $cursor)` against the existing
    row (sibling keys preserved; legacy zero-on-switch semantics preserved for old builds
-   without corrupting other programs). Validator branches on `'cursors' in body` vs
-   `'cursor' in body`, cast-free.
+   without corrupting other programs). Validator: a body that CARRIES `cursors` but fails the
+   guard 400s explicitly (review F6 — no silent fall-through to the legacy arm on a
+   coincidentally-valid `cursor`); else the legacy arm; else 400. Cast-free.
 4. **POST /me/sessions**: body shape UNCHANGED (`{programId, programName, dayName,
    dateISO, cursor, activeProgramId}`); `cursor` is reinterpreted as "the new cursor value
    for programId"; the CTE conflict arm becomes
@@ -58,9 +66,10 @@ break, and leaves dead columns.)
    build can produce (every Begin path starts the active program; finishSession's
    active-vs-live gate is unreachable defensive code — thrice code-verified).
 5. **Shared guard helper** `isCursorMap(value): value is Record<string, number>` (object,
-   non-null, every value a number) in `src/data/guards/`, reused by the client payload
-   guard, the server mapper validation, and the PUT validator — one implementation, not
-   three inline copies.
+   non-null, every value a **non-negative integer** — review F1: `typeof NaN === 'number'`,
+   so the number-typed check would let NaN/floats reach `% days.length`) in
+   `src/data/guards/`, reused by the client payload guard, the server mapper validation, and
+   the PUT validator — one implementation, not three inline copies.
 6. **Client state**: `AppState.cursor: number` → `cursors: Record<string, number>`
    (missing key = 0); `UserStatePayload` likewise. `SET_ACTIVE_PROGRAM` only changes the
    id (no zeroing). `RESET_USER_STATE` → `{}`; the `nothingToReset` bailout uses
@@ -79,7 +88,8 @@ break, and leaves dead columns.)
    `LiveSession` gains `switchedFrom: string | null`; `startSession` sets it null.
 8. **Composite action `SWITCH_AND_START_WORKOUT {id}`** (replaces 014's fragile
    SET_ACTIVE_PROGRAM + START_WORKOUT adjacent-dispatch pair on program detail): in-catalog
-   guard; sets `activeProgramId = id`; live =
+   guard; **same-id no-op** (review F4 — a double-tap race would otherwise clobber
+   `switchedFrom` with the just-switched id); sets `activeProgramId = id`; live =
    `{...startSession(program, (cursors[id] ?? 0) % days.length), switchedFrom: previous
    activeProgramId}` (resume, not day 0). `CANCEL_WORKOUT`: when
    `live.switchedFrom !== null`, also restores `activeProgramId = live.switchedFrom` —
