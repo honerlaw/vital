@@ -1,12 +1,19 @@
 # On every push to main: sync EXPO_PUBLIC_ env vars from Doppler (prd config) into the
 # EAS "production" environment, then trigger the EAS workflow that builds the iOS app
 # and submits it to App Store Connect. Doppler stays the single source of truth for
-# env vars; EAS is just a mirror refreshed immediately before every build.
+# env vars; EAS values are overwritten from Doppler immediately before every build.
+# Upsert-only: keys REMOVED from Doppler are NOT auto-deleted from EAS — prune those
+# manually with `eas env:delete`, or the stale value keeps shipping in client bundles.
 #
 # `eas workflow:run` packages and uploads this checkout, so the EAS GitHub app
 # integration is NOT required. Required GitHub repo secrets (see docs/ios-release.md):
 #   EXPO_TOKEN    — EAS access token (expo.dev → account settings → Access tokens)
 #   DOPPLER_TOKEN — read-only Doppler service token scoped to the vital/prd config
+#
+# A green run here means "env synced + EAS workflow queued" — NOT that the build or
+# App Store submission succeeded. EAS's own build-failure notifications (email) are
+# the red signal for those; `eas workflow:run --wait` could gate this job on the
+# result instead, at the cost of ~30-40 idle runner minutes per merge.
 name: Release iOS
 
 on:
@@ -65,6 +72,8 @@ jobs:
             echo '::error::Failed to download secrets from Doppler — check that DOPPLER_TOKEN is a valid service token scoped to the prd config.' >&2
             exit 1
           fi
+          # Line-based filter: assumes single-line values. A multiline EXPO_PUBLIC_
+          # value (e.g. PEM) would be silently truncated — switch to a real parser then.
           printf '%s\n' "$env_dump" | grep '^EXPO_PUBLIC_' > .env.eas || true
           unset env_dump
           # A blank Clerk key or API URL still builds green but ships a dead-on-arrival

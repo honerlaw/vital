@@ -5,13 +5,26 @@ which does two things in order:
 
 1. **Syncs env vars from Doppler to EAS** — downloads the `EXPO_PUBLIC_*` vars from the
    Doppler `prd` config and pushes them into the EAS `production` environment
-   (`eas env:push`). Doppler stays the single source of truth; EAS is a mirror refreshed
-   immediately before every build. Server-side secrets in the prd config are filtered
-   out and never reach EAS.
+   (`eas env:push`). Doppler stays the single source of truth; EAS values are
+   overwritten from Doppler immediately before every build. Server-side secrets in the
+   prd config are filtered out and never reach EAS.
+
+   **The sync is upsert-only.** A key *removed* (or renamed) in Doppler is **not**
+   auto-deleted from EAS — the stale value persists and keeps being inlined into every
+   client bundle, silently. After removing or renaming an `EXPO_PUBLIC_*` var in
+   Doppler, prune the old key manually: `eas env:delete production --variable-name <key>`.
 2. **Triggers the EAS workflow** — runs `.eas/workflows/build-and-submit-ios.yml` via
    `eas workflow:run`, which uploads the checkout to EAS infrastructure: a production
    iOS build, then submission of that binary to App Store Connect. Because the checkout
    is uploaded directly, the EAS GitHub app integration is **not** required.
+
+   **A green "Release iOS" run means the EAS workflow was queued, not that the release
+   succeeded.** The trigger is fire-and-forget: a failed EAS build or App Store
+   submission never turns anything red in GitHub. The red signal for those is EAS's
+   own build-failure notifications (email) and the
+   [EAS workflows dashboard](https://expo.dev/accounts/onerlawllc/projects/vital/workflows).
+   If a build-gating GitHub status ever becomes worth ~30-40 idle runner minutes per
+   merge, switch the trigger step to `eas workflow:run --wait`.
 
 ## What "submit" means here
 

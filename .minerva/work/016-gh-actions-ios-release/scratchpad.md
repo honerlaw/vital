@@ -41,3 +41,33 @@
 - Implementation predates the work unit: built conversationally in the main checkout,
   panel-hardened during propose, then transplanted into this worktree; main checkout
   restored to HEAD.
+
+## Panel decisions 2026-06-06 (work phase)
+
+- [3/3 accept] completion verification: SC1-4 independently re-verified by all three
+  agents against worktree files (validator re-run ✓, YAML parses, trigger blocks,
+  filter/assert/trap, doppler-free package.json, docs accuracy); SC5 (CI green)
+  pending-ship ruled legitimate — outcome structurally entailed by a code-free diff;
+  green-confirmation obligation carried by ship's CI watch.
+
+## Review triage 2026-06-06
+
+Inline structured review (no PR yet); fresh-eyes agent; 5 findings + 1 info.
+- [2/3 accept — Proponent + Arbiter as amended; Skeptic dissent cured by binding
+  amendments] triage panel.
+- F1 (med, GH green = queued only) → FIX via docs/comment naming EAS build-failure
+  notifications as the red signal; `--wait` recorded as future option (~30-40 idle
+  runner min/merge). APPLIED.
+- F2 (med, "mirror" false for deletions) → FIX wording in workflow header + docs:
+  upsert-only; prune with `eas env:delete production --variable-name <key>` (syntax
+  verified vs eas-cli 20.1.0). APPLIED.
+- F3 (low, line-based grep truncates multiline values) → FIX-lite comment at the
+  filter site. APPLIED.
+- F4 (low, working-tree upload not ref-pinned) → IGNORE. Corrected rationale: the
+  checkout IS the merge commit by construction on a push trigger. NOTE (Skeptic
+  fact-check): `--ref` resolves against the LOCAL git repo via rev-parse — it does
+  NOT require the EAS GitHub-app link; viable future hardening (`--ref ${{ github.sha }}`).
+- F5 (low, eas-cli ^20 floats) → IGNORE (propose-phase accepted residual).
+- F6 (info, concurrency group equivalence) → no action.
+- Skeptic verification item: two-key assert list proven complete — grep of src/ +
+  app.config.ts returns exactly EXPO_PUBLIC_API_URL + EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY.
