@@ -1,9 +1,9 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 019 -->
+<!-- synthesis-watermark: 020 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012, 013, and 014). Theme-grouped navigation
-over the corpus; the entries remain the source of truth.
+Synthesized 2026-06-05 (work 011, refreshed in works 012, 013, 014, and 016). Theme-grouped
+navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
 
@@ -49,24 +49,30 @@ the DB the sole runtime source.
 The app self-hosts web + API on DO App Platform ([[006-decision-digitalocean-app-platform-hosting]])
 via an Express host around the Expo Router server build ([[007-pattern-expo-router-server-self-host]]).
 CI runs build/test/lint on every PR and needs no expo-router typegen step
-([[006-pattern-ci-no-typegen-needed]]). iOS releases are automated separately on EAS Workflows:
-every merge to main builds the production iOS app and submits it to App Store Connect — with the
-hard-won caveats that EAS builds can't see Doppler/DO env (production `EXPO_PUBLIC_*` values must
-exist as EAS environment variables or the binary is green-but-dead-on-arrival) and that submit
-lands in TestFlight, not public release ([[018-decision-eas-ios-release-workflow]]).
+([[006-pattern-ci-no-typegen-needed]]). iOS releases are orchestrated from GitHub Actions since
+work 016: every merge to main first mirrors the `EXPO_PUBLIC_*` vars from Doppler prd into the
+EAS production environment (upsert-only — stale keys need manual pruning), then triggers the
+EAS build+submit workflow via `eas workflow:run`, which uploads the checkout so the EAS
+GitHub-app link is unnecessary ([[020-decision-gh-actions-ios-release-orchestration]],
+superseding in part [[018-decision-eas-ios-release-workflow]]). 018's caveats still bite: EAS
+builds can't see Doppler/DO env (a missing `EXPO_PUBLIC_*` value means a green-but-dead-on-arrival
+binary — the sync's two-key assert guards this), and submit lands in TestFlight, not public
+release. A green "Release iOS" run means queued, not released — EAS notifications are the build
+red signal.
 
 ## Auth & environment
 
 Clerk (core-3 `@clerk/expo`) provides the auth flows, with per-route endpoint enforcement via an
 opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]). Local dev
 env vars come from the Doppler CLI, with the local Postgres hardcoded in Docker Compose
-([[013-decision-doppler-local-env]]); production iOS build-time env is the separate EAS channel
-([[018-decision-eas-ios-release-workflow]]). Unit tests run offline via `node --import tsx --test`
-over `src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
+([[013-decision-doppler-local-env]]); production iOS build-time env lives in EAS but is
+auto-mirrored from Doppler prd on every release
+([[020-decision-gh-actions-ios-release-orchestration]]). Unit tests run offline via
+`node --import tsx --test` over `src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 019, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 020, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
