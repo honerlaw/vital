@@ -2,7 +2,11 @@
 
 ## Status
 
-Draft
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on
+merge). Approved + delivered via `minerva:propose-ship-auto` consensus panels — approach
+v2 escalated to the user (iOS sourcing: flat `icon.png` over the unvalidatable Icon
+Composer bundle), whole-proposal 3/3 after one revision round (prebuild gate added),
+completion 3/3 with pixel-level independent verification.
 
 ## Goal
 
