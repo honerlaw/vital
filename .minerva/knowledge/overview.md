@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 018 -->
+<!-- synthesis-watermark: 019 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012 and 013). Theme-grouped navigation
+Synthesized 2026-06-05 (work 011, refreshed in works 012, 013, and 014). Theme-grouped navigation
 over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -27,7 +27,12 @@ explicit loading/ready/error statuses (combined readiness since work 012) and, s
 an in-app retry primitive ([[016-pattern-ssr-safe-startup-hydration-gate]]). Per-user state —
 active program, cursor, workout history — persists in Postgres bound to the Clerk userId, with a
 fire-and-forget write-through over the authoritative local reducer
-([[017-pattern-per-user-state-persistence]]).
+([[017-pattern-per-user-state-persistence]]). Since work 014, a null active program is a
+first-class "never chose" signal that survives hydration — the Today screen renders a first-run
+chooser, switching programs is gated on starting a workout, and null must short-circuit BEFORE
+every catalog-membership check ([[019-pattern-null-active-program-first-run]]); the re-point /
+null-fallback claims in [[016-pattern-ssr-safe-startup-hydration-gate]] and
+[[017-pattern-per-user-state-persistence]] are narrowed accordingly (scoped ⚠ markers).
 
 ## Data layer — Postgres as the single source of truth
 
@@ -61,7 +66,7 @@ over `src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 018, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 019, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a

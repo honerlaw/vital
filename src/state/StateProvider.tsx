@@ -87,10 +87,12 @@ export default function StateProvider({ children }: { children: ReactNode }) {
         // stores. (Holds because FINISH_WORKOUT is a single user tap — no concurrent dispatch.)
         if (state.live !== null) {
           const { log, nextCursor } = finishSession(state, action.nowISO);
+          // `live.programId` (not the nullable `activeProgramId`): inside the live guard it's a
+          // guaranteed string, and live is only ever created from a non-null active program.
           void postSession(getToken, {
             ...log,
             cursor: nextCursor,
-            activeProgramId: state.activeProgramId,
+            activeProgramId: state.live.programId,
           }).catch(warn);
         }
       } else if (action.type === 'HYDRATE_USER_STATE') {
@@ -107,8 +109,11 @@ export default function StateProvider({ children }: { children: ReactNode }) {
         }
       } else if (action.type === 'HYDRATE_PROGRAMS') {
         // Symmetric persist-after-normalize for the other landing order (preserved cursor).
+        // Null-guarded (014): a never-chose user must NOT be auto-PUT to the first program —
+        // `.some(p => p.id === null)` is false, so without the guard this branch would fire.
         if (
           state.userStateStatus === 'ready' &&
+          state.activeProgramId !== null &&
           action.programs.length > 0 &&
           !action.programs.some((p) => p.id === state.activeProgramId)
         ) {

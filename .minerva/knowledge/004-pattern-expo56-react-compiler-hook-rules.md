@@ -5,7 +5,8 @@
 - Work unit: 002-ui-component-library
 - Related: [[003-pattern-conforming-code-under-strict-guardrails]] (other code-author lint techniques),
   [[001-constraint-strict-eslint-guardrails]] (these rules also run at `--max-warnings 0`, so they
-  are errors, not advice)
+  are errors, not advice),
+  [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014)
 
 `eslint-config-expo@56` (the repo's base) bundles the modern, React-Compiler-aware `react-hooks`
 plugin, and this app runs with `experiments.reactCompiler: true` in `app.json`. Two of its rules are

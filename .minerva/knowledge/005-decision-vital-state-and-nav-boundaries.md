@@ -4,7 +4,8 @@
 - Date: 2026-05-31
 - Work unit: 002-ui-component-library
 - Related: [[004-pattern-expo56-react-compiler-hook-rules]] (the timer's compiler-safe
-  implementation), [[003-pattern-conforming-code-under-strict-guardrails]]
+  implementation), [[003-pattern-conforming-code-under-strict-guardrails]],
+  [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014)
 
 Two architectural choices made building VITAL's UI that future work should preserve (or
 consciously revisit), not rediscover.

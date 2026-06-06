@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from '@/components/AppText';
 import Button from '@/components/Button';
 import CornerCard from '@/components/CornerCard';
+import ProgramCard from '@/components/ProgramCard';
 import RowItem from '@/components/RowItem';
 import Screen from '@/components/Screen';
 import StatRow from '@/components/StatRow';
@@ -21,6 +22,46 @@ import { colors, space } from '@/theme';
 export default function TodayScreen() {
   const { state, dispatch } = useAppStore();
   const router = useRouter();
+
+  // First-run chooser (014): null = the user has never chosen a program. The fork sits between
+  // the hooks (order-safe) and the engine calls below — `getProgram` is the throwing trusted
+  // lookup, so the null branch must return before it. The render-gate guarantees a non-empty,
+  // ready catalog here (an empty catalog resolves to 'error', not 'ready').
+  if (state.activeProgramId === null) {
+    return (
+      <Screen>
+        {/* Same header row as the session view — the Account link must stay reachable on first
+            run (it is the only path to /account and Sign out). */}
+        <View style={styles.headerRow}>
+          <AppText variant="label" style={styles.eyebrow}>
+            {dateEyebrow(new Date())}
+          </AppText>
+          <TouchableOpacity onPress={() => router.push('/account')} accessibilityRole="button">
+            <AppText variant="backLink">Account</AppText>
+          </TouchableOpacity>
+        </View>
+        <AppText variant="screenTitle" style={styles.title}>
+          Choose your program
+        </AppText>
+        <AppText variant="body" style={styles.chooserBlurb}>
+          Pick a routine to train with — your next session will always be ready here.
+        </AppText>
+        <View style={styles.chooserList}>
+          {state.programs.map((program) => (
+            <ProgramCard
+              key={program.id}
+              program={program}
+              active={false}
+              onPress={() =>
+                router.push({ pathname: '/program/[id]', params: { id: program.id } })
+              }
+            />
+          ))}
+        </View>
+      </Screen>
+    );
+  }
+
   const program = getProgram(state.programs, state.activeProgramId);
   const dayIndex = state.cursor % program.days.length;
   const day = getNextWorkout(program, state.cursor);
@@ -91,6 +132,8 @@ const styles = StyleSheet.create({
     marginTop: space.lg,
   },
   eyebrow: {},
+  chooserBlurb: { marginTop: space.md },
+  chooserList: { marginTop: space.lg },
   title: { marginTop: space.sm },
   hero: { marginTop: space.lg },
   day: { marginTop: space.sm },

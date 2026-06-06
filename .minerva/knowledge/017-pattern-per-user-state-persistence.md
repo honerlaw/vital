@@ -9,7 +9,8 @@
   [[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] (the per-route auth all three
   endpoints ride), [[009-decision-postgres-node-pg-migrate]] (the migration discipline),
   [[004-pattern-expo56-react-compiler-hook-rules]] (the hook rules the client effects follow),
-  [[003-pattern-conforming-code-under-strict-guardrails]] (the multi-method route re-export shape)
+  [[003-pattern-conforming-code-under-strict-guardrails]] (the multi-method route re-export shape),
+  [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014)
 
 How VITAL persists `activeProgramId` / `cursor` / `history` per Clerk user so state survives
 restarts/reinstalls and follows the identity across devices — while the pure `useReducer` store
@@ -46,9 +47,11 @@ mirrors current client semantics; per-program cursors are an anticipated **addit
   re-fires itself. The user-state effect is **auth-keyed** (`isLoaded && isSignedIn && status
   === 'loading'`) so a cold launch never burns a retry on a guaranteed 401.
 - Hydration normalization is **symmetric**: whichever of catalog / user-state lands second
-  re-points an absent `activeProgramId` to the first program; normalization **preserves the
-  cursor** (only `SET_ACTIVE_PROGRAM` zeroes it). A null server id falls back to the first
-  program (catalog ready) or the default seed (not ready yet).
+  re-points a stale **non-null** `activeProgramId` to the first program; normalization
+  **preserves the cursor** (only `SET_ACTIVE_PROGRAM` zeroes it).
+  > ⚠ Superseded by [[019-pattern-null-active-program-first-run]] (014): a **null** server id no
+  > longer falls back to the first program / default seed — null means "never chose" and survives
+  > hydration so the Today chooser shows. Only stale non-null ids converge.
 - `RESET_USER_STATE` on sign-out clears exactly the five per-user fields (incl. `live` — a
   mid-workout sign-out must not leak a session to the next account), leaves catalog fields, and
   returns the **same state reference** when there is nothing to reset (React bailout, so the

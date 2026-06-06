@@ -15,11 +15,21 @@ import { reducer } from '@/state/reducer';
 import { SAMPLE_PROGRAMS } from '@/test-support/programs';
 
 void test('HYDRATE_PROGRAMS with a non-empty catalog becomes ready, keeps a present id', () => {
-  const next = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const chosen: AppState = { ...DEFAULT_STATE, activeProgramId: 'bbr' };
+  const next = reducer(chosen, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   assert.equal(next.programsStatus, 'ready');
   assert.equal(next.programs.length, SAMPLE_PROGRAMS.length);
-  // DEFAULT_STATE.activeProgramId 'bbr' is present in the catalog → unchanged.
+  // 'bbr' is present in the catalog → unchanged.
   assert.equal(next.activeProgramId, 'bbr');
+});
+
+void test('HYDRATE_PROGRAMS keeps a null active id null (never-chose → chooser)', () => {
+  // DEFAULT_STATE.activeProgramId is null. `.some(p => p.id === null)` is false, so without the
+  // explicit null special-case the reducer would silently re-point to programs[0] — the exact
+  // silent-enrollment bug 014 removes.
+  const next = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  assert.equal(next.programsStatus, 'ready');
+  assert.equal(next.activeProgramId, null);
 });
 
 void test('HYDRATE_PROGRAMS normalizes an absent active id to the first program', () => {
@@ -94,18 +104,22 @@ void test('HYDRATE_USER_STATE before the catalog: raw id stored, later HYDRATE n
   assert.equal(then.cursor, 1);
 });
 
-void test('HYDRATE_USER_STATE null id: first program when ready, default seed when not', () => {
+void test('HYDRATE_USER_STATE null id stays null in BOTH landing orders (014)', () => {
+  // null = the user never chose (server no-row signal); it must survive hydration untouched so
+  // the Today chooser shows. Only a STALE non-null id re-points (the user already chose once).
   const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   const a = reducer(ready, {
     type: 'HYDRATE_USER_STATE',
     payload: { activeProgramId: null, cursor: 0, history: [] },
   });
-  assert.equal(a.activeProgramId, SAMPLE_PROGRAMS[0].id);
+  assert.equal(a.activeProgramId, null); // catalog first, user state second
   const b = reducer(DEFAULT_STATE, {
     type: 'HYDRATE_USER_STATE',
     payload: { activeProgramId: null, cursor: 0, history: [] },
   });
-  assert.equal(b.activeProgramId, DEFAULT_STATE.activeProgramId);
+  assert.equal(b.activeProgramId, null); // user state first…
+  const c = reducer(b, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  assert.equal(c.activeProgramId, null); // …catalog second: still null
 });
 
 void test('RESET_USER_STATE resets the five per-user fields, leaves the catalog alone', () => {
@@ -122,7 +136,7 @@ void test('RESET_USER_STATE resets the five per-user fields, leaves the catalog 
   });
   const started = reducer(hydrated, { type: 'START_WORKOUT', dayIndex: 0 });
   const reset = reducer(started, { type: 'RESET_USER_STATE' });
-  assert.equal(reset.activeProgramId, DEFAULT_STATE.activeProgramId);
+  assert.equal(reset.activeProgramId, null); // back to never-chose — the next account must be asked
   assert.equal(reset.cursor, 0);
   assert.equal(reset.history.length, 0);
   assert.equal(reset.live, null);
@@ -150,8 +164,17 @@ void test('RETRY_HYDRATE resets ONLY the statuses currently in error', () => {
   assert.equal(retriedB.userStateStatus, 'loading');
 });
 
-void test('FINISH_WORKOUT uses the injected nowISO for the history entry', () => {
+void test('START_WORKOUT is a no-op while no program is chosen (reducer contract, 014)', () => {
+  // Unreachable via UI (the chooser replaces every Begin affordance while null) but load-bearing
+  // for the type system and for finishSession's safety: live only exists after a non-null start.
   const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  assert.equal(ready.activeProgramId, null);
+  assert.equal(reducer(ready, { type: 'START_WORKOUT', dayIndex: 0 }), ready);
+});
+
+void test('FINISH_WORKOUT uses the injected nowISO for the history entry', () => {
+  const hydrated = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const ready = reducer(hydrated, { type: 'SET_ACTIVE_PROGRAM', id: 'bbr' });
   const started = reducer(ready, { type: 'START_WORKOUT', dayIndex: 0 });
   const finished = reducer(started, {
     type: 'FINISH_WORKOUT',
