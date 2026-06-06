@@ -33,6 +33,8 @@ yarn-error.*
 # local env files
 .env
 .env*.local
+# transient Doppler→EAS sync file (written and removed by .github/workflows/release-ios.yml)
+.env.eas
 
 # typescript
 *.tsbuildinfo

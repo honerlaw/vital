@@ -1,12 +1,14 @@
-# On every push to main, build the iOS app on EAS (production profile, production
-# EAS environment variables) and submit the resulting binary to App Store Connect.
+# Builds the iOS app on EAS (production profile, production EAS environment
+# variables) and submits the resulting binary to App Store Connect.
+# NOT push-triggered on EAS: GitHub Actions (.github/workflows/release-ios.yml)
+# triggers this via `eas workflow:run` after syncing env vars from Doppler, so the
+# EAS environment is always up to date before the build starts.
 # Prerequisites (one-time, manual) are documented in docs/ios-release.md — until they
 # are completed, runs of this workflow are expected to fail.
 name: Build and submit iOS
 
 on:
-  push:
-    branches: ['main']
+  workflow_dispatch: {}
 
 jobs:
   build_ios:
