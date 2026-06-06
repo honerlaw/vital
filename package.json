@@ -5,7 +5,7 @@
   "//db": "pg, @types/pg, and node-pg-migrate are REGULAR dependencies (not devDependencies) on purpose: the production migrate job (.do/app.yaml PRE_DEPLOY) builds under NODE_ENV=production, which prunes devDeps, so the migration runner and the API routes' typed pg access must survive pruning. See docs/database.md.",
   "dependencies": {
     "@clerk/backend": "^3.4.14",
-    "@clerk/expo": "^3.3.0",
+    "@clerk/expo": "^3.3.1",
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
@@ -52,8 +52,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint . --max-warnings 0",
     "lint:rules-test": "node --test eslint-rules/*.test.js",
