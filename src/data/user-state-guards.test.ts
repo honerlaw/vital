@@ -28,10 +28,15 @@ void test('isSessionLogArray accepts [] and valid arrays, rejects one bad elemen
   assert.equal(isSessionLogArray('not-an-array'), false);
 });
 
-void test('isCursorMap accepts maps and {}, rejects non-number values and arrays (015)', () => {
+void test('isCursorMap accepts non-negative-integer maps, rejects everything else (015)', () => {
   assert.equal(isCursorMap({}), true);
   assert.equal(isCursorMap({ bbr: 3, gzclp: 0 }), true);
+  assert.equal(isCursorMap({ bbr: 100000 }), true); // large integers fine
   assert.equal(isCursorMap({ bbr: 'x' }), false);
+  // Day-index discipline: NaN, floats, and negatives must not reach `% days.length`.
+  assert.equal(isCursorMap({ bbr: NaN }), false);
+  assert.equal(isCursorMap({ bbr: 3.7 }), false);
+  assert.equal(isCursorMap({ bbr: -1 }), false);
   assert.equal(isCursorMap([3]), false);
   assert.equal(isCursorMap(null), false);
   assert.equal(isCursorMap(3), false);

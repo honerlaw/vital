@@ -56,3 +56,30 @@
   resumes + records switchedFrom + in-catalog guard; cancel reverts vs plain cancel;
   finishSession advances own key only). `tsc --noEmit` clean. `eslint --max-warnings 0`
   clean.
+
+## Panel decisions 2026-06-06 (cont.)
+
+- [3/3 accept] completion verification: all three agents independently re-ran the gates
+  (45/45, tsc, lint) and read the load-bearing assertions + SQL param indexing; SC#3's
+  partial-E2E scoping ruled honest disclosure (the only test-unproven seam — StateProvider
+  PUT-arg forwarding — was read directly and is correct). Nits logged: switchedFrom
+  recorded unconditionally (sole caller's !active branch prevents self-reference); one
+  weak assertion line in the ad-hoc finishSession test.
+
+## Panel decisions 2026-06-06 (review)
+
+- [2/3 accept (quorum met at 2 accepts; arbiter not convened)] review triage: F1 FIX
+  (isCursorMap → non-negative integers; closes F2/F3 via the shared guard), F4 FIX
+  (reducer same-id SWITCH no-op — double-tap clobbered switchedFrom), F5 IGNORE
+  (FINISH+CANCEL same-tick: two distinct controls, no UI path, reducer sequential-safe),
+  F6 FIX (explicit 400 when a carried `cursors` fails the guard — no silent legacy
+  fall-through; cannot hit a shipped client: new sends cursors-only, old cursor-only).
+  Skeptic verified the tightened guard rejects no server-written or test value.
+
+## Review finding 2026-06-06
+
+- IGNORE (theoretical, documented): if FINISH_WORKOUT and CANCEL_WORKOUT were ever
+  dispatched in one tick, both persist closures would capture the same pre-reduce state
+  and the CANCEL arm could PUT switchedFrom for a finished session. No UI path exists
+  (Finish button vs Cancel BackLink; live nulls after either). Revisit only if a
+  composite handler ever emits both.

@@ -43,10 +43,15 @@ export async function PUT(request: Request): Promise<Response> {
   ) {
     return Response.json({ error: 'Invalid body' }, { status: 400 });
   }
-  // Map shape first (new clients), legacy scalar second (pre-015 builds), else 400.
+  // Map shape first (new clients), legacy scalar second (pre-015 builds), else 400. A body
+  // that CARRIES `cursors` but fails the guard 400s explicitly — it must not silently fall
+  // through to the legacy arm on a coincidentally-valid `cursor` field.
   let statement: string;
   let params: unknown[];
-  if ('cursors' in body && isCursorMap(body.cursors)) {
+  if ('cursors' in body) {
+    if (!isCursorMap(body.cursors)) {
+      return Response.json({ error: 'Invalid body' }, { status: 400 });
+    }
     statement = UPSERT_STATE_MAP;
     params = [auth.userId, body.activeProgramId, JSON.stringify(body.cursors)];
   } else if ('cursor' in body && typeof body.cursor === 'number') {

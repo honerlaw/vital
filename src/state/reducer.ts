@@ -131,6 +131,10 @@ export const reducer = (state: AppState, action: Action): AppState => {
       // correctness depended on event-handler batching. Same in-catalog guard as
       // SET_ACTIVE_PROGRAM; resumes the target program's own position (missing key = day 0) and
       // records the previous id on the session so CANCEL can revert the committed switch.
+      // Same-id no-op: only reachable via a double-tap race (the detail screen dispatches this
+      // from the !active branch) — without it the second dispatch would clobber `switchedFrom`
+      // with the just-switched id and CANCEL would "revert" forward.
+      if (action.id === state.activeProgramId) return state;
       if (!state.programs.some((p) => p.id === action.id)) return state;
       const program = getProgram(state.programs, action.id);
       const dayIndex = (state.cursors[action.id] ?? 0) % program.days.length;
