@@ -1,0 +1,92 @@
+# On every push to main: sync EXPO_PUBLIC_ env vars from Doppler (prd config) into the
+# EAS "production" environment, then trigger the EAS workflow that builds the iOS app
+# and submits it to App Store Connect. Doppler stays the single source of truth for
+# env vars; EAS values are overwritten from Doppler immediately before every build.
+# Upsert-only: keys REMOVED from Doppler are NOT auto-deleted from EAS — prune those
+# manually with `eas env:delete`, or the stale value keeps shipping in client bundles.
+#
+# `eas workflow:run` packages and uploads this checkout, so the EAS GitHub app
+# integration is NOT required. Required GitHub repo secrets (see docs/ios-release.md):
+#   EXPO_TOKEN    — EAS access token (expo.dev → account settings → Access tokens)
+#   DOPPLER_TOKEN — read-only Doppler service token scoped to the vital/prd config
+#
+# A green run here means "env synced + EAS workflow queued" — NOT that the build or
+# App Store submission succeeded. EAS's own build-failure notifications (email) are
+# the red signal for those; `eas workflow:run --wait` could gate this job on the
+# result instead, at the cost of ~30-40 idle runner minutes per merge.
+name: Release iOS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# Serialize the GH-side sync+trigger runs (never cancel one mid-flight). Note this does
+# NOT serialize the EAS builds themselves — `eas workflow:run` is fire-and-forget, so
+# rapid merges can overlap on EAS. That is safe: build numbers auto-increment remotely.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Sync env and trigger EAS build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # eas-cli needs the project's dependencies to resolve the app config.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@^20
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v4
+
+      # The service token pins the project/config, so no -p/-c flags are needed.
+      # Only EXPO_PUBLIC_ vars are mirrored — server-side secrets in the prd config
+      # (database URL, Clerk secret key, …) must never reach the client bundle.
+      # The trap guarantees .env.eas is gone before `eas workflow:run` uploads the
+      # checkout, even when env:push fails (it is also gitignored as a second fence).
+      - name: Sync EXPO_PUBLIC_ env vars from Doppler to EAS
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          trap 'rm -f .env.eas' EXIT
+          # Download separately from filtering so a Doppler failure (bad/unscoped token,
+          # outage) reports its real cause instead of masquerading as missing keys.
+          if ! env_dump="$(doppler secrets download --no-file --format env)"; then
+            echo '::error::Failed to download secrets from Doppler — check that DOPPLER_TOKEN is a valid service token scoped to the prd config.' >&2
+            exit 1
+          fi
+          # Line-based filter: assumes single-line values. A multiline EXPO_PUBLIC_
+          # value (e.g. PEM) would be silently truncated — switch to a real parser then.
+          printf '%s\n' "$env_dump" | grep '^EXPO_PUBLIC_' > .env.eas || true
+          unset env_dump
+          # A blank Clerk key or API URL still builds green but ships a dead-on-arrival
+          # binary, so require the two keys the app cannot run without.
+          for key in EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY EXPO_PUBLIC_API_URL; do
+            if ! grep -q "^${key}=" .env.eas; then
+              echo "::error::${key} is missing from the Doppler prd config — the build would produce a dead-on-arrival binary." >&2
+              exit 1
+            fi
+          done
+          eas env:push production --path .env.eas --force
+
+      - name: Trigger EAS build & submit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas workflow:run .eas/workflows/build-and-submit-ios.yml --non-interactive

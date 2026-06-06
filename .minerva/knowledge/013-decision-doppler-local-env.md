@@ -11,7 +11,8 @@
   [[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] (the `CLERK_*` / `EXPO_PUBLIC_*`
   secrets this also sources),
   [[018-decision-eas-ios-release-workflow]] (EAS builds can't see Doppler — production
-  EXPO_PUBLIC_* values live separately as EAS environment variables)
+  EXPO_PUBLIC_* values live separately as EAS environment variables, now auto-mirrored
+  from Doppler prd on every release by [[021-decision-gh-actions-ios-release-orchestration]])
 
 Local development sources **every** environment variable from **Doppler via the Doppler CLI**
 (`doppler run -- <cmd>`); production keeps using Doppler's **native DigitalOcean App Platform

@@ -1,9 +1,30 @@
-# iOS release automation (EAS Workflows)
+# iOS release automation (GitHub Actions → EAS Workflows)
 
-Every push to `main` triggers `.eas/workflows/build-and-submit-ios.yml` on EAS
-infrastructure: a production iOS build, then submission of that binary to App Store
-Connect. There is no GitHub Actions involvement and no GitHub secret — EAS runs the
-workflow itself via its GitHub app integration.
+Every push to `main` triggers `.github/workflows/release-ios.yml` on GitHub Actions,
+which does two things in order:
+
+1. **Syncs env vars from Doppler to EAS** — downloads the `EXPO_PUBLIC_*` vars from the
+   Doppler `prd` config and pushes them into the EAS `production` environment
+   (`eas env:push`). Doppler stays the single source of truth; EAS values are
+   overwritten from Doppler immediately before every build. Server-side secrets in the
+   prd config are filtered out and never reach EAS.
+
+   **The sync is upsert-only.** A key *removed* (or renamed) in Doppler is **not**
+   auto-deleted from EAS — the stale value persists and keeps being inlined into every
+   client bundle, silently. After removing or renaming an `EXPO_PUBLIC_*` var in
+   Doppler, prune the old key manually: `eas env:delete production --variable-name <key>`.
+2. **Triggers the EAS workflow** — runs `.eas/workflows/build-and-submit-ios.yml` via
+   `eas workflow:run`, which uploads the checkout to EAS infrastructure: a production
+   iOS build, then submission of that binary to App Store Connect. Because the checkout
+   is uploaded directly, the EAS GitHub app integration is **not** required.
+
+   **A green "Release iOS" run means the EAS workflow was queued, not that the release
+   succeeded.** The trigger is fire-and-forget: a failed EAS build or App Store
+   submission never turns anything red in GitHub. The red signal for those is EAS's
+   own build-failure notifications (email) and the
+   [EAS workflows dashboard](https://expo.dev/accounts/onerlawllc/projects/vital/workflows).
+   If a build-gating GitHub status ever becomes worth ~30-40 idle runner minutes per
+   merge, switch the trigger step to `eas workflow:run --wait`.
 
 ## What "submit" means here
 
@@ -24,29 +45,36 @@ supersede one already in review. At single-developer cadence this is a non-issue
 
 ## One-time manual setup (required before the workflow can succeed)
 
-Until ALL of these are done, every push to `main` produces a **failing workflow
-run**. That first red run is expected — it is not a regression.
+Until ALL of these are done, every push to `main` produces a **failing run** — in
+GitHub Actions if the secrets (step 2) are missing, otherwise in the EAS workflow it
+triggers. That first red run is expected — it is not a regression.
 
 1. **Apple Developer Program membership** — an active (paid) membership for the
    Apple account that will own the app.
 
-2. **Link the GitHub repo to the EAS project** — at
-   [expo.dev](https://expo.dev/accounts/onerlawllc/projects/vital) → project →
-   GitHub settings, install/authorize the EAS GitHub app for this repository.
-   Without this, push triggers never fire at all.
+2. **Create the two GitHub repo secrets** (repo → Settings → Secrets and variables →
+   Actions). Without these, the `Release iOS` GitHub Actions run fails before
+   reaching EAS:
 
-3. **Create production EAS environment variables** — the app inlines these at
-   bundle build time; EAS build machines cannot see Doppler or DigitalOcean env:
+   - `EXPO_TOKEN` — an EAS access token, created at
+     [expo.dev → account settings → Access tokens](https://expo.dev/settings/access-tokens).
+   - `DOPPLER_TOKEN` — a **read-only Doppler service token** scoped to the `vital`
+     project's `prd` config (Doppler dashboard → vital → prd → Access → Service
+     Tokens).
 
-   ```sh
-   eas env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value <production Clerk publishable key>
-   eas env:create --environment production --name EXPO_PUBLIC_API_URL --value <DigitalOcean app origin, e.g. https://…ondigitalocean.app>
-   ```
+3. **Add the production client env vars to the Doppler `prd` config** — the app
+   inlines these at bundle build time; the workflow mirrors every `EXPO_PUBLIC_*`
+   var from Doppler into EAS before each build:
+
+   - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — production Clerk publishable key
+   - `EXPO_PUBLIC_API_URL` — DigitalOcean app origin, e.g. `https://…ondigitalocean.app`
 
    **Skipping this ships a dead-on-arrival binary**: a blank Clerk key makes
    `ClerkProvider` error at launch, and a blank API URL leaves native clients with a
-   relative origin (every API call fails). The build itself still goes green — the
-   failure only shows up in the running app.
+   relative origin (every API call fails). The GitHub Actions run fails loudly if
+   either of these two required vars is missing from prd; any additional
+   `EXPO_PUBLIC_*` vars added later are synced automatically but not individually
+   asserted.
 
 4. **Provision iOS credentials with one interactive build** —
 
