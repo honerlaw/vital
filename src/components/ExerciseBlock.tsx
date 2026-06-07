@@ -10,21 +10,26 @@ interface Props {
   name: string;
   scheme: string;
   sets: SetEntry[];
+  /** Last logged weight for this exercise from history (024) — the chain's lowest rung. */
+  historyWeight: number | null;
   onPatch: (si: number, patch: SetPatch) => void;
 }
 
-export default function ExerciseBlock({ name, scheme, sets, onPatch }: Props) {
-  // Both fallbacks are non-authoritative prefills (022): reps from the scheme's parsed
-  // per-set target; weight from the nearest PRIOR committed set in this exercise (straight
-  // sets fill forward as you log). They render as placeholders and commit only at done-toggle
-  // with the field blank — committed values are never rewritten by other rows.
+export default function ExerciseBlock({ name, scheme, sets, historyWeight, onPatch }: Props) {
+  // All fallbacks are non-authoritative prefills (022/024): reps from the scheme's parsed
+  // per-set target; weight from the nearest PRIOR set in this exercise (straight sets fill
+  // forward as you log), falling back to the last logged weight in history (024). The chain
+  // coalesces HERE — SetRow keeps its single weightFallback prop. The two rungs qualify
+  // differently on purpose: in-session inherits any typed weight (freshest signal, committed
+  // or not), while history trusts only done sets (028). Placeholders commit only at
+  // done-toggle with the field blank — committed values are never rewritten by other rows.
   const repsFallback = parseSchemeReps(scheme);
   const priorWeight = (si: number): number | null => {
     const prior = sets
       .slice(0, si)
       .reverse()
       .find((e) => e.weight !== null);
-    return prior ? prior.weight : null;
+    return prior ? prior.weight : historyWeight;
   };
   return (
     <View style={styles.block}>

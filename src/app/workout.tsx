@@ -8,7 +8,7 @@ import ProgressBar from '@/components/ProgressBar';
 import RestTimerBar from '@/components/RestTimerBar';
 import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
-import { getProgram, sessionProgress } from '@/data/engine';
+import { getProgram, lastLoggedWeight, sessionProgress } from '@/data/engine';
 import { type SetPatch } from '@/data/engine/updateSet';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { bootStatus } from '@/state/boot-status';
@@ -90,6 +90,10 @@ export default function WorkoutScreen() {
   const program = getProgram(state.programs, live.programId);
   const day = program.days[live.dayIndex];
   const progress = sessionProgress(live);
+  // Cross-session weight prefill (024): the chain's lowest rung, per exercise. Plain
+  // derivation per house style — the React Compiler memoizes it (history and the day's
+  // exercises are stable for the whole session, so this is effectively computed once).
+  const historyWeights = day.exercises.map((ex) => lastLoggedWeight(state.history, ex.name));
 
   const onPatch = (ei: number, si: number, patch: SetPatch) => {
     // All coercion happens in the pure engine (022); this handler only forwards the patch
@@ -122,6 +126,7 @@ export default function WorkoutScreen() {
               name={ex.name}
               scheme={ex.scheme}
               sets={live.sets[ei]}
+              historyWeight={historyWeights[ei]}
               onPatch={(si, patch) => onPatch(ei, si, patch)}
             />
           ))}
