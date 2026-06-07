@@ -5,7 +5,9 @@
 - Work unit: 007-postgres-migrations
 - Related: [[009-decision-postgres-node-pg-migrate]] (the tooling), 
   [[006-decision-digitalocean-app-platform-hosting]] (the substrate),
-  [[007-pattern-expo-router-server-self-host]] (the buildpack/devDep-pruning facts)
+  [[007-pattern-expo-router-server-self-host]] (the buildpack/devDep-pruning facts),
+  [[028-pattern-per-set-log-tracking]] (the set_log migration; source of the local-verification
+  addendum below)
 - Superseded in part by [[013-decision-doppler-local-env]] (work 008): the "Buildpack Node major /
   `--env-file-if-exists` needs Node ≥ 20.12" caveat below is obsolete — that flag was removed. The
   rest of the PRE_DEPLOY pattern stands. True record *as of work 007*.
@@ -63,3 +65,13 @@ not, and must be confirmed on the first real deploy (same boundary as
   > removed, so this Node-version caveat no longer applies. `DATABASE_URL` comes from `process.env`
   > (native integration); the `scripts/check-database-url.js` guard now fronts the job's `up`.
 - Operator escape hatch: `doctl apps run <app-id> --component migrate -- npm run migrate`.
+
+## Addendum (022): verifying a migration locally without the managed DB
+
+Agent-driven runs cannot exercise `doppler run -- npm run migrate` — the permission classifier
+(rightly) denies it because the doppler config could resolve to the managed/production DB. The
+working alternative: spin a throwaway container (`docker run --rm -d -e POSTGRES_PASSWORD=… -p
+<freeport>:5432 postgres:16-alpine`), point `DATABASE_URL` at it explicitly, and run the full
+chain up → down → up, verifying the column/default via `\d`. This checks reversibility against
+a real Postgres without ever touching a shared database. (The local compose DB is NOT a
+substitute when its fixed port 5432 is occupied by another project's container.)

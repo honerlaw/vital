@@ -2,10 +2,11 @@
 
 ## Status
 
-Approved (2026-06-07) via `minerva:propose-ship-auto` consensus panels — scope 3/3 (vote 2),
+Implemented — review complete; PR pending (`minerva:ship` flips this to Shipped on merge).
+Approved 2026-06-07 via `minerva:propose-ship-auto` consensus panels — scope 3/3 (vote 2),
 approach 3/3 (vote 2), whole-proposal escalated once (client-guard failure semantics; user chose
-symmetric degrade). `minerva:work` flips nothing here; `minerva:ship` flips this to Shipped on
-merge.
+symmetric degrade); completion verified 3/3. Approach below reconciled to shipped reality at
+promote.
 
 ## Goal
 
@@ -63,18 +64,24 @@ and no action resizes it (stated invariant). Mirror determinism preserved
 pure function with identical args; the EXISTING determinism test is REWRITTEN to the new `sets`
 fixture shape (same deepEqual property, not weakened).
 
-### UI (workout)
+### UI (workout) — as built
 
-Per-set row component (NEW FILE, replaces SetChip; one-component-per-file lint budgeted): set
-label, weight input, reps input, done toggle; numeric keyboards. Prefill is a one-time
-non-authoritative seed per row — weight from prior set in same exercise; reps from shared pure
-`parseSchemeReps(scheme)`. **The scheme separator is U+00D7 `×` (NOT ASCII `x`) — the parser
-must match the Unicode codepoint.** Full live vocabulary (from the migration seed, the runtime
-catalog source) and expected parses: `1×5`→5, `3×5`→5, `4×5`→5, `5×5`→5, `3×10`→10, `3×15`→15,
-`5×15`→15, `1×5+`→5, `3×5+`→5, `5×3+`→3 (AMRAP floor), `3×8-12`→8, `4×8-12`→8, `5×8-12`→8
-(range floor), `5/3/1`→blank, `8 sets`→blank, `9 sets`→blank. Typed values never clamped (15
-over "5+" stays 15); edits never cascade; done with blanks allowed; progress/Finish gate keep
-keying off `done`.
+Per-set row component `SetRow.tsx` (replaced SetChip): set label, weight input, reps input,
+done toggle; numeric keyboards. Prefill is realized as **placeholder + commit-on-toggle** (not
+the drafted mount-time text seed — all rows mount at session start, before any weight exists to
+inherit): fallbacks (weight from the nearest prior committed set in the exercise; reps from
+shared pure `parseSchemeReps(scheme)`) render as placeholders and a blank field commits its
+fallback ONLY on the pending→done toggle. **Un-toggling patches only `{done:false}`** so a
+deliberately cleared field is never resurrected (review fix #1). **The scheme separator is
+U+00D7 `×` (NOT ASCII `x`) — the parser must match the Unicode codepoint.** Full live
+vocabulary (from the migration seed, the runtime catalog source) and expected parses: `1×5`→5,
+`3×5`→5, `4×5`→5, `5×5`→5, `3×10`→10, `3×15`→15, `5×15`→15, `1×5+`→5, `3×5+`→5, `5×3+`→3
+(AMRAP floor), `3×8-12`→8, `4×8-12`→8, `5×8-12`→8 (range floor), `5/3/1`→blank, `8 sets`→blank,
+`9 sets`→blank. Typed values never clamped (15 over "5+" stays 15); edits never cascade; done
+with blanks allowed; progress/Finish gate keep keying off `done`. `Screen`'s ScrollView gained
+`keyboardShouldPersistTaps="handled"` so the toggle fires on first tap with the keyboard up.
+Accepted v1 bound: inputs hold local text, so engine-rejected junk (pasted "12.5.5" → stored
+null) can transiently display while null is stored — data safe, self-corrects on remount.
 
 ### UI (history)
 
@@ -82,21 +89,26 @@ HistoryRow becomes tappable to expand; the expanded per-exercise set list is a N
 file (lint: no-multi-comp). Shows `weight × reps` per done set, planned-only sets dimmed;
 sessions without set data render exactly as today.
 
-### Write path
+### Write path — as built
 
-Migration adds `set_log jsonb NOT NULL DEFAULT '[]'` to `workout_sessions` (down drops;
-lossy-acceptable). `POST /api/me/sessions` body gains optional `exercises` + `unit`; the
-single-statement atomic data-modifying CTE ([[014-pattern-server-pg-access-expo-routes]]) gains
-one column/param. Validator: absent → accept (old clients); present-but-malformed
-(null/non-array/NaN/Infinity/negative/wrong shape) → explicit 400 via the shared guard, never
-silent fall-through. **Deliberate asymmetry: strict writer (400 at the door), tolerant reader
-(degrade on legacy/corrupt rows).**
+Migration adds `set_log jsonb NOT NULL DEFAULT '{}'::jsonb` to `workout_sessions` (down drops;
+lossy-acceptable), storing the **wrapper object `{"unit":"lb","exercises":[...]}`** — the
+drafted bare-array/`'[]'` shape had no home for `unit`, which would have defeated the unit
+pin's purpose (self-describing rows, no future backfill); `'{}'`/empty exercises read as "no
+per-set data". `POST /api/me/sessions` body gains optional `exercises` + `unit` (both travel
+together or neither); the single-statement atomic data-modifying CTE
+([[014-pattern-server-pg-access-expo-routes]]) gains one column/param. Validator: absent →
+accept (old clients); present-but-malformed (null/non-array/NaN/Infinity/negative/wrong shape)
+→ explicit 400 via the shared guard, never silent fall-through. The route **re-projects to the
+known shape before stringifying** (review fix #3 — guards validate, they don't strip; without
+re-projection client-attached extras would persist into append-only history). **Deliberate
+asymmetry: strict writer (400 at the door), tolerant reader (degrade on legacy/corrupt rows).**
 
 ### Read path (degrade symmetrically — user-decided at escalation)
 
 - Server: `me-state-get.ts` `SELECT_SESSIONS` adds the `set_log` column; `rowToSessionLog`
   parses it BEST-EFFORT — guard failure → `console.error` + return the log WITHOUT `exercises`,
-  never throw (`'[]'` → field omitted: "no per-set data", not "empty workout"). Docstring
+  never throw (`'{}'`/empty → field omitted: "no per-set data", not "empty workout"). Docstring
   justification: core columns keep throw-semantics (absence is server corruption); `set_log` is
   optional client-supplied data whose corruption must not brick History/boot.
 - Client: the hydration guard DEGRADES the same way — a present-but-malformed `exercises`/`unit`
@@ -120,7 +132,7 @@ client hydration sanitizer (attach-on-valid), server row mapper (best-effort), P
    set; no cascade on edit.
 3. Finish persists `exercises` + `unit:'lb'` atomically with the session row (single-statement
    CTE); POST validator absent→accept / malformed→400 via the shared guard.
-4. History hydration returns `exercises` for new sessions; legacy rows (`'[]'`/absent) hydrate
+4. History hydration returns `exercises` for new sessions; legacy rows (`'{}'`/absent) hydrate
    without the field; malformed `set_log` drops the field on BOTH boundaries (server mapper
    console.error + client sanitizer) and never 500s / never bricks boot.
 5. History UI: expandable row shows per-set `weight × reps` where data exists; sessions without

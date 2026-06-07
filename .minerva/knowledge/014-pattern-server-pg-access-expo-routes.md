@@ -8,7 +8,9 @@
   `server.js` process this must survive within), [[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]
   (the public-vs-`requireAuth` per-route choice), [[012-pattern-src-unit-tests-node-tsx]] /
   [[008-pattern-dynamic-app-config-strict-lint]] (the `unknown`+`typeof` narrowing reused here).,
-  [[020-pattern-per-program-cursors]] (the jsonb cursor-map merges that extend the CTE technique, 015)
+  [[020-pattern-per-program-cursors]] (the jsonb cursor-map merges that extend the CTE technique, 015),
+  [[028-pattern-per-set-log-tracking]] (the set_log jsonb column that joined the CTE as one more
+  param, 022)
 
 VITAL's **first runtime DB read path** (009 stood up the migrate pipeline only; this added the
 data-access layer). How an Expo Router `+api.ts` route reads Postgres under the strict guardrails

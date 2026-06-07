@@ -13,7 +13,9 @@
   [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014),
   [[020-pattern-per-program-cursors]] (the per-program cursor map that replaced the scalar, 015),
   [[027-pattern-native-stack-headers-pushed-screens]] (a consumer-side consequence of the
-  `[state]`-memoized wrapped dispatch: handler effects keyed on it re-subscribe per dispatch)
+  `[state]`-memoized wrapped dispatch: handler effects keyed on it re-subscribe per dispatch),
+  [[028-pattern-per-set-log-tracking]] (per-set weight/reps log, 022 — extends this history
+  model with a set_log jsonb column and adds both-boundary degrade for the optional field)
 
 How VITAL persists `activeProgramId` / `cursors` / `history` per Clerk user so state survives
 restarts/reinstalls and follows the identity across devices — while the pure `useReducer` store
