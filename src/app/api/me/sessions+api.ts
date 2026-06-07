@@ -76,7 +76,18 @@ export async function POST(request: Request): Promise<Response> {
     ) {
       return Response.json({ error: 'Invalid body' }, { status: 400 });
     }
-    setLogJson = JSON.stringify({ unit: body.unit, exercises: body.exercises });
+    // Re-project to the known shape before persisting (review finding #3): the guards
+    // validate required fields but don't strip extras, and set_log is append-only — without
+    // this, arbitrary client-attached keys would land in history verbatim. Mirrors the
+    // read-side sanitizer's rebuild-from-known-fields discipline.
+    setLogJson = JSON.stringify({
+      unit: body.unit,
+      exercises: body.exercises.map((ex) => ({
+        name: ex.name,
+        scheme: ex.scheme,
+        sets: ex.sets.map((s) => ({ done: s.done, weight: s.weight, reps: s.reps })),
+      })),
+    });
   }
   try {
     await query(INSERT_SESSION_AND_CURSOR, [

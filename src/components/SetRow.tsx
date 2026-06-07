@@ -39,13 +39,19 @@ export default function SetRow({ index, entry, weightFallback, repsFallback, onP
     onPatch({ reps: t === '' ? null : Number(t) });
   };
   const onToggle = () => {
-    // Commit-on-toggle: a blank field records its fallback (the visible placeholder), and the
-    // input is filled in so the row shows exactly what was logged.
+    // Un-toggling only flips `done` — committed values stay as typed, and a deliberately
+    // cleared field must NOT be resurrected from its fallback (review finding #1).
+    if (entry.done) {
+      onPatch({ done: false });
+      return;
+    }
+    // Commit-on-toggle (pending→done only): a blank field records its fallback (the visible
+    // placeholder), and the input is filled in so the row shows exactly what was logged.
     const weight = weightText === '' ? weightFallback : Number(weightText);
     const reps = repsText === '' ? repsFallback : Number(repsText);
     if (weightText === '' && weightFallback !== null) setWeightText(String(weightFallback));
     if (repsText === '' && repsFallback !== null) setRepsText(String(repsFallback));
-    onPatch({ done: !entry.done, weight, reps });
+    onPatch({ done: true, weight, reps });
   };
 
   return (
