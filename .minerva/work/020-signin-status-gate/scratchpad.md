@@ -25,3 +25,29 @@
   specifically; import SignInStatus from the future-resource types (not
   @clerk/backend); read status/factors only after the call resolves;
   needs_client_trust recovery is best-effort
+
+## Implementation log 2026-06-06
+
+- Types derived from the hook (`ReturnType<typeof useSignIn>['signIn']`) instead of
+  importing `@clerk/shared/types` directly — app code only ever imports `@clerk/expo`,
+  and the derived union is identical (6 members) while staying version-proof and
+  avoiding a transitive-dep import.
+- Exhaustiveness mechanism: explicit `SignInNextStep` return type + no default arm —
+  a missing case fails tsc ("lacks ending return statement") with no `never` cast
+  needed, satisfying assertionStyle 'never'.
+- `finalize()` returns `{ error }` too (typed) — handled at all 4 call sites rather
+  than fire-and-forget.
+- Gates green: lint ✓ typecheck ✓ test ✓ (51 pass, 6 new). Grep confirms all
+  finalize() call sites gated (sign-in via helper kind, forgot-password/sign-up via
+  status === 'complete').
+
+## Panel decisions 2026-06-06 (work phase)
+
+- [3/3 accept] completion verification: both panelists re-ran the gates
+  independently; Arbiter mutation-tested the fence (mapping needs_new_password to
+  finalize → property test FAILS; deleting a switch case → TS2366 compile error
+  under strict alone, no noImplicitReturns needed). Logged low concerns: proposal
+  prose said "never-typed fallthrough" but exhaustiveness is via explicit return
+  type + closed switch (cosmetic drift); SC#3's grep is performed manually, not
+  scripted; needs_client_trust mapping stays an upstream guess absorbed by the
+  fence.
