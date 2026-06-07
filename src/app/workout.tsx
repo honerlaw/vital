@@ -91,8 +91,9 @@ export default function WorkoutScreen() {
   const day = program.days[live.dayIndex];
   const progress = sessionProgress(live);
   // Cross-session weight prefill (024): the chain's lowest rung, per exercise. Plain
-  // derivation per house style — the React Compiler memoizes it (history and the day's
-  // exercises are stable for the whole session, so this is effectively computed once).
+  // derivation, NOT useMemo — this sits after the early-return render gates where a hook
+  // would violate hook rules (004), and the React Compiler memoizes it anyway (history only
+  // mutates on FINISH, which navigates away, so this is effectively computed once).
   const historyWeights = day.exercises.map((ex) => lastLoggedWeight(state.history, ex.name));
 
   const onPatch = (ei: number, si: number, patch: SetPatch) => {
