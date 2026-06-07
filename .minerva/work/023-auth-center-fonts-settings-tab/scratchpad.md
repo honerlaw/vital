@@ -6,3 +6,6 @@ Promoted 2026-06-07 — durable knowledge in
 Shipped, §1 scroll-only caveat); forward-looking items in `followups.md`. Prior scratchpad
 (panel decisions across propose/work/review/promote, the verification transcript, and the
 review triage) preserved in git history of this file.
+
+## Panel decisions 2026-06-07 (synthesis)
+- [synthesis] no-op (1 un-synthesized entry — 029 — below threshold; overview link-rot: none)
