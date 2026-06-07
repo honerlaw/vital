@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
 import Button from '@/components/Button';
 import CornerCard from '@/components/CornerCard';
@@ -30,16 +30,11 @@ export default function TodayScreen() {
   if (state.activeProgramId === null) {
     return (
       <Screen>
-        {/* Same header row as the session view — the Account link must stay reachable on first
-            run (it is the only path to /account and Sign out). */}
-        <View style={styles.headerRow}>
-          <AppText variant="label" style={styles.eyebrow}>
-            {dateEyebrow(new Date())}
-          </AppText>
-          <TouchableOpacity onPress={() => router.push('/account')} accessibilityRole="button">
-            <AppText variant="backLink">Account</AppText>
-          </TouchableOpacity>
-        </View>
+        {/* Sign out lives on the always-visible Settings tab (023), so the header is just
+            the date eyebrow — same as the session view below. */}
+        <AppText variant="label" style={styles.eyebrow}>
+          {dateEyebrow(new Date())}
+        </AppText>
         <AppText variant="screenTitle" style={styles.title}>
           Choose your program
         </AppText>
@@ -82,14 +77,9 @@ export default function TodayScreen() {
 
   return (
     <Screen>
-      <View style={styles.headerRow}>
-        <AppText variant="label" style={styles.eyebrow}>
-          {dateEyebrow(new Date())}
-        </AppText>
-        <TouchableOpacity onPress={() => router.push('/account')} accessibilityRole="button">
-          <AppText variant="backLink">Account</AppText>
-        </TouchableOpacity>
-      </View>
+      <AppText variant="label" style={styles.eyebrow}>
+        {dateEyebrow(new Date())}
+      </AppText>
       <AppText variant="screenTitle" style={styles.title}>
         Today&apos;s session
       </AppText>
@@ -127,13 +117,7 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: space.lg,
-  },
-  eyebrow: {},
+  eyebrow: { marginTop: space.lg },
   chooserBlurb: { marginTop: space.md },
   chooserList: { marginTop: space.lg },
   title: { marginTop: space.sm },

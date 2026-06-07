@@ -13,12 +13,14 @@ const ICONS: Record<string, FeatherName> = {
   index: 'home',
   programs: 'list',
   history: 'clock',
+  settings: 'settings',
 };
 
 const LABELS: Record<string, string> = {
   index: 'Today',
   programs: 'Programs',
   history: 'History',
+  settings: 'Settings',
 };
 
 export default function TabBar({ state, navigation }: TabBarProps) {

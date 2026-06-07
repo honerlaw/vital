@@ -56,7 +56,6 @@ export default function RootNavigator() {
           name="workout"
           options={{ ...pushedHeaderOptions, headerBackVisible: false, gestureEnabled: false }}
         />
-        <Stack.Screen name="account" options={pushedHeaderOptions} />
       </Stack.Protected>
       <Stack.Protected guard={!auth.isSignedIn}>
         <Stack.Screen name="(auth)" />
