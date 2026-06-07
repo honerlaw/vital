@@ -1,7 +1,8 @@
 # 023 — Centered auth forms, larger reading type, Settings tab
 
 ## Status
-Draft
+Shipped (2026-06-07). Delivered via `minerva:propose-ship-auto` consensus panels; durable
+learnings in `.minerva/knowledge/029-pattern-wcag-safe-generated-avatar-colors.md`.
 
 ## Goal
 Three UI ergonomics improvements: (1) the sign-in / sign-up / forgot-password forms render
@@ -25,7 +26,9 @@ that didn't need push semantics.
    (iOS keyboard-follows-focus; silent no-op on Android where the default `resize` mode
    re-centers content in the shrunken viewport; flexGrow degrades gracefully when content
    exceeds the viewport — it never shrinks below content height). The three auth screens pass
-   `center` and drop their `marginTop: space['4xl']` eyebrow margins.
+   `center` and drop their `marginTop: space['4xl']` eyebrow margins. Caveat (review F1):
+   `center` applies only in scroll mode — the `scroll={false}` View branch does not consult
+   it (no current call site combines them; see followups.md).
 2. **Reading-type bump** (`src/theme.ts`, dedicated commit for revertability): body 14→15
    (lineHeight 21→22), bodySub 13→14 (19→20), screenTitle 30→32 (32→34), displayDay 24→25
    (26→27), programTitle 22→23 (26→27), exerciseName 16→17 (20→21). ALL JetBrains Mono chrome

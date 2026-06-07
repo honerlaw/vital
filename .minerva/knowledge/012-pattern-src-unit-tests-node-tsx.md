@@ -6,7 +6,9 @@
 - Related: [[002-pattern-eslint-strict-config-gotchas]] (the `node --test` glob requirement on
   Node 24), [[001-constraint-strict-eslint-guardrails]] (test files are bound by these too),
   [[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]] (the injectable-verifier seam
-  that makes the API route testable).
+  that makes the API route testable),
+  [[029-pattern-wcag-safe-generated-avatar-colors]] (a property sweep — WCAG contrast with a
+  coverage floor — run offline on this runner).
 
 `006-clerk-auth` added the repo's first `src/` unit tests (the `eslint-rules/` tests already ran
 under `node --test`, but only over plain `.js`). The reusable mechanics for any future `src` test:
