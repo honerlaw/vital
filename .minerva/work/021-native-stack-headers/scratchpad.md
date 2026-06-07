@@ -1,0 +1,1 @@
+Promoted 2026-06-07 — durable knowledge in `.minerva/knowledge/027-pattern-native-stack-headers-pushed-screens.md`; reciprocal `## Related` links added to 003/004/005/017; proposal.md reconciled to shipped reality (headerScreen const, useCallback cancel path, CatalogStatus hasHeader); forward-looking items in `followups.md`. Panel log archived in git history of this file.

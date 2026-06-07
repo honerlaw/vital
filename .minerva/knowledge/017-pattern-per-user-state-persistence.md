@@ -11,7 +11,9 @@
   [[004-pattern-expo56-react-compiler-hook-rules]] (the hook rules the client effects follow),
   [[003-pattern-conforming-code-under-strict-guardrails]] (the multi-method route re-export shape),
   [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014),
-  [[020-pattern-per-program-cursors]] (the per-program cursor map that replaced the scalar, 015)
+  [[020-pattern-per-program-cursors]] (the per-program cursor map that replaced the scalar, 015),
+  [[027-pattern-native-stack-headers-pushed-screens]] (a consumer-side consequence of the
+  `[state]`-memoized wrapped dispatch: handler effects keyed on it re-subscribe per dispatch)
 
 How VITAL persists `activeProgramId` / `cursors` / `history` per Clerk user so state survives
 restarts/reinstalls and follows the identity across devices — while the pure `useReducer` store

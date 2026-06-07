@@ -6,7 +6,9 @@
 - Related: [[001-constraint-strict-eslint-guardrails]] (the invariants this code must satisfy),
   [[002-pattern-eslint-strict-config-gotchas]] (the *config-author* side; this entry is the
   *application-author* side — given the guardrails as fixed, how to write conforming code),
-  [[004-pattern-expo56-react-compiler-hook-rules]] (the react-hooks rules that also bind code)
+  [[004-pattern-expo56-react-compiler-hook-rules]] (the react-hooks rules that also bind code),
+  [[027-pattern-native-stack-headers-pushed-screens]] (the inline-arrow `headerLeft` idiom
+  that clears `single-declaration`/`no-multi-comp`)
 
 Concrete, reusable techniques for writing feature code under the un-bypassable 001 lint
 (`no any`, no casts except `as const`, 100-col, one function/component per file, no suppression).
