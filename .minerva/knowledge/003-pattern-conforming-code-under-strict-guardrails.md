@@ -55,3 +55,19 @@ Discovered building the VITAL UI. Reach for these from the start rather than at 
   `BottomTabBarProps` is not importable cleanly. Derive it from the public component:
   `type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];`. No cast,
   no fragile `expo-router/build/...` path.
+  *Extends to hook return types (020):* `@clerk/expo` doesn't re-export its resource types, and
+  the obvious fallbacks are traps — `@clerk/shared/types` is a transitive dep, and
+  `@clerk/backend` exports a DIFFERENT 4-member `SignInStatus` union than the frontend's
+  6-member one. Derive from the hook instead:
+  `type SignInResource = ReturnType<typeof useSignIn>['signIn']` then index
+  (`SignInResource['status']`, `SignInResource['supportedSecondFactors'][number]`). Version-proof
+  and cast-free.
+
+- **Cast-free exhaustive switch: explicit return type + closed switch, no default arm.** A
+  function with a declared non-optional return type whose body is a `switch` over a closed union
+  (every member a `case`, no `default`) is exhaustiveness-checked by plain `strict` tsc: deleting
+  a case is `TS2366` ("lacks ending return statement") — mutation-tested in work 020; no
+  `noImplicitReturns`, no `never`-typed fallthrough variable, no cast, so it satisfies
+  `assertionStyle: 'never'`. A future union member added upstream becomes a compile error
+  instead of a silent fallthrough (the load-bearing property of
+  [[026-bug-clerk-finalize-intermediate-status]]'s status gate).
