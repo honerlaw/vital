@@ -47,3 +47,6 @@ example
 
 # minerva worktrees
 .minerva/worktrees/
+
+# Claude Code scheduled-tasks lock
+.claude/scheduled_tasks.lock
