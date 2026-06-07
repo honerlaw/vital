@@ -2,7 +2,9 @@
 
 ## Status
 
-Approved (2026-06-07) — panel consensus via `minerva:propose-ship-auto` (round 2, 3/3 accept).
+Implemented (2026-06-07) — review + promote complete; PR pending (`minerva:ship` flips this
+to Shipped on merge). Durable knowledge in
+`.minerva/knowledge/030-pattern-cross-session-weight-prefill.md`.
 
 ## Goal
 
@@ -34,10 +36,12 @@ default with zero configuration and zero schema change.
   qualifying set (or no `exercises` field — legacy/degraded rows), continue scanning older
   sessions. No match anywhere → null. Matching is cross-program (history names are
   denormalized from the same catalog vocabulary).
-- `workout.tsx` newly reads `state.history` (one-line addition — the screen currently uses
-  only `live`/`programs`), memoizes the per-exercise history fallbacks (`useMemo` over
-  history + the day's exercises), and passes a new `historyWeight: number | null` prop to
-  `ExerciseBlock`.
+- `workout.tsx` newly reads `state.history` (one-line addition — the screen previously used
+  only `live`/`programs`) and derives the per-exercise history fallbacks as a plain const
+  AFTER the early-return render gates — not `useMemo`: a hook there would violate hook
+  ordering (004), and the React Compiler memoizes plain derivation anyway (history only
+  mutates on FINISH, which navigates away). Passes a new `historyWeight: number | null`
+  prop to `ExerciseBlock`.
 - **The fallback chain coalesces inside `ExerciseBlock`**: the per-row value passed to
   `SetRow` becomes `priorWeight(si) ?? historyWeight`. `SetRow` keeps its single
   `weightFallback` prop and is untouched — the placeholder + commit-on-toggle machinery
