@@ -15,18 +15,32 @@ export const finishSession = (
   nowISO: string,
 ): { log: SessionLog; nextCursor: number } => {
   if (!state.live) throw new Error('No live session');
-  const program = getProgram(state.programs, state.live.programId);
-  const day = program.days[state.live.dayIndex];
+  const live = state.live;
+  const program = getProgram(state.programs, live.programId);
+  const day = program.days[live.dayIndex];
   const log: SessionLog = {
     programId: program.id,
     programName: program.name,
     dayName: day.name,
     dateISO: nowISO,
+    // Per-set log (022): zip the day's exercises with `live.sets` BY INDEX — aligned because
+    // startSession seeds `sets` from this same exercises array and no action resizes it.
+    // ALL set rows are persisted, incl. untouched ones (planned-vs-actual stays visible;
+    // consumers filter on `done`). Values are already normalized — coercion lives in
+    // `updateSet`, so this is pure projection and the determinism contract holds untouched.
+    exercises: day.exercises.map((ex, ei) => ({
+      name: ex.name,
+      scheme: ex.scheme,
+      sets: live.sets[ei] ?? [],
+    })),
+    // v1 has no unit picker — every new log is pounds, denormalized per session so a future
+    // kg toggle needs no history backfill.
+    unit: 'lb',
   };
   // Per-program pointers (015): finishing a session advances the FINISHED program's own
   // cursor unconditionally — `nextCursor` is the new value for `cursors[live.programId]`.
   // (The old active-vs-live gate is gone; with a per-program map there is no other pointer
   // a finish could legitimately advance.)
-  const nextCursor = advanceCursor(program, state.cursors[state.live.programId] ?? 0);
+  const nextCursor = advanceCursor(program, state.cursors[live.programId] ?? 0);
   return { log, nextCursor };
 };

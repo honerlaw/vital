@@ -35,6 +35,8 @@ export default function HistoryScreen() {
               dayName={log.dayName}
               programName={log.programName}
               date={historyDate(log.dateISO)}
+              exercises={log.exercises}
+              unit={log.unit}
             />
           ))
         )}

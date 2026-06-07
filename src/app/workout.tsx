@@ -9,6 +9,7 @@ import RestTimerBar from '@/components/RestTimerBar';
 import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import { getProgram, sessionProgress } from '@/data/engine';
+import { type SetPatch } from '@/data/engine/updateSet';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { bootStatus } from '@/state/boot-status';
 import { useAppStore } from '@/state/useAppStore';
@@ -90,10 +91,12 @@ export default function WorkoutScreen() {
   const day = program.days[live.dayIndex];
   const progress = sessionProgress(live);
 
-  const onToggle = (ei: number, si: number) => {
-    const wasDone = live.completed[ei][si];
-    dispatch({ type: 'TOGGLE_SET', ei, si });
-    if (!wasDone) restTimer.start(REST_SECONDS);
+  const onPatch = (ei: number, si: number, patch: SetPatch) => {
+    // All coercion happens in the pure engine (022); this handler only forwards the patch
+    // and starts the rest timer on a pending→done transition (weight/reps edits don't).
+    const wasDone = live.sets[ei][si].done;
+    dispatch({ type: 'UPDATE_SET', ei, si, patch });
+    if (patch.done === true && !wasDone) restTimer.start(REST_SECONDS);
   };
 
   const onFinish = () => {
@@ -118,8 +121,8 @@ export default function WorkoutScreen() {
               key={`${ex.name}-${ei}`}
               name={ex.name}
               scheme={ex.scheme}
-              completed={live.completed[ei]}
-              onToggle={(si) => onToggle(ei, si)}
+              sets={live.sets[ei]}
+              onPatch={(si, patch) => onPatch(ei, si, patch)}
             />
           ))}
         </View>

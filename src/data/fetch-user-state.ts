@@ -5,6 +5,7 @@
  */
 import { apiFetch } from '@/auth/api-fetch';
 import { isUserStatePayload } from '@/data/guards';
+import { sanitizeSessionLog } from '@/data/sanitize-session-log';
 import { type UserStatePayload } from '@/data/types';
 
 type GetSessionToken = () => Promise<string | null>;
@@ -18,5 +19,7 @@ export async function fetchUserState(getToken: GetSessionToken): Promise<UserSta
   if (!isUserStatePayload(body)) {
     throw new Error('Malformed /api/me/state response');
   }
-  return body;
+  // Per-entry sanitize (022): core fields stay strict (above), but the optional per-set data
+  // degrades per entry — a corrupt `exercises` blob must never brick hydration/boot.
+  return { ...body, history: body.history.map(sanitizeSessionLog) };
 }

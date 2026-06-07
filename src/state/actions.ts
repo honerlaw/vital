@@ -1,4 +1,5 @@
 /** Reducer actions for the in-memory app store. */
+import { SetPatch } from '@/data/engine/updateSet';
 import { Program, UserStatePayload } from '@/data/types';
 
 export type Action =
@@ -9,7 +10,7 @@ export type Action =
   | { type: 'RESET_USER_STATE' }
   | { type: 'RETRY_HYDRATE' }
   | { type: 'START_WORKOUT'; dayIndex: number }
-  | { type: 'TOGGLE_SET'; ei: number; si: number }
+  | { type: 'UPDATE_SET'; ei: number; si: number; patch: SetPatch }
   | { type: 'FINISH_WORKOUT'; nowISO: string }
   | { type: 'CANCEL_WORKOUT' }
   | { type: 'SET_ACTIVE_PROGRAM'; id: string }

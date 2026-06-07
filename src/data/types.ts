@@ -28,16 +28,47 @@ export interface Program {
   days: WorkoutDay[]; // the rotation
 }
 
-/** A completed session, written to history. */
+/**
+ * One set's record (022): `done` is the check-off; `weight`/`reps` are the user-entered
+ * actuals (null = not entered — entry is never forced). All numeric coercion (finite,
+ * non-negative, null-for-invalid) happens in the pure `updateSet` engine function, never in
+ * the UI or the persistence wrapper, so the reducer/write-through mirror stays deterministic.
+ */
+export interface SetEntry {
+  done: boolean;
+  weight: number | null;
+  reps: number | null;
+}
+
+/** Per-exercise slice of a finished session's set log (022). `name`/`scheme` are denormalized
+ * from the program at finish time so history stays self-contained when programs change. */
+export interface SessionExerciseLog {
+  name: string;
+  scheme: string;
+  sets: SetEntry[];
+}
+
+/**
+ * A completed session, written to history. `exercises`/`unit` (022) are OPTIONAL at every
+ * trust boundary: legacy sessions lack them, and a malformed `set_log` degrades to a log
+ * without them (never an error) on BOTH the server mapper and the client sanitizer.
+ * `unit` is denormalized per session ('lb' only in v1 — no unit picker) so a future kg
+ * toggle needs no history backfill.
+ */
 export interface SessionLog {
   programId: string;
   programName: string;
   dayName: string;
   dateISO: string;
+  exercises?: SessionExerciseLog[];
+  unit?: 'lb';
 }
 
 /**
- * An in-progress workout. completed[exerciseIndex][setIndex] = logged?.
+ * An in-progress workout. sets[exerciseIndex][setIndex] = that set's record (022 — replaced
+ * the boolean check-off matrix; in-memory only, never wired/persisted). `startSession` seeds
+ * `sets` from the day's exercises and no action resizes it, so `finishSession` can zip it
+ * against `program.days[dayIndex].exercises` by index.
  * `switchedFrom` (015): the previously-active program id when this session was started via
  * "Switch & begin" (the switch commits at the Begin tap); null for a plain start. CANCEL
  * restores it as the active program — the revert is lossless because a switch never mutates
@@ -46,7 +77,7 @@ export interface SessionLog {
 export interface LiveSession {
   programId: string;
   dayIndex: number;
-  completed: boolean[][];
+  sets: SetEntry[][];
   switchedFrom: string | null;
 }
 

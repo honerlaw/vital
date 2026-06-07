@@ -25,6 +25,9 @@ export default function Screen({ children, scroll = true, hasHeader = false }: P
       style={[styles.flex, styles.bg]}
       contentContainerStyle={[styles.base, pad]}
       showsVerticalScrollIndicator={false}
+      // Taps on touchables (e.g. a set's done toggle, 022) must fire on the first tap even
+      // while the keyboard is up — 'handled' keeps plain background taps dismissing as before.
+      keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>

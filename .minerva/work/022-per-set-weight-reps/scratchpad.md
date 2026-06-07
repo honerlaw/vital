@@ -20,3 +20,23 @@
   semantics for malformed per-set data. User chose: degrade symmetrically (both boundaries drop
   the malformed optional field, keep the core entry; boot can never brick on set data).
   Escalation counter: 1/3.
+
+## Implementation notes 2026-06-07
+
+- Routine divergence (detail-level, not load-bearing): `set_log` stores the wrapper object
+  `{"unit":"lb","exercises":[...]}` with DEFAULT `'{}'::jsonb` instead of the proposal's bare
+  array + `'[]'`. Reason: a bare array has no home for `unit`, which would defeat the unit
+  pin's whole purpose (self-describing rows, no future backfill). Read semantics unchanged in
+  spirit: `'{}'` / absent / empty exercises → optional field omitted.
+- Prefill realized as placeholder + commit-on-toggle (not a mount-time text seed): fallbacks
+  render as input placeholders and are committed only when the set is toggled done with the
+  field still blank. A mount-time seed could not implement "weight prefills from prior set"
+  (all rows mount together at session start, before any weight exists); placeholders are
+  live-derived but never overwrite typed/committed values, so the no-cascade pin holds.
+- `Screen`'s ScrollView gained `keyboardShouldPersistTaps="handled"` — without it the done
+  toggle eats the first tap dismissing the numeric keyboard.
+- Migration smoke-tested against a throwaway postgres:16-alpine (up → down → up, column +
+  default verified), NOT against the doppler-managed DB (permission classifier denied; the
+  throwaway test covers the SQL). Local `npm ci` run inside the worktree.
+- Old-fixture note: pre-022 `finishSession.test.ts` used `completed: [[true]]` (misaligned
+  with the 2-exercise day anyway); rewritten fixtures now mirror the startSession seed shape.

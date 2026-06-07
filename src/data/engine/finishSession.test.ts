@@ -2,17 +2,27 @@
 /**
  * Evidences 012's determinism contract: `finishSession(state, nowISO)` is pure, so the reducer
  * and the persistence write-through — which call it with identical args — provably produce
- * identical results (proposal SC#1).
+ * identical results (proposal SC#1). Rewritten in 022 for the per-set shape (`live.sets`
+ * replaced the boolean matrix); the deepEqual-on-identical-args property is unchanged.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { finishSession } from '@/data/engine';
-import { type AppState } from '@/data/types';
+import { type AppState, type SetEntry } from '@/data/types';
 import { DEFAULT_STATE } from '@/state/default-state';
 import { SAMPLE_PROGRAMS } from '@/test-support/programs';
 
 const NOW = '2026-06-05T12:00:00.000Z';
 
+const doneSet = (weight: number | null, reps: number | null): SetEntry => ({
+  done: true,
+  weight,
+  reps,
+});
+const plannedSet: SetEntry = { done: false, weight: null, reps: null };
+
+// Matches SAMPLE_PROGRAMS[0] Workout A: Squat 3×5, Bench Press 3×5 (the seed invariant —
+// startSession shapes `sets` from the same exercises array finishSession zips against).
 const liveState: AppState = {
   ...DEFAULT_STATE,
   programs: SAMPLE_PROGRAMS,
@@ -22,7 +32,10 @@ const liveState: AppState = {
   live: {
     programId: SAMPLE_PROGRAMS[0].id,
     dayIndex: 0,
-    completed: [[true]],
+    sets: [
+      [doneSet(135, 5), doneSet(135, 5), doneSet(135, 15)],
+      [doneSet(95, 5), plannedSet, plannedSet],
+    ],
     switchedFrom: null,
   },
 };
@@ -39,6 +52,24 @@ void test('finishSession stamps the injected nowISO and advances the live progra
   assert.equal(nextCursor, (4 + 1) % SAMPLE_PROGRAMS[0].days.length);
 });
 
+void test('finishSession projects the per-set log: zipped by index, unit lb (022)', () => {
+  const { log } = finishSession(liveState, NOW);
+  assert.equal(log.unit, 'lb');
+  assert.deepEqual(log.exercises, [
+    {
+      name: 'Squat',
+      scheme: '3×5',
+      sets: [doneSet(135, 5), doneSet(135, 5), doneSet(135, 15)],
+    },
+    {
+      // ALL set rows persist, incl. untouched planned ones — the planned-vs-actual signal.
+      name: 'Bench Press',
+      scheme: '3×5',
+      sets: [doneSet(95, 5), plannedSet, plannedSet],
+    },
+  ]);
+});
+
 void test('finishSession advances the FINISHED program own pointer only (015)', () => {
   // The new contract's load-bearing case: a non-active live session advances its own
   // per-program cursor (from a missing key = 0 here), independent of the active program.
@@ -47,7 +78,7 @@ void test('finishSession advances the FINISHED program own pointer only (015)', 
     live: {
       programId: SAMPLE_PROGRAMS[1].id,
       dayIndex: 0,
-      completed: [[true]],
+      sets: [[doneSet(225, 3)]],
       switchedFrom: null,
     },
   };
