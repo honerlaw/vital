@@ -7,9 +7,15 @@ interface Props {
   children: ReactNode;
   scroll?: boolean;
   hasHeader?: boolean;
+  center?: boolean;
 }
 
-export default function Screen({ children, scroll = true, hasHeader = false }: Props) {
+export default function Screen({
+  children,
+  scroll = true,
+  hasHeader = false,
+  center = false,
+}: Props) {
   const insets = useSafeAreaInsets();
   const pad = {
     // Under a native stack header the header bar consumes the top safe-area inset (021),
@@ -23,11 +29,14 @@ export default function Screen({ children, scroll = true, hasHeader = false }: P
   return (
     <ScrollView
       style={[styles.flex, styles.bg]}
-      contentContainerStyle={[styles.base, pad]}
+      contentContainerStyle={[styles.base, pad, center ? styles.center : null]}
       showsVerticalScrollIndicator={false}
       // Taps on touchables (e.g. a set's done toggle, 022) must fire on the first tap even
       // while the keyboard is up — 'handled' keeps plain background taps dismissing as before.
       keyboardShouldPersistTaps="handled"
+      // Centered forms (023): on iOS this scrolls the focused field clear of the keyboard
+      // (no-op on Android, where the default `resize` mode re-centers the shrunken viewport).
+      automaticallyAdjustKeyboardInsets={center}
     >
       {children}
     </ScrollView>
@@ -41,4 +50,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: layout.screenPaddingX,
   },
+  // Vertical centering for short content (023, auth forms). flexGrow never shrinks below
+  // content height, so overflowing content simply scrolls as before.
+  center: { flexGrow: 1, justifyContent: 'center' },
 });
