@@ -1,82 +1,9 @@
 # 020 — signin-status-gate · scratchpad
 
-## Panel decisions 2026-06-06 (review + promote phases)
-
-- [2/3 accept, arbiter moot] review triage: 6 findings dispositioned (1 FIX applied, 2
-  SUGGEST→followups, 2 IGNORE, 1 FIX-at-promote) — see Review triage section
-- [2/3 accept after 1 revision] promote partition: revision required the inline 011
-  finalize()-throws correction (not just a backlink) and folding the hook-derived-types
-  + mutation-tested TS2366 exhaustiveness technique into 003 instead of burying it in
-  the bug entry
-- [skipped — small] TODO disposition: single unambiguous disposition for all 3 items
-  (evidence: each is forward-looking — a UX fast-follow and two Sentry-data-dependent
-  items; none requested as new units; auto mode never cascades) → followups.md
-
-## Log 2026-06-06
-
-- Invoked via `minerva:propose-ship-auto`. Pre-flight: 003-dev-start-skill is Draft
-  but unrelated (no slug/goal overlap); no worktrees in flight — proceeded.
-- Seed: debug session same day diagnosed the native sign-in crash (Probable):
-  ungated `finalize()` after `signIn.password()` at intermediate sign-in statuses.
-
-## Panel decisions 2026-06-06
-
-- [3/3 accept after 1 revision] scope check: single unit — revision baked in the
-  de-risking (exhaustive helper, supportedSecondFactors-aware branching, degradation
-  fence so the crash fix never depends on the unverified client-trust mapping)
-- [3/3 accept after 1 revision] approach selection: option B (gate + fenced inline
-  verification) — rejected: A (gate-only — dead-ends blocked users), C (dedicated
-  verification route/state machine — overbuilt). Revision promoted the fence to a
-  BINDING acceptance criterion with a negative test, corrected the helper signature
-  to non-nullable supportedSecondFactors, and named two limitations
-  (forgot-password+2FA dead-end; forward-provisioned email-code UI)
-- [3/3 accept after 1 revision] whole-proposal acceptance — revision relabeled SC#4/
-  SC#5 as manual-verify and corrected the lint-rule citation to
-  local/single-declaration
-- Carried implementer notes: negative test must exercise needs_client_trust
-  specifically; import SignInStatus from the future-resource types (not
-  @clerk/backend); read status/factors only after the call resolves;
-  needs_client_trust recovery is best-effort
-
-## Implementation log 2026-06-06
-
-- Types derived from the hook (`ReturnType<typeof useSignIn>['signIn']`) instead of
-  importing `@clerk/shared/types` directly — app code only ever imports `@clerk/expo`,
-  and the derived union is identical (6 members) while staying version-proof and
-  avoiding a transitive-dep import.
-- Exhaustiveness mechanism: explicit `SignInNextStep` return type + no default arm —
-  a missing case fails tsc ("lacks ending return statement") with no `never` cast
-  needed, satisfying assertionStyle 'never'.
-- `finalize()` returns `{ error }` too (typed) — handled at all 4 call sites rather
-  than fire-and-forget.
-- Gates green: lint ✓ typecheck ✓ test ✓ (51 pass, 6 new). Grep confirms all
-  finalize() call sites gated (sign-in via helper kind, forgot-password/sign-up via
-  status === 'complete').
-
-## Review triage 2026-06-06
-
-Inline code review (no PR yet) + minerva audit: 0 high, 2 medium, 4 low. Triage panel
-2/3 accept (Proponent + Skeptic both accepted; Arbiter moot). Dispositions applied:
-
-- FIX (applied): #3 verify() catch-all message no longer invites a retry that cannot
-  succeed — reuses the "sign in on the web" degrade copy.
-- SUGGEST → followups at promote: #1 no Back/resend affordance from the verify step
-  (same pre-existing gap in sign-up/forgot-password — candidate small shared
-  fast-follow); #2 needs_client_trust→sendEmailCode degradation shows raw Clerk error;
-  tighten once the new Sentry capture names the real prod status.
-- IGNORE: #4 degrade pattern duplicated inline across screens (single-declaration rule
-  makes a shared util ceremony-heavy); #5 finalize-{error} retry edge (rare, degrades
-  safely).
-- FIX at promote: #6 proposal prose says "never-typed fallthrough"; shipped mechanism
-  is explicit-return-type + closed switch — reconcile in the proposal rewrite.
-
-## Panel decisions 2026-06-06 (work phase)
-
-- [3/3 accept] completion verification: both panelists re-ran the gates
-  independently; Arbiter mutation-tested the fence (mapping needs_new_password to
-  finalize → property test FAILS; deleting a switch case → TS2366 compile error
-  under strict alone, no noImplicitReturns needed). Logged low concerns: proposal
-  prose said "never-typed fallthrough" but exhaustiveness is via explicit return
-  type + closed switch (cosmetic drift); SC#3's grep is performed manually, not
-  scripted; needs_client_trust mapping stays an upstream guess absorbed by the
-  fence.
+Promoted 2026-06-06 — durable knowledge in
+`.minerva/knowledge/026-bug-clerk-finalize-intermediate-status.md`, the finalize()-throws
+carve-out in [[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]], and the
+hook-derived-types / cast-free-exhaustiveness bullets in
+[[003-pattern-conforming-code-under-strict-guardrails]]; proposal.md reconciled to shipped
+reality; forward-looking items in `followups.md`. Full work/panel log in git history of
+this file.
