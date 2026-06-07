@@ -1,10 +1,8 @@
 import { useAuth, useUser } from '@clerk/expo';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { apiFetch } from '@/auth/api-fetch';
 import AppText from '@/components/AppText';
-import BackLink from '@/components/BackLink';
 import Button from '@/components/Button';
 import Screen from '@/components/Screen';
 import { colors, space } from '@/theme';
@@ -12,7 +10,6 @@ import { colors, space } from '@/theme';
 export default function AccountScreen() {
   const { getToken, signOut } = useAuth();
   const { user } = useUser();
-  const router = useRouter();
   const [meId, setMeId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +35,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <Screen>
-      <BackLink label="Back" onPress={() => router.back()} />
+    <Screen hasHeader>
       <AppText variant="screenTitle" style={styles.title}>Account</AppText>
       {user !== null && user !== undefined ? (
         <AppText variant="body" style={styles.row}>

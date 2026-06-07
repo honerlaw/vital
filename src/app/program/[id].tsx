@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
-import BackLink from '@/components/BackLink';
 import Button from '@/components/Button';
 import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
@@ -27,8 +26,7 @@ export default function ProgramDetailScreen() {
   const program = state.programs.find((p) => p.id === id);
   if (!program) {
     return (
-      <Screen>
-        <BackLink label="Programs" onPress={() => router.back()} />
+      <Screen hasHeader>
         <AppText variant="screenTitle" style={styles.title}>
           Not found
         </AppText>
@@ -65,8 +63,7 @@ export default function ProgramDetailScreen() {
   };
 
   return (
-    <Screen>
-      <BackLink label="Programs" onPress={() => router.back()} />
+    <Screen hasHeader>
       <Tag label={program.tag} />
       <AppText variant="screenTitle" style={styles.title}>
         {program.name}

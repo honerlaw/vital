@@ -28,3 +28,17 @@
   expo-router ~56.2.8 — BackHandler from react-native committed.
 - (whole-proposal Skeptic, folded) criterion-3 wording: Cancel chrome must mount in the
   `!live` branch via fragment-with-Stack.Screen, not bare null.
+
+## Implementation notes 2026-06-07
+
+- v56 option names pinned from docs.expo.dev/router/advanced/stack: headerBackButtonDisplayMode
+  ('default'|'generic'|'minimal', iOS), gestureEnabled (iOS), headerBackVisible, headerLeft,
+  in-route <Stack.Screen options> all confirmed.
+- CANCEL_WORKOUT verified a reducer no-op when live is null (reducer.ts:115) — BackHandler can
+  safely route through onCancel in every branch.
+- exhaustive-deps required a stable onCancel for the BackHandler effect → useCallback([dispatch,
+  router]); preserves the proposal's single-cancel-path property (header Cancel + hardware back
+  share one function). No divergence — knowledge 004's "write to the rule" pattern.
+- workout headerLeft text uses AppText variant="backLink" ("Cancel" → uppercase mono muted),
+  keeping the design language inside the native chrome.
+- account.tsx lost its only router use with BackLink → useRouter import removed.
