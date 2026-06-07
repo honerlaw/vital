@@ -18,3 +18,5 @@ history of this file.
   vote could not change the outcome. Skeptic concerns honored: reciprocal 004↔030 link
   added; 030 rationale framed as separation-of-concerns; compiler note kept slim.
 - [skipped — small] TODO disposition: single TODO, single unambiguous home (followups.md)
+- [synthesis] refreshed overview.md (watermark 028→030; 2 entries synthesized — 029, 030;
+  no link rot before or after)
