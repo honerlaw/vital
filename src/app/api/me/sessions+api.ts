@@ -11,14 +11,23 @@
  * needs `active_program_id` (NOT NULL) for a user with no settings row yet, so the body
  * carries the client's current active program; the conflict arm deliberately updates ONLY the
  * cursor map (finishing a workout never changes the active program).
+ *
+ * `exercises` + `unit` (022) are OPTIONAL — an old client that sends neither is accepted
+ * (tolerant of pre-022 builds), but a body that CARRIES either must carry BOTH valid (shared
+ * guard; explicit 400, never a silent fall-through — the 015 validator rule). The server never
+ * trusts client coercion: NaN/Infinity/negative/float-reps are rejected here, the only stop
+ * before bad data reaches the append-only history. Deliberate asymmetry with the read path:
+ * strict writer (400 at the door), tolerant reader (degrade on corrupt rows).
  */
+import { isSessionExerciseLogArray } from '@/data/guards';
 import { query } from '@/server/db';
 import { requireAuth } from '@/server/requireAuth';
 
 const INSERT_SESSION_AND_CURSOR =
   'WITH ins AS (' +
-  'INSERT INTO workout_sessions (clerk_user_id, program_id, program_name, day_name, finished_at) ' +
-  'VALUES ($1, $2, $3, $4, $5)' +
+  'INSERT INTO workout_sessions ' +
+  '(clerk_user_id, program_id, program_name, day_name, finished_at, set_log) ' +
+  'VALUES ($1, $2, $3, $4, $5, $8::jsonb)' +
   ') ' +
   'INSERT INTO user_state (clerk_user_id, active_program_id, cursors) ' +
   'VALUES ($1, $6, jsonb_build_object($2::text, $7::integer)) ' +
@@ -53,6 +62,33 @@ export async function POST(request: Request): Promise<Response> {
   ) {
     return Response.json({ error: 'Invalid body' }, { status: 400 });
   }
+  // Optional per-set log (022): absent → accept ('{}', no per-set data — old clients).
+  // Present-but-malformed → explicit 400; a body carrying set data never silently degrades
+  // to a logless session. Both fields travel together: a lone `exercises` or lone `unit` is
+  // malformed too.
+  let setLogJson = '{}';
+  if ('exercises' in body || 'unit' in body) {
+    if (
+      !('exercises' in body) ||
+      !isSessionExerciseLogArray(body.exercises) ||
+      !('unit' in body) ||
+      body.unit !== 'lb'
+    ) {
+      return Response.json({ error: 'Invalid body' }, { status: 400 });
+    }
+    // Re-project to the known shape before persisting (review finding #3): the guards
+    // validate required fields but don't strip extras, and set_log is append-only — without
+    // this, arbitrary client-attached keys would land in history verbatim. Mirrors the
+    // read-side sanitizer's rebuild-from-known-fields discipline.
+    setLogJson = JSON.stringify({
+      unit: body.unit,
+      exercises: body.exercises.map((ex) => ({
+        name: ex.name,
+        scheme: ex.scheme,
+        sets: ex.sets.map((s) => ({ done: s.done, weight: s.weight, reps: s.reps })),
+      })),
+    });
+  }
   try {
     await query(INSERT_SESSION_AND_CURSOR, [
       auth.userId,
@@ -62,6 +98,7 @@ export async function POST(request: Request): Promise<Response> {
       body.dateISO,
       body.activeProgramId,
       body.cursor,
+      setLogJson,
     ]);
     return Response.json({ ok: true });
   } catch (error) {

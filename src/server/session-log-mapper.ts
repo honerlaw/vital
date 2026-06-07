@@ -2,9 +2,15 @@
  * Maps a raw `workout_sessions` table row (every column `unknown`) to the typed `SessionLog`.
  * pg returns `timestamptz` columns as JS `Date` instances (NOT strings), so `finished_at` is
  * narrowed via `instanceof Date` and serialized with `.toISOString()` — a string-typed guard
- * would reject every row. Invalid rows throw (the route 500s rather than serving a partial
- * list). No `pg` import — unit-testable offline.
+ * would reject every row. Invalid CORE columns throw (the route 500s rather than serving a
+ * partial list — their corruption is server fault). The optional `set_log` (022) is the one
+ * deliberate exception: it is client-supplied data parsed BEST-EFFORT — a malformed blob
+ * console.errors and degrades to a log without `exercises`, because one bad row must never
+ * 500 the whole history (which gates boot). '{}' / empty exercises = "no per-set data" (the
+ * pre-022 default and every old-client write), omitted silently. No `pg` import —
+ * unit-testable offline.
  */
+import { isSessionExerciseLogArray } from '@/data/guards';
 import { type UnknownRow } from '@/server/db';
 import { type SessionLog } from '@/data/types';
 
@@ -23,5 +29,29 @@ export function rowToSessionLog(row: UnknownRow): SessionLog {
     throw new Error('workout_sessions.finished_at is not a Date');
   }
 
-  return { programId, programName, dayName, dateISO: finishedAt.toISOString() };
+  const log: SessionLog = { programId, programName, dayName, dateISO: finishedAt.toISOString() };
+
+  // Best-effort set_log (022) — pg parses jsonb into a JS value already.
+  const setLog = row['set_log'];
+  if (typeof setLog === 'object' && setLog !== null && !Array.isArray(setLog)) {
+    if ('exercises' in setLog || 'unit' in setLog) {
+      if (
+        'exercises' in setLog &&
+        isSessionExerciseLogArray(setLog.exercises) &&
+        'unit' in setLog &&
+        setLog.unit === 'lb'
+      ) {
+        if (setLog.exercises.length > 0) {
+          log.exercises = setLog.exercises;
+          log.unit = setLog.unit;
+        }
+      } else {
+        console.error('workout_sessions.set_log malformed — serving log without set data');
+      }
+    }
+  } else if (setLog !== undefined) {
+    console.error('workout_sessions.set_log malformed — serving log without set data');
+  }
+
+  return log;
 }

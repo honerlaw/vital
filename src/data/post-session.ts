@@ -7,6 +7,7 @@
  * catches and console-warns.
  */
 import { apiFetch } from '@/auth/api-fetch';
+import { type SessionExerciseLog } from '@/data/types';
 
 type GetSessionToken = () => Promise<string | null>;
 
@@ -17,6 +18,11 @@ export interface FinishedSessionBody {
   dateISO: string;
   cursor: number;
   activeProgramId: string;
+  // Per-set log (022): present on every new-client finish (the wrapper spreads the
+  // finishSession log, which always carries both); optional so the type matches the wire
+  // contract, where pre-022 clients send neither.
+  exercises?: SessionExerciseLog[];
+  unit?: 'lb';
 }
 
 export async function postSession(

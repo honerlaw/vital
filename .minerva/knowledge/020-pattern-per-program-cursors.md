@@ -7,7 +7,8 @@
   schema/contract this replaced), [[019-pattern-null-active-program-first-run]] (the switch
   semantics this upgraded — the adjacent-dispatch pair is gone),
   [[014-pattern-server-pg-access-expo-routes]] (the atomic data-modifying-CTE technique the
-  POST/PUT jsonb merges extend).
+  POST/PUT jsonb merges extend), [[028-pattern-per-set-log-tracking]] (per-set log, 022 —
+  applies this one-shared-guard discipline to the SetEntry family).
 
 How VITAL moved from one global rotation cursor to a per-program map — `user_state.cursors
 jsonb` server-side, `AppState.cursors: Record<string, number>` client-side — so switching the

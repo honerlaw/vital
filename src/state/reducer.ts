@@ -2,7 +2,7 @@ import {
   finishSession,
   getProgram,
   startSession,
-  toggleSet,
+  updateSet,
 } from '@/data/engine';
 import { AppState } from '@/data/types';
 import { Action } from '@/state/actions';
@@ -97,9 +97,11 @@ export const reducer = (state: AppState, action: Action): AppState => {
       const program = getProgram(state.programs, state.activeProgramId);
       return { ...state, live: startSession(program, action.dayIndex) };
     }
-    case 'TOGGLE_SET': {
+    case 'UPDATE_SET': {
       if (!state.live) return state;
-      return { ...state, live: toggleSet(state.live, action.ei, action.si) };
+      // All weight/reps coercion happens inside the pure updateSet (022) — the reducer just
+      // forwards the patch, keeping the engine the single normalization choke point.
+      return { ...state, live: updateSet(state.live, action.ei, action.si, action.patch) };
     }
     case 'FINISH_WORKOUT': {
       if (!state.live) return state;
