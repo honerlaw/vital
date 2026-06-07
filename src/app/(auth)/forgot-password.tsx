@@ -1,4 +1,5 @@
 import { useSignIn } from '@clerk/expo';
+import * as Sentry from '@sentry/react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -34,7 +35,11 @@ export default function ForgotPasswordScreen() {
     setCodeSent(true);
   };
 
-  // Step 2: verify the code, submit the new password, then finalize() to sign in.
+  // Step 2: verify the code, submit the new password, then finalize() to sign in — gated
+  // on the 'complete' status (proposal 020): submitPassword() can leave the sign-in at an
+  // intermediate status (e.g. a 2FA account), where an ungated finalize() throws. That
+  // path degrades to a readable error + a Sentry message naming the status (a known
+  // limitation: no second-factor recovery UI in this flow yet).
   const reset = async () => {
     setError(null);
     const verified = await signIn.resetPasswordEmailCode.verifyCode({ code });
@@ -47,7 +52,17 @@ export default function ForgotPasswordScreen() {
       setError(submitted.error.message);
       return;
     }
-    await signIn.finalize();
+    if (signIn.status !== 'complete') {
+      Sentry.captureMessage(
+        `password reset blocked at status "${signIn.status}"`,
+        { level: 'warning' },
+      );
+      setError('Your password was reset, but this device needs additional verification. ' +
+        'Please sign in again.');
+      return;
+    }
+    const finalized = await signIn.finalize();
+    if (finalized.error !== null) setError(finalized.error.message);
   };
 
   return (

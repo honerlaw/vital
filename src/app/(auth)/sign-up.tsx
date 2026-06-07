@@ -1,4 +1,5 @@
 import { useSignUp } from '@clerk/expo';
+import * as Sentry from '@sentry/react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -34,7 +35,10 @@ export default function SignUpScreen() {
     setPendingVerification(true);
   };
 
-  // Step 2: verify the emailed code, then finalize() to activate the session.
+  // Step 2: verify the emailed code, then finalize() to activate the session — gated on
+  // the 'complete' status (proposal 020): verifyEmailCode() can leave the sign-up at
+  // 'missing_requirements', where an ungated finalize() throws. That path degrades to a
+  // readable error + a Sentry message naming the status.
   const verify = async () => {
     setError(null);
     const verified = await signUp.verifications.verifyEmailCode({ code });
@@ -42,7 +46,17 @@ export default function SignUpScreen() {
       setError(verified.error.message);
       return;
     }
-    await signUp.finalize();
+    if (signUp.status !== 'complete') {
+      Sentry.captureMessage(
+        `sign-up blocked at status "${signUp.status}"`,
+        { level: 'warning' },
+      );
+      setError('Your account needs more information before sign-up can finish. ' +
+        'Please continue on the web.');
+      return;
+    }
+    const finalized = await signUp.finalize();
+    if (finalized.error !== null) setError(finalized.error.message);
   };
 
   return (
