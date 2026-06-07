@@ -15,6 +15,8 @@ interface Props {
   status: Exclude<ProgramsStatus, 'ready'>;
   /** Shown as a Retry button on the error view; dispatches RETRY_HYDRATE at the call sites. */
   onRetry?: () => void;
+  /** Set by callers rendered under a native stack header (021) so Screen skips the top inset. */
+  hasHeader?: boolean;
 }
 
 /**
@@ -22,9 +24,9 @@ interface Props {
  * the standalone `program/[id]` / `workout` routes so no program screen renders (on the client or
  * during SSR) before `state.programs` is hydrated.
  */
-export default function CatalogStatus({ status, onRetry }: Props) {
+export default function CatalogStatus({ status, onRetry, hasHeader = false }: Props) {
   return (
-    <Screen>
+    <Screen hasHeader={hasHeader}>
       <EmptyState lines={LINES[status]} />
       {status === 'error' && onRetry !== undefined ? (
         <View style={styles.retry}>

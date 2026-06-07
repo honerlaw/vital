@@ -54,3 +54,17 @@
   cannot blindly opt in.
 - (LOW, by design) !live branch renders an empty colors.bg body behind the header —
   proposal-specified (fragment-not-null), near-unreachable transient.
+
+## Panel decisions 2026-06-07 (review phase)
+- [2/3 accept (Proponent + Skeptic), arbiter not dispatched — vote arithmetically moot
+  at 2/3 quorum with two accepts in hand; logged for audit] per-finding triage: F1
+  comment-FIX + churn-SUGGEST, F2 IGNORE (benign by reducer no-op), F3 SUGGEST (a11y
+  escape), F4 FIX (unwrap fragment), F5 IGNORE (pre-existing, import/order not enabled),
+  F6 FIX (CatalogStatus hasHeader, threads cleanly across all 3 real call sites — auth
+  screens never use CatalogStatus), F7 IGNORE (by design).
+
+## Review finding 2026-06-07
+- SUGGEST (F1): BackHandler subscribe-once-via-ref refactor → followups.md.
+- SUGGEST (F3): onAccessibilityEscape backstop on workout → followups.md.
+- Skeptic caveat honored: the F1 comment fix REPLACES the false stability claim with an
+  honest churn explanation (workout.tsx NOTE block), not a softening.

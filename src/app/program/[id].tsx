@@ -18,7 +18,13 @@ export default function ProgramDetailScreen() {
   // per-user-state readiness); after all hooks.
   const status = bootStatus(state);
   if (status !== 'ready') {
-    return <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} />;
+    return (
+      <CatalogStatus
+        status={status}
+        onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })}
+        hasHeader
+      />
+    );
   }
 
   // Untrusted route param → non-throwing lookup with a not-found view (vs the throwing engine

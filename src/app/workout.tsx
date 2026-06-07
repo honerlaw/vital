@@ -23,7 +23,7 @@ export default function WorkoutScreen() {
   const live = state.live;
 
   // The single cancel path (021): the headerLeft Cancel and the Android hardware back both
-  // route through here. Stable via useCallback so the BackHandler effect keys on it cleanly.
+  // route through here.
   const onCancel = useCallback(() => {
     dispatch({ type: 'CANCEL_WORKOUT' });
     router.back();
@@ -34,6 +34,10 @@ export default function WorkoutScreen() {
   // (CANCEL_WORKOUT is a reducer no-op when no session is live). Predictive back is not
   // enabled in this app (CNG, no enableOnBackInvokedCallback), so BackHandler intercepts
   // classic back reliably; revisit this if that manifest flag is ever added (021).
+  // NOTE: onCancel is re-created on every dispatch (StateProvider's dispatch is
+  // re-memoized on [state]), so this effect re-subscribes per state change. Cleanup keeps
+  // exactly one listener holding the latest closure — correct, just churny; a
+  // subscribe-once-via-ref refactor is recorded in followups.md.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       onCancel();
@@ -72,11 +76,15 @@ export default function WorkoutScreen() {
     return (
       <>
         {headerScreen}
-        <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} />
+        <CatalogStatus
+          status={status}
+          onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })}
+          hasHeader
+        />
       </>
     );
   }
-  if (!live) return <>{headerScreen}</>;
+  if (!live) return headerScreen;
 
   const program = getProgram(state.programs, live.programId);
   const day = program.days[live.dayIndex];
