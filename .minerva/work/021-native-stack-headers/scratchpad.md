@@ -42,3 +42,15 @@
 - workout headerLeft text uses AppText variant="backLink" ("Cancel" → uppercase mono muted),
   keeping the design language inside the native chrome.
 - account.tsx lost its only router use with BackLink → useRouter import removed.
+
+## Panel decisions 2026-06-07 (work phase)
+- [3/3 accept] completion verification: all six criteria honestly met/labeled; both
+  voters independently re-ran the automated gates (lint clean, tsc clean, 51/51).
+
+## Panel concerns 2026-06-07 (completion panel, for review triage)
+- (LOW, Skeptic + Arbiter-verified) CatalogStatus renders a plain Screen (no hasHeader)
+  → transient double top inset on the non-ready branch under the now-visible header, on
+  BOTH workout and program/[id]. CatalogStatus is shared by headerless (tabs) so it
+  cannot blindly opt in.
+- (LOW, by design) !live branch renders an empty colors.bg body behind the header —
+  proposal-specified (fragment-not-null), near-unreachable transient.
