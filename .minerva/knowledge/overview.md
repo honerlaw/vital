@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 021 -->
+<!-- synthesis-watermark: 026 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012, 013, 014, 015, and 016). Theme-grouped
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016 and 020). Theme-grouped
 navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -11,11 +11,12 @@ All TypeScript is bound by an un-bypassable `eslint . --max-warnings 0` gate: no
 100-column lines, one function per file, no inline suppression
 ([[001-constraint-strict-eslint-guardrails]]). Standing up that config has its own gotchas
 ([[002-pattern-eslint-strict-config-gotchas]]), and a body of technique exists for writing code
-that conforms from the start ([[003-pattern-conforming-code-under-strict-guardrails]]), for the
-React-Compiler-era hook rules — refs in render, setState-in-effect, and re-run-key deps that must
-be read inside the effect ([[004-pattern-expo56-react-compiler-hook-rules]]) — and for keeping a
-dynamic `app.config.ts` lint-clean ([[008-pattern-dynamic-app-config-strict-lint]]; revised by
-work 013 — the guarded `config.extra` spread is now load-bearing, not forbidden).
+that conforms from the start — since work 020 including hook-derived resource types and the
+cast-free exhaustive-switch idiom ([[003-pattern-conforming-code-under-strict-guardrails]]) —
+for the React-Compiler-era hook rules — refs in render, setState-in-effect, and re-run-key deps
+that must be read inside the effect ([[004-pattern-expo56-react-compiler-hook-rules]]) — and for
+keeping a dynamic `app.config.ts` lint-clean ([[008-pattern-dynamic-app-config-strict-lint]];
+revised by work 013 — the guarded `config.extra` spread is now load-bearing, not forbidden).
 
 ## App architecture — state, navigation, and startup hydration
 
@@ -63,12 +64,35 @@ superseding in part [[018-decision-eas-ios-release-workflow]]). 018's caveats st
 builds can't see Doppler/DO env (a missing `EXPO_PUBLIC_*` value means a green-but-dead-on-arrival
 binary — the sync's two-key assert guards this), and submit lands in TestFlight, not public
 release. A green "Release iOS" run means queued, not released — EAS notifications are the build
-red signal.
+red signal. Brand assets ride a one-master-SVG pipeline: every icon surface is rasterized
+locally by a lockfile-safe (`--no-save`, pinned) script, validated pre-merge by an
+`expo prebuild` gate, with the committed PNGs as the artifacts
+([[022-pattern-icon-asset-pipeline]]). The toolchain itself can split green-CI from red-EAS:
+npm 11 writes lockfiles npm 10 rejects, so EAS pins node to match `.nvmrc` (EAS does NOT honor
+`engines`/`.nvmrc` on its own) and lockfile regeneration is npm-major-sensitive
+([[024-bug-npm10-npm11-lockfile-divergence]]).
+
+## Observability — crashes, silent hangs, and the green-but-dead class
+
+The worst production failures here threw nothing: TestFlight build 5 white-screened because
+Clerk's `load()` failed silently and `isLoaded` never flipped — release builds hide the SDK's
+`__DEV__`-only diagnostics ([[023-bug-clerk-isloaded-boot-hang]]). Hence Sentry crash reporting
+plus a startup watchdog that fires when the splash never hides, with milestone breadcrumbs
+recorded from effects ([[025-pattern-sentry-observability-wiring]]): a DSN-less build is
+blocked by the release workflow's required-keys guard (green-but-blind), while a token-less
+build merely ships unsymbolicated. The same instrument now names blocked sign-in statuses
+(`captureMessage` on every degraded auth path) so production data — not guesswork — identifies
+which intermediate Clerk status actually fires ([[026-bug-clerk-finalize-intermediate-status]]).
 
 ## Auth & environment
 
 Clerk (core-3 `@clerk/expo`) provides the auth flows, with per-route endpoint enforcement via an
-opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]). Local dev
+opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]). Two
+version-fragile Clerk traps are on record: `isLoaded` stuck false reads as a silent blank screen
+([[023-bug-clerk-isloaded-boot-hang]]), and Core-3 methods returning `{ error: null }` at
+intermediate sign-in statuses — where `createdSessionId` is null and an ungated `finalize()`
+THROWS — crashed native login until work 020 gated every `finalize()` behind a unit-tested
+status fence ([[026-bug-clerk-finalize-intermediate-status]]). Local dev
 env vars come from the Doppler CLI, with the local Postgres hardcoded in Docker Compose
 ([[013-decision-doppler-local-env]]); production iOS build-time env lives in EAS but is
 auto-mirrored from Doppler prd on every release
@@ -77,7 +101,7 @@ auto-mirrored from Doppler prd on every release
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 021, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 026, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
