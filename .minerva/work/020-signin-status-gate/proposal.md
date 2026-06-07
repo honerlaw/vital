@@ -2,8 +2,12 @@
 
 ## Status
 
-Approved 2026-06-06 via `minerva:propose-ship-auto` consensus panels (scope 3/3,
-approach 3/3, whole-proposal 3/3 — each after one revision round).
+Shipped (2026-06-06). Approved + delivered via `minerva:propose-ship-auto` consensus
+panels (scope 3/3, approach 3/3, whole-proposal 3/3, completion 3/3 — strategic gates
+each passed after one revision round). Durable learnings:
+[[026-bug-clerk-finalize-intermediate-status]], plus the finalize()-throws carve-out in
+[[011]] and the hook-derived-types / cast-free-exhaustiveness bullets in [[003]].
+Forward-looking items in `followups.md`.
 
 ## Goal
 
@@ -28,8 +32,11 @@ confirm it. The same ungated `finalize()` exists at `forgot-password.tsx:50` and
 
 1. **Pure helper** `src/auth/sign-in-next-step.ts` (own file per the repo's custom
    `local/single-declaration` rule): exhaustive switch (no default arm — future Clerk
-   statuses become compile errors, via a `never`-typed fallthrough, no casts) over the
-   6-member `SignInStatus` union from the future-resource types. Signature:
+   statuses become compile errors via the explicit `SignInNextStep` return type + closed
+   switch, TS2366 under plain strict; no casts) over the 6-member `SignInStatus` union,
+   with types derived from the hook (`ReturnType<typeof useSignIn>['signIn']` — avoids
+   the transitive `@clerk/shared/types` import and `@clerk/backend`'s different 4-member
+   union; see [[003]]). Signature:
    `(status: SignInStatus, supportedSecondFactors: SignInSecondFactor[]) → NextStep`
    where `NextStep = {kind:'finalize'} | {kind:'verify-email-code'} |
    {kind:'blocked', message:string}`. Mapping: `complete`→finalize;

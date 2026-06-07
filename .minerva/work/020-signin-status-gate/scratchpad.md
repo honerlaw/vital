@@ -1,5 +1,17 @@
 # 020 — signin-status-gate · scratchpad
 
+## Panel decisions 2026-06-06 (review + promote phases)
+
+- [2/3 accept, arbiter moot] review triage: 6 findings dispositioned (1 FIX applied, 2
+  SUGGEST→followups, 2 IGNORE, 1 FIX-at-promote) — see Review triage section
+- [2/3 accept after 1 revision] promote partition: revision required the inline 011
+  finalize()-throws correction (not just a backlink) and folding the hook-derived-types
+  + mutation-tested TS2366 exhaustiveness technique into 003 instead of burying it in
+  the bug entry
+- [skipped — small] TODO disposition: single unambiguous disposition for all 3 items
+  (evidence: each is forward-looking — a UX fast-follow and two Sentry-data-dependent
+  items; none requested as new units; auto mode never cascades) → followups.md
+
 ## Log 2026-06-06
 
 - Invoked via `minerva:propose-ship-auto`. Pre-flight: 003-dev-start-skill is Draft

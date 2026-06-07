@@ -6,7 +6,9 @@
 - Related: [[008-pattern-dynamic-app-config-strict-lint]] (the `unknown`+`typeof` env-read this
   reuses), [[007-pattern-expo-router-server-self-host]] (the server the API guard runs in),
   [[012-pattern-src-unit-tests-node-tsx]] (how the guard is tested),
-  [[004-pattern-expo56-react-compiler-hook-rules]] (why guards stay declarative).
+  [[004-pattern-expo56-react-compiler-hook-rules]] (why guards stay declarative),
+  [[026-bug-clerk-finalize-intermediate-status]] (the ungated-finalize() crash this
+  entry's original "don't throw" claim hid — see the carve-out below).
 
 How VITAL wired Clerk-backed signup/signin/forgot-password (universal web + native) and
 endpoint-level authn/authz under the strict guardrails ([[001-constraint-strict-eslint-guardrails]]).
@@ -42,8 +44,13 @@ Two load-bearing facts:
   silent "reset succeeded, still logged out" bug.
 - **These methods return `{ error: ClerkError | null }` (they don't throw).** Check
   `result.error !== null` and show `result.error.message` (`ClerkError extends Error`) — no
-  try/catch, no cast. (`getToken()` is the exception: in Core 3 it *throws* `ClerkOfflineError`,
-  so the `apiFetch` Bearer-attach wraps it.)
+  try/catch, no cast. TWO exceptions: `getToken()` *throws* `ClerkOfflineError` in Core 3
+  (the `apiFetch` Bearer-attach wraps it), and **`finalize()` THROWS when
+  `createdSessionId` is null** — i.e. whenever the sign-in/sign-up is at any non-`complete`
+  status. `{ error: null }` from `password()` etc. does NOT mean a session exists; gate
+  every `finalize()` on `status === 'complete'` (see
+  [[026-bug-clerk-finalize-intermediate-status]] — this exact gap was a production crash).
+  On its other failure paths `finalize()` does return `{ error }` like the rest.
 
 ## Token cache: use the built-in (don't hand-roll)
 `tokenCache` imported from `@clerk/expo/token-cache` is typed `TokenCache | undefined` and is
