@@ -8,7 +8,9 @@
   one-shared-guard-across-three-boundaries discipline and the NaN/float numeric traps this
   extends), [[014-pattern-server-pg-access-expo-routes]] (the single-statement CTE the set_log
   column joined as one more param), [[010-pattern-do-app-platform-migrations]] (deploy-side
-  migrations; see its local-verification addendum from this unit)
+  migrations; see its local-verification addendum from this unit),
+  [[030-pattern-cross-session-weight-prefill]] (the fallback POLICY layered on this
+  contract — three-rung chain, asymmetric done-qualification)
 
 How VITAL records per-set weight and actual reps (022): `SetEntry {done, weight, reps}` end to
 end — `LiveSession.sets` in memory, a `set_log` jsonb column on `workout_sessions`, optional

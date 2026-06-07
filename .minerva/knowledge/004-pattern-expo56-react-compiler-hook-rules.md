@@ -8,7 +8,9 @@
   are errors, not advice),
   [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014),
   [[027-pattern-native-stack-headers-pushed-screens]] (the BackHandler effect written to
-  these rules, and its benign re-subscription)
+  these rules, and its benign re-subscription),
+  [[030-pattern-cross-session-weight-prefill]] (plain-const derivation after render gates —
+  useMemo there would violate hook ordering; the compiler memoizes plain derivation)
 
 `eslint-config-expo@56` (the repo's base) bundles the modern, React-Compiler-aware `react-hooks`
 plugin, and this app runs with `experiments.reactCompiler: true` in `app.json`. Two of its rules are

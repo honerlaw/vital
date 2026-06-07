@@ -7,6 +7,7 @@ export { estimateMinutes } from '@/data/engine/estimateMinutes';
 export { startSession } from '@/data/engine/startSession';
 export { updateSet } from '@/data/engine/updateSet';
 export { parseSchemeReps } from '@/data/engine/parseSchemeReps';
+export { lastLoggedWeight } from '@/data/engine/lastLoggedWeight';
 export { sessionProgress } from '@/data/engine/sessionProgress';
 export { finishSession } from '@/data/engine/finishSession';
 export { cadenceDayLabel } from '@/data/engine/cadenceDayLabel';
