@@ -2,7 +2,7 @@
 
 ## Status
 
-Approved (2026-06-06) via `minerva:propose-ship-auto` consensus panels.
+Shipped (2026-06-06) — merged to `main` via PR #25. Approved via `minerva:propose-ship-auto` consensus panels; completion/promote gates user-overridden (see scratchpad run record).
 
 ## Goal
 
