@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 028 -->
+<!-- synthesis-watermark: 030 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020 and 022). Theme-grouped
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022 and 024). Theme-grouped
 navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -48,6 +48,14 @@ per-set weight and actual reps end to end: all numeric coercion lives in the pur
 engine (preserving 017's reducer/wrapper mirror), the catalog's `×` scheme separator is
 U+00D7 (an ASCII-x parser silently no-ops prefill), and prefill is placeholder +
 commit-on-toggle, never clamping a typed value ([[028-pattern-per-set-log-tracking]]).
+Since work 024 the weight placeholder resolves through a three-rung fallback chain — typed
+in-session prior set, then the user's last logged weight from history, then blank — with
+deliberately asymmetric qualification (in-session inherits any typed weight; history trusts
+only done sets) coalescing in `ExerciseBlock` so `SetRow` stays fallback-source-agnostic,
+and the derivation is a plain const after the render gates because a `useMemo` there would
+violate hook ordering ([[030-pattern-cross-session-weight-prefill]]). Since work 023 the
+Settings tab's generated avatar derives a WCAG-AA-safe background color deterministically
+from the user's email ([[029-pattern-wcag-safe-generated-avatar-colors]]).
 
 ## Data layer — Postgres as the single source of truth
 
@@ -116,7 +124,7 @@ auto-mirrored from Doppler prd on every release
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 028, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 030, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
