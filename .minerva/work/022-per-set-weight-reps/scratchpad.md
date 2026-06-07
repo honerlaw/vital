@@ -10,4 +10,6 @@ work in `followups.md` (set-log size cap). Panel record: scope 3/3 (v2), approac
 whole-proposal escalated once (user chose symmetric degrade; escalations 1/3 total),
 completion 3/3, triage 2/2, partition 2/3 + arbiter-bound write constraints,
 [skipped — small] TODO disposition: single unambiguous followups.md entry (evidence: one TODO,
-one obvious home). Full work/panel log in git history of this file.
+one obvious home), [synthesis] refreshed overview.md (watermark 026→028; 2 entries
+synthesized — 027, 028; link check 35/35 resolving). Full work/panel log in git history of
+this file.

@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 026 -->
+<!-- synthesis-watermark: 028 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016 and 020). Theme-grouped
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020 and 022). Theme-grouped
 navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -38,7 +38,16 @@ first-class "never chose" signal that survives hydration — the Today screen re
 chooser, switching programs is gated on starting a workout, and null must short-circuit BEFORE
 every catalog-membership check ([[019-pattern-null-active-program-first-run]]); the re-point /
 null-fallback claims in [[016-pattern-ssr-safe-startup-hydration-gate]] and
-[[017-pattern-per-user-state-persistence]] are narrowed accordingly (scoped ⚠ markers).
+[[017-pattern-per-user-state-persistence]] are narrowed accordingly (scoped ⚠ markers). Since
+work 021 the pushed screens carry chrome-only native stack headers, and a screen whose every
+exit must dispatch (the live workout) follows a four-piece guaranteed-exit recipe — static
+gesture/back locks at the navigator, header chrome in every render branch, an inline
+`headerLeft` arrow, and `BackHandler` routed through the same cancel path
+([[027-pattern-native-stack-headers-pushed-screens]]). Since work 022 a workout records
+per-set weight and actual reps end to end: all numeric coercion lives in the pure `updateSet`
+engine (preserving 017's reducer/wrapper mirror), the catalog's `×` scheme separator is
+U+00D7 (an ASCII-x parser silently no-ops prefill), and prefill is placeholder +
+commit-on-toggle, never clamping a typed value ([[028-pattern-per-set-log-tracking]]).
 
 ## Data layer — Postgres as the single source of truth
 
@@ -48,7 +57,13 @@ Postgres with plain-SQL `node-pg-migrate` migrations is the durable store
 pool, `unknown` rows, and cast-free mappers ([[014-pattern-server-pg-access-expo-routes]]). The
 catalog was originally dual-sourced (TS constant + DB seed) under a generated-seed byte-equality
 drift guard ([[015-pattern-generated-seed-drift-guard]]) — that window closed when work 010 made
-the DB the sole runtime source.
+the DB the sole runtime source. Workout history gained a per-set log in work 022: a `set_log`
+jsonb wrapper (`{"unit","exercises"}`, `'{}'` = no data) denormalized per row so a future unit
+toggle needs no backfill, written through the same single-statement CTE with a strict-writer /
+tolerant-reader asymmetry — the POST 400s on malformed set data while BOTH read boundaries
+(server mapper, client sanitizer) degrade per entry instead of letting one corrupt blob brick
+boot, and the route re-projects to known fields because guards validate but don't strip
+([[028-pattern-per-set-log-tracking]]).
 
 ## Hosting & delivery — DigitalOcean for web/API, EAS for iOS releases
 
@@ -101,7 +116,7 @@ auto-mirrored from Doppler prd on every release
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 026, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 028, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
