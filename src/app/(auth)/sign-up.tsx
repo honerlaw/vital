@@ -60,8 +60,8 @@ export default function SignUpScreen() {
   };
 
   return (
-    <Screen>
-      <AppText variant="label" style={styles.eyebrow}>Get started</AppText>
+    <Screen center>
+      <AppText variant="label">Get started</AppText>
       <AppText variant="screenTitle" style={styles.title}>
         {pendingVerification ? 'Verify email' : 'Create account'}
       </AppText>
@@ -118,7 +118,6 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space['4xl'] },
   title: { marginTop: space.sm },
   error: { marginTop: space.lg },
   cta: { marginTop: space.xl },

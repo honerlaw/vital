@@ -77,25 +77,25 @@ export const font = {
 export const type = {
   // Archivo — headings & body
   screenTitle: {
-    fontFamily: font.archivoSemiBold, fontSize: 30, lineHeight: 32,
+    fontFamily: font.archivoSemiBold, fontSize: 32, lineHeight: 34,
     letterSpacing: -0.6, color: colors.ink,
   },
   displayDay: {
-    fontFamily: font.archivoSemiBold, fontSize: 24, lineHeight: 26,
+    fontFamily: font.archivoSemiBold, fontSize: 25, lineHeight: 27,
     letterSpacing: -0.3, color: colors.ink,
   },
   programTitle: {
-    fontFamily: font.archivoSemiBold, fontSize: 22, lineHeight: 26,
+    fontFamily: font.archivoSemiBold, fontSize: 23, lineHeight: 27,
     letterSpacing: -0.3, color: colors.ink,
   },
   exerciseName: {
-    fontFamily: font.archivoSemiBold, fontSize: 16, lineHeight: 20, color: colors.ink,
+    fontFamily: font.archivoSemiBold, fontSize: 17, lineHeight: 21, color: colors.ink,
   },
   body: {
-    fontFamily: font.archivoRegular, fontSize: 14, lineHeight: 21, color: colors.body,
+    fontFamily: font.archivoRegular, fontSize: 15, lineHeight: 22, color: colors.body,
   },
   bodySub: {
-    fontFamily: font.archivoRegular, fontSize: 13, lineHeight: 19, color: colors.muted,
+    fontFamily: font.archivoRegular, fontSize: 14, lineHeight: 20, color: colors.muted,
   },
 
   // JetBrains Mono — labels, numbers, technical chrome

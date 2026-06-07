@@ -8,7 +8,9 @@
   *application-author* side — given the guardrails as fixed, how to write conforming code),
   [[004-pattern-expo56-react-compiler-hook-rules]] (the react-hooks rules that also bind code),
   [[027-pattern-native-stack-headers-pushed-screens]] (the inline-arrow `headerLeft` idiom
-  that clears `single-declaration`/`no-multi-comp`)
+  that clears `single-declaration`/`no-multi-comp`),
+  [[029-pattern-wcag-safe-generated-avatar-colors]] (a multi-helper util kept lint-clean by
+  nesting its helpers inside the one exported function body)
 
 Concrete, reusable techniques for writing feature code under the un-bypassable 001 lint
 (`no any`, no casts except `as const`, 100-col, one function/component per file, no suppression).

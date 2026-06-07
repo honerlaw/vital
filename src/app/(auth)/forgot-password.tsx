@@ -66,8 +66,8 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <Screen>
-      <AppText variant="label" style={styles.eyebrow}>Account recovery</AppText>
+    <Screen center>
+      <AppText variant="label">Account recovery</AppText>
       <AppText variant="screenTitle" style={styles.title}>Reset password</AppText>
 
       {codeSent ? (
@@ -122,7 +122,6 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space['4xl'] },
   title: { marginTop: space.sm },
   error: { marginTop: space.lg },
   cta: { marginTop: space.xl },

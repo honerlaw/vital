@@ -81,8 +81,8 @@ export default function SignInScreen() {
   };
 
   return (
-    <Screen>
-      <AppText variant="label" style={styles.eyebrow}>Welcome back</AppText>
+    <Screen center>
+      <AppText variant="label">Welcome back</AppText>
       <AppText variant="screenTitle" style={styles.title}>
         {verifying ? 'Verify it’s you' : 'Sign in'}
       </AppText>
@@ -147,7 +147,6 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space['4xl'] },
   title: { marginTop: space.sm },
   hint: { marginTop: space.lg },
   error: { marginTop: space.lg },
