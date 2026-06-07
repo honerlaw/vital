@@ -8,7 +8,7 @@ interface Props {
   seed: string;
 }
 
-/** Generated identicon stand-in (023): first character on a deterministic seed-hashed hue. */
+/** Generated monogram avatar (023): first character on a deterministic seed-hashed hue. */
 export default function Avatar({ seed }: Props) {
   return (
     <View style={[styles.circle, { backgroundColor: avatarColor(seed) }]}>
