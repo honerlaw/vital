@@ -2,7 +2,11 @@
 
 ## Status
 
-Draft
+Shipped (2026-06-07). Delivered via `minerva:propose-ship-auto` consensus panels (scope
+2/3×2→user-confirmed, approach 1/3→2/3 with dissent absorbed as commitments,
+whole-proposal 3/3, completion 3/3). Durable learnings:
+[[027-pattern-native-stack-headers-pushed-screens]]; reciprocal links added in 003/004/
+005/017. Forward-looking items in `followups.md`.
 
 ## Goal
 
@@ -36,34 +40,41 @@ custom nav header we have today."
    SDK 56 docs at implementation (AGENTS.md mandate). `workout` gets
    `headerShown: true` + `gestureEnabled: false` STATICALLY in the navigator
    (unconditional iOS gesture lock — cannot be lost to an in-screen early return).
-2. **`workout.tsx`**: every render branch returns
-   `<><Stack.Screen options={{ headerLeft: () => <Cancel touchable/> }} />{branch body}</>`
-   so the Cancel affordance exists in all reachable states. This includes BOTH early
-   returns: the whole non-ready branch (`bootStatus !== 'ready'` — covers loading AND
-   error/retry, not just loading) and the `!live` branch, which must return a
-   fragment-with-`Stack.Screen` instead of bare `null` (bare `null` mounts no
-   `Stack.Screen`, dropping the Cancel chrome exactly when it matters). The Cancel is an
+2. **`workout.tsx`** (as shipped): the `<Stack.Screen options={{ headerLeft }}>` element
+   is hoisted into a shared `headerScreen` const (built before the early returns) and
+   rendered in every render branch so the Cancel affordance exists in all reachable
+   states — the whole non-ready branch (`bootStatus !== 'ready'` — covers loading AND
+   error/retry) returns `<>{headerScreen}<CatalogStatus hasHeader/></>`, and the `!live`
+   branch returns `headerScreen` directly (never bare `null`, which would mount no
+   `Stack.Screen` and drop the Cancel chrome exactly when it matters). The Cancel is an
    INLINE ARROW inside the options object — verified (empirical lint probe) to clear
    both `local/single-declaration` (rule walks only `program.body`) and
    `react/no-multi-comp` (`{ ignoreStateless: false }`) — with
    `accessibilityRole="button"` and `accessibilityLabel="Cancel workout"`, routing
-   through the existing `onCancel` (`CANCEL_WORKOUT` dispatch + `router.back()`). It
-   REPLACES the default native back button. Android: hardware/system back routed to
-   `onCancel` via `BackHandler` from `react-native` (COMMITTED — `usePreventRemove` is
-   not publicly exported by expo-router ~56.2.8, verified against node_modules exports;
-   no `@react-navigation/native` installed). Documented caveat: the Android
-   predictive-back gesture (`enableOnBackInvokedCallback`) is NOT enabled in this app
-   (CNG prebuild, no manifest flag), so `BackHandler` intercepts classic back reliably;
-   a code comment + this note flag revisiting if predictive back is ever enabled.
+   through `onCancel` (`CANCEL_WORKOUT` dispatch + `router.back()`), which is
+   `useCallback`-wrapped so the headerLeft and the BackHandler share ONE cancel path
+   (exhaustive-deps required the stable reference; note the provider's dispatch is
+   re-memoized on `[state]`, so the effect still re-subscribes per dispatch — benign,
+   documented in-code). It REPLACES the default native back button. Android:
+   hardware/system back routed to `onCancel` via `BackHandler` from `react-native`
+   (COMMITTED — `usePreventRemove` is not publicly exported by expo-router ~56.2.8,
+   verified against node_modules exports; no `@react-navigation/native` installed).
+   Documented caveat: the Android predictive-back gesture
+   (`enableOnBackInvokedCallback`) is NOT enabled in this app (CNG prebuild, no manifest
+   flag), so `BackHandler` intercepts classic back reliably; a code comment + this note
+   flag revisiting if predictive back is ever enabled.
 3. **Delete `src/components/BackLink.tsx`** and its 4 call sites: `account.tsx:42`,
    `workout.tsx:58`, `program/[id].tsx:69` (main) and `:31` (not-found branch — an
    alternate render path; its `<Screen>` also needs `hasHeader`). The `backLink` theme
    variant STAYS — verified surviving consumers: `(tabs)/index.tsx:40,90` (Account
    links), the `(auth)` screens, `RestTimerBar.tsx:36`.
-4. **`src/components/Screen.tsx`**: opt-in `hasHeader` prop threaded through BOTH the
-   scroll and non-scroll branches: when set, `paddingTop = layout.screenPaddingTop` only
-   (the native header consumes the top inset); when unset, byte-for-byte the current
-   behavior — tab and auth screens untouched. `workout`'s nested structure (`Screen`
+4. **`src/components/Screen.tsx`** (and, via review F6, **`CatalogStatus.tsx`**): opt-in
+   `hasHeader` prop threaded through BOTH the scroll and non-scroll branches: when set,
+   `paddingTop = layout.screenPaddingTop` only (the native header consumes the top
+   inset); when unset, byte-for-byte the prior behavior — tab and auth screens
+   untouched. `CatalogStatus` forwards its own optional `hasHeader` (default false —
+   headerless tabs share it) so the non-ready branches of `workout`/`program/[id]` don't
+   double-inset under their now-visible headers. `workout`'s nested structure (`Screen`
    inside a root `View` with bottom-anchored `RestTimerBar` sibling) passes `hasHeader`;
    the nested-header inset interaction is a named manual-verify item.
 5. **Large screen titles stay INLINE** in content (intentional hybrid: the native header

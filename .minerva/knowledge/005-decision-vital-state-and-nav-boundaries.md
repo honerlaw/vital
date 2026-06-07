@@ -5,7 +5,9 @@
 - Work unit: 002-ui-component-library
 - Related: [[004-pattern-expo56-react-compiler-hook-rules]] (the timer's compiler-safe
   implementation), [[003-pattern-conforming-code-under-strict-guardrails]],
-  [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014)
+  [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014),
+  [[027-pattern-native-stack-headers-pushed-screens]] (021's native header chrome on the
+  pushed routes this placement defined)
 
 Two architectural choices made building VITAL's UI that future work should preserve (or
 consciously revisit), not rediscover.
