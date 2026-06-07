@@ -41,6 +41,23 @@
   finalize() call sites gated (sign-in via helper kind, forgot-password/sign-up via
   status === 'complete').
 
+## Review triage 2026-06-06
+
+Inline code review (no PR yet) + minerva audit: 0 high, 2 medium, 4 low. Triage panel
+2/3 accept (Proponent + Skeptic both accepted; Arbiter moot). Dispositions applied:
+
+- FIX (applied): #3 verify() catch-all message no longer invites a retry that cannot
+  succeed — reuses the "sign in on the web" degrade copy.
+- SUGGEST → followups at promote: #1 no Back/resend affordance from the verify step
+  (same pre-existing gap in sign-up/forgot-password — candidate small shared
+  fast-follow); #2 needs_client_trust→sendEmailCode degradation shows raw Clerk error;
+  tighten once the new Sentry capture names the real prod status.
+- IGNORE: #4 degrade pattern duplicated inline across screens (single-declaration rule
+  makes a shared util ceremony-heavy); #5 finalize-{error} retry edge (rare, degrades
+  safely).
+- FIX at promote: #6 proposal prose says "never-typed fallthrough"; shipped mechanism
+  is explicit-return-type + closed switch — reconcile in the proposal rewrite.
+
 ## Panel decisions 2026-06-06 (work phase)
 
 - [3/3 accept] completion verification: both panelists re-ran the gates

@@ -76,8 +76,8 @@ export default function SignInScreen() {
       if (finalized.error !== null) setError(finalized.error.message);
       return;
     }
-    degrade(step.kind === 'blocked' ? step.message : 'Verification did not complete. ' +
-      'Please try again.');
+    degrade(step.kind === 'blocked' ? step.message : 'Verification could not be completed ' +
+      'on this device. Please sign in on the web.');
   };
 
   return (
