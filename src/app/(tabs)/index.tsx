@@ -29,7 +29,7 @@ export default function TodayScreen() {
   // ready catalog here (an empty catalog resolves to 'error', not 'ready').
   if (state.activeProgramId === null) {
     return (
-      <Screen>
+      <Screen tabScreen>
         {/* Sign out lives on the always-visible Settings tab (023), so the header is just
             the date eyebrow — same as the session view below. */}
         <AppText variant="label" style={styles.eyebrow}>
@@ -76,7 +76,7 @@ export default function TodayScreen() {
   ];
 
   return (
-    <Screen>
+    <Screen tabScreen>
       <AppText variant="label" style={styles.eyebrow}>
         {dateEyebrow(new Date())}
       </AppText>

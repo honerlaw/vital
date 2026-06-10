@@ -15,7 +15,7 @@ export default function ProgramsScreen() {
   const eyebrow = `Library / ${String(programs.length).padStart(2, '0')} programs`;
 
   return (
-    <Screen>
+    <Screen tabScreen>
       <AppText variant="label" style={styles.eyebrow}>
         {eyebrow}
       </AppText>
