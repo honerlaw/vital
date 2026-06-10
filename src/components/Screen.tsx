@@ -8,6 +8,7 @@ interface Props {
   scroll?: boolean;
   hasHeader?: boolean;
   center?: boolean;
+  flushBottom?: boolean;
   tabScreen?: boolean;
 }
 
@@ -16,20 +17,30 @@ export default function Screen({
   scroll = true,
   hasHeader = false,
   center = false,
+  flushBottom = false,
   tabScreen = false,
 }: Props) {
   const insets = useSafeAreaInsets();
-  // On iOS the tab bar is the native UITabBar (025), which auto-insets a tab screen's
-  // ScrollView — so the manual `tabBarHeight` term would double-count. Drop it only on the
-  // iOS scroll path. The non-scroll Settings tab (bare View, no native auto-inset) and every
-  // non-tab consumer (`tabScreen` defaults false) keep the original padding byte-for-byte.
-  const tabBarPad =
-    tabScreen && process.env.EXPO_OS === 'ios' && scroll ? 0 : layout.tabBarHeight;
+  // On iOS the tab bar is the native UITabBar (025) — an overlay that auto-insets a tab
+  // screen's ScrollView, so the manual `tabBarHeight` term would double-count there. Drop it
+  // only on the iOS scroll path. The non-scroll Settings tab (bare View, no native auto-inset)
+  // and every non-tab consumer (`tabScreen` defaults false) keep the original padding.
+  const onNativeTabBar = process.env.EXPO_OS === 'ios';
+  const tabBarPad = tabScreen && onNativeTabBar && scroll ? 0 : layout.tabBarHeight;
   const pad = {
     // Under a native stack header the header bar consumes the top safe-area inset (021),
     // so headered screens keep only the design padding. The default path is unchanged.
     paddingTop: hasHeader ? layout.screenPaddingTop : insets.top + layout.screenPaddingTop,
-    paddingBottom: insets.bottom + tabBarPad + space['2xl'],
+    // flushBottom (027) drops the tab-bar clearance so a bottom-pinned child (Settings' Sign
+    // out) sits one design margin above the bar. SAFE ONLY where the bar is relative-flow
+    // (Android + web custom TabBar.tsx): the scene ends at the bar's top, so the default
+    // expression double-counts insets.bottom + tabBarHeight. On iOS the bar is the native
+    // UITabBar overlay (025) — content runs under it and a non-scroll screen gets no auto-inset
+    // — so flushBottom is gated off there (restoring the inset, per 032), leaving the iOS path
+    // byte-identical to the default.
+    paddingBottom: flushBottom && !onNativeTabBar
+      ? space['2xl']
+      : insets.bottom + tabBarPad + space['2xl'],
   };
   if (!scroll) {
     return <View style={[styles.flex, styles.base, pad]}>{children}</View>;

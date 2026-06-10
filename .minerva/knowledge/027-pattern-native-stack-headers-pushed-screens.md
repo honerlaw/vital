@@ -12,7 +12,9 @@
   is why handler effects here re-subscribe per dispatch),
   [[001-constraint-strict-eslint-guardrails]] (binds every file below),
   [[031-pattern-ios-native-tabs-liquid-glass]] (025 reused this entry's inline-arrow lint
-  pattern and v56-fragility mandate for the NativeTabs tab bar)
+  pattern and v56-fragility mandate for the NativeTabs tab bar),
+  [[032-pattern-screen-flushbottom-tabbar-inset]] (the sibling `flushBottom` opt-in on the
+  same `Screen`, extending the hasHeader inset-propagation story to the bottom edge)
 
 How work 021 put native expo-router Stack headers on the pushed screens (`program/[id]`,
 `account`, `workout`) and made the live workout's exits dispatch-guaranteed. The option

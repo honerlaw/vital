@@ -9,7 +9,9 @@
   [[027-pattern-native-stack-headers-pushed-screens]] (021's native header chrome on the
   pushed routes this placement defined),
   [[031-pattern-ios-native-tabs-liquid-glass]] (025's iOS NativeTabs bar — the pushed routes
-  here still cover it by placement, no visibility toggling)
+  here still cover it by placement, no visibility toggling),
+  [[032-pattern-screen-flushbottom-tabbar-inset]] (why the tabs tab bar is a relative-flow
+  sibling on Android/web — the layout fact the flushBottom padding fix depends on)
 
 Two architectural choices made building VITAL's UI that future work should preserve (or
 consciously revisit), not rediscover.
