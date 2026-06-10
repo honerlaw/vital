@@ -1,7 +1,11 @@
 # 025 — iOS Liquid Glass tab bar via NativeTabs, behind a platform abstraction
 
 ## Status
-Draft
+Shipped (2026-06-10) — implemented as designed (the Approach below matches the as-built code;
+no replan fired). Criteria 2, 3, 5 fully verified (lint --max-warnings 0, tsc, 74 tests, iOS JS
+bundle export). Criteria 1 & 4's iOS-runtime aspects (Liquid Glass render, native auto-inset
+spacing) are code-verified / bundle-builds only — NOT yet exercised on an iOS 26 device/sim;
+carried forward in `followups.md`.
 
 ## Goal
 On iOS, render the bottom tab bar through expo-router's `NativeTabs`
