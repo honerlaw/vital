@@ -1,7 +1,10 @@
 # 026 — Program-detail inline back (drop the blank native header)
 
 ## Status
-Draft
+Implemented (2026-06-10) — review + promote complete; PR pending (`minerva:ship` flips this to
+Shipped on merge). Delivered via `minerva:propose-ship-auto` consensus panels (approach selection
+2/3 after one revision round; completion verification 3/3). Durable learning: [[027-pattern-native-stack-headers-pushed-screens]]
+amended (program/[id] now uses an inline BackButton; workout retains the native Cancel header).
 
 ## Goal
 Remove the blank, chrome-only native navigation bar at the top of the Program-detail screen
@@ -43,11 +46,14 @@ Cancel button — so only `program/[id]` is genuinely blank and in scope.
    `<Screen>`, and via `CatalogStatus` for the loading branch (step 4). Drop `hasHeader` from the
    two `<Screen>` usages so they use the default `insets.top + layout.screenPaddingTop`
    (`Screen.tsx`) — the tab-screen rhythm, correct now that no native bar consumes the top inset.
-4. **`CatalogStatus` gains an optional `onBack?: () => void`** (`src/components/CatalogStatus.tsx`):
-   when provided it renders `<BackButton onPress={onBack} />` above its content. `program/[id]`'s
-   loading-branch call passes `onBack` and **drops `hasHeader`** (avoiding the inset double-count
-   027 §"hasHeader inset propagation" warns about). The `workout` and `(tabs)/_layout` call sites
-   pass no `onBack` and keep their existing args — unchanged.
+4. **`CatalogStatus` gains an optional `back?: boolean`** (`src/components/CatalogStatus.tsx`):
+   when set it renders the self-routing `<BackButton />` above its content. (Shipped as a boolean
+   flag rather than the originally-drafted `onBack?: () => void` callback — since `BackButton`
+   owns its own routing + cold-deep-link guard, a flag gives the loading branch the same guard for
+   free with no duplicated handler.) `program/[id]`'s loading-branch call passes `back` and **drops
+   `hasHeader`** (avoiding the inset double-count 027 §"hasHeader inset propagation" warns about).
+   The `workout` and `(tabs)/_layout` call sites pass no `back` (it defaults `false`) and keep
+   their existing args — unchanged.
 5. **`workout` untouched** — native Cancel header + four-piece guaranteed-exit recipe (027) intact.
 
 ### Candidate approaches considered (approach panel, 2 rounds)
