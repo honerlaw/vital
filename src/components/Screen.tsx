@@ -8,6 +8,7 @@ interface Props {
   scroll?: boolean;
   hasHeader?: boolean;
   center?: boolean;
+  flushBottom?: boolean;
 }
 
 export default function Screen({
@@ -15,13 +16,21 @@ export default function Screen({
   scroll = true,
   hasHeader = false,
   center = false,
+  flushBottom = false,
 }: Props) {
   const insets = useSafeAreaInsets();
   const pad = {
     // Under a native stack header the header bar consumes the top safe-area inset (021),
     // so headered screens keep only the design padding. The default path is unchanged.
     paddingTop: hasHeader ? layout.screenPaddingTop : insets.top + layout.screenPaddingTop,
-    paddingBottom: insets.bottom + layout.tabBarHeight + space['2xl'],
+    // The custom tab bar (TabBar.tsx) renders in normal flow below the scene, so it already
+    // reserves insets.bottom + tabBarHeight beneath it; the default path adds that clearance
+    // as trailing scroll space. flushBottom (027) drops it so a bottom-pinned child (Settings'
+    // Sign out) sits just above the bar — SAFE ONLY while the bar stays relative-flow; if it
+    // were ever made position:'absolute', flushBottom screens would lose home-indicator clearance.
+    paddingBottom: flushBottom
+      ? space['2xl']
+      : insets.bottom + layout.tabBarHeight + space['2xl'],
   };
   if (!scroll) {
     return <View style={[styles.flex, styles.base, pad]}>{children}</View>;
