@@ -28,6 +28,28 @@ reproduce the JetBrains-Mono-eyebrow-over-Archivo-title composition. The shared
 are exempt from `local/single-declaration`, so no extra file. Option names are
 v56-fragile; they were pinned against the versioned Expo docs (AGENTS.md mandate).
 
+### Update 2026-06-10 (026): `program/[id]` reverted to an inline back affordance
+The chrome-only bar on `program/[id]` read as wasted blank space (a white nav row whose only
+content is a chevron, above the safe-area inset the tab screens already carry). 026 dropped its
+native header — the `program/[id]` `<Stack.Screen>` now passes **no `options`**, inheriting the
+Stack default `headerShown: false` — and renders an inline `BackButton` (`src/components/BackButton.tsx`)
+as the first row of every render branch (ready, not-found, and the loading branch via
+`CatalogStatus`'s new `back?: boolean`). `pushedHeaderOptions` survives **only for `workout`**,
+whose bar is load-bearing (it holds the Cancel exit). Two non-obvious points this revision pins:
+- **Self-routing + cold-deep-link guard.** `BackButton` owns its own routing —
+  `router.canGoBack() ? router.back() : router.replace('/')`. The native chevron auto-hid when
+  `canGoBack()` was false; an unguarded `router.back()` on a first-route deep link is a visible
+  **dead tap**. Folding the guard into the component (not per-call-site handlers) gives every
+  branch the fallback for free and keeps `local/single-declaration` happy (one default-export
+  component; the `onPress` closure lives in `program.body`, which the rule does not walk).
+- **`hasHeader` must drop with the header.** With no native bar consuming the top inset, all of
+  `program/[id]`'s `<Screen>`/`CatalogStatus` callers drop `hasHeader` so `Screen` re-adds
+  `insets.top` (the tab-screen rhythm). Leaving `hasHeader` would under-pad under the status bar —
+  the inverse of the inset double-count in the §"hasHeader inset propagation" note below.
+This is a scoped UX reversal, not a safety regression: `program/[id]` never had exit
+side-effects, so re-enabling swipe-back/system-back under `headerShown: false` (the §recipe-point-1
+hazard) is *desired* here, unlike `workout`.
+
 ## The guaranteed-exit screen recipe (workout)
 A screen whose every exit must run a dispatch (CANCEL_WORKOUT, whose absence strands the
 live session AND leaves a `SWITCH_AND_START_WORKOUT` program switch un-reverted — the 015

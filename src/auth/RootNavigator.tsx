@@ -5,9 +5,11 @@ import { useEffect } from 'react';
 import { recordBootMilestone } from '@/observability/record-boot-milestone';
 import { colors } from '@/theme';
 
-// Shared chrome for the pushed detail screens (021): a native back-affordance bar themed
-// to the app — white, shadowless, ink chevron with no back text, empty title (large titles
-// stay inline in screen content per the design language).
+// Chrome for the workout screen (021): a native back-affordance bar themed to the app —
+// white, shadowless, ink chevron with no back text, empty title (large titles stay inline in
+// screen content per the design language). `program/[id]` used to share this, but its bar was
+// blank (back chevron only) and the screen now uses an inline BackButton instead (026); only
+// `workout` keeps the native bar, because its headerLeft holds the Cancel exit.
 const pushedHeaderOptions = {
   headerShown: true,
   headerTitle: '',
@@ -47,7 +49,9 @@ export default function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={auth.isSignedIn}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="program/[id]" options={pushedHeaderOptions} />
+        {/* No `options` → inherits the Stack default `headerShown: false` (026): the blank
+            chrome-only header is gone; the screen renders its own inline BackButton. */}
+        <Stack.Screen name="program/[id]" />
         {/* A live workout's only exits must run the cancel/finish dispatches (021): the
             swipe gesture and native back button are disabled HERE — statically, so the
             lock can't be lost to an in-screen early return — and the screen supplies its
