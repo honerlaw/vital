@@ -29,6 +29,27 @@
 2. Use Feather `chevron-left` in `colors.ink` (already a dep via `TabBar`).
 3. Keep the back handler inline / BackButton a single default-export component (single-declaration).
 
+## Panel decisions 2026-06-10 (work + review)
+- [3/3 accept] completion verification: all 6 success criteria honestly met. Proponent + Skeptic
+  + Arbiter independently re-ran lint(0)/tsc(0)/test(74/74)/lint:rules-test(20/20)/export:web
+  (11 routes incl `/program/[id]`). Verified: single headerless route covers all 3 branches;
+  BackButton self-routes with the canGoBack guard in every state; Screen padding = insets.top +
+  screenPaddingTop (no double-count); workout/(tabs) provably untouched in the diff.
+- [skipped — small] review triage: all findings low-severity (evidence below); no FIX items, no
+  load-bearing divergence → no replan. Per the taxonomy, triage panel skippable when all findings
+  are low.
+
+## Review findings 2026-06-10
+- F1 [low → promote] Implementation used `CatalogStatus.back?: boolean` (self-routing BackButton)
+  instead of the proposal step-4 `onBack?: () => void` callback. Strictly better — the
+  cold-deep-link guard lives once inside BackButton and covers all 3 branches for free. Proposal
+  text is now slightly stale; reconcile `## Approach` at promote.
+- F2 [low → promote] This unit revises [[027-pattern-native-stack-headers-pushed-screens]]:
+  `program/[id]` no longer uses the native chrome header (now an inline BackButton); only
+  `workout` keeps the native bar (Cancel exit). Amend 027 at promote.
+- Code quality: no correctness/lint/type issues (green suite; completion-panel Skeptic ran a
+  31-tool-use review → accept). BackButton clears single-declaration (rule walks top-level only).
+
 ## Notes
 - Base: branched off `origin/main` (cae3419, #32 NativeTabs) — local `main` was stale at bf1dac2.
   Verified `Screen.tsx`'s `hasHeader`→paddingTop branch and `RootNavigator`/`CatalogStatus` are

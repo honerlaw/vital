@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import BackButton from '@/components/BackButton';
 import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import Screen from '@/components/Screen';
@@ -17,6 +18,11 @@ interface Props {
   onRetry?: () => void;
   /** Set by callers rendered under a native stack header (021) so Screen skips the top inset. */
   hasHeader?: boolean;
+  /**
+   * Render the inline BackButton above the status content (026). Used by `program/[id]`, which
+   * has no native header, so its loading/error states still offer a discoverable back affordance.
+   */
+  back?: boolean;
 }
 
 /**
@@ -24,9 +30,10 @@ interface Props {
  * the standalone `program/[id]` / `workout` routes so no program screen renders (on the client or
  * during SSR) before `state.programs` is hydrated.
  */
-export default function CatalogStatus({ status, onRetry, hasHeader = false }: Props) {
+export default function CatalogStatus({ status, onRetry, hasHeader = false, back = false }: Props) {
   return (
     <Screen hasHeader={hasHeader}>
+      {back ? <BackButton /> : null}
       <EmptyState lines={LINES[status]} />
       {status === 'error' && onRetry !== undefined ? (
         <View style={styles.retry}>
