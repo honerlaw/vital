@@ -2,7 +2,10 @@
 
 ## Status
 Shipped (2026-06-10). Delivered via `minerva:propose-ship-auto` consensus panels; durable
-learning in `.minerva/knowledge/031-pattern-screen-flushbottom-tabbar-inset.md`.
+learning in `.minerva/knowledge/032-pattern-screen-flushbottom-tabbar-inset.md`. Replanned
+2026-06-10 (see `replan.md`) when 025's iOS native tab bar landed on main before this PR
+merged: `flushBottom` is now gated off on iOS (the bar is a native overlay there), so the
+~24px pin applies on Android + web; iOS keeps the full safe inset that clears the overlay.
 
 ## Goal
 On the Settings tab, pin the "Sign out" button just above the bottom tab bar (a small
@@ -47,8 +50,12 @@ spacer that pushes everything down), looking unbalanced.
      either way). Update the file header comment to describe the pin/center mechanism.
 
 ## Success criteria
-1. **[visual — verified by iOS simulator / manual inspection; no UI test harness exists]**
-   Sign out sits ~24px above the tab bar (not floating high).
+1. **[visual — verified by simulator / manual inspection; no UI test harness exists]**
+   Sign out sits ~24px above the tab bar (not floating high) on Android + web (the relative-flow
+   `TabBar.tsx`). On iOS the bar is the native `UITabBar` overlay (025), where 24px is
+   unachievable on a bare View without losing home-indicator clearance — there `flushBottom` is
+   gated off and Sign out clears the overlay with the full safe inset (this matches main's iOS
+   Settings padding; see `replan.md`).
 2. **[visual — verified by simulator / manual inspection]** Avatar + email are vertically
    centered in the region between the title and the Sign out button.
 3. `Screen`'s false/default `flushBottom` branch is behaviorally unchanged — every other
