@@ -1,6 +1,5 @@
-import { Tabs } from 'expo-router';
+import AppTabs from '@/components/AppTabs';
 import CatalogStatus from '@/components/CatalogStatus';
-import TabBar from '@/components/TabBar';
 import { bootStatus } from '@/state/boot-status';
 import { useAppStore } from '@/state/useAppStore';
 
@@ -15,12 +14,7 @@ export default function TabsLayout() {
     return <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} />;
   }
 
-  return (
-    <Tabs tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="programs" />
-      <Tabs.Screen name="history" />
-      <Tabs.Screen name="settings" />
-    </Tabs>
-  );
+  // The tab bar is platform-resolved (025): the native UITabBar / Liquid Glass on iOS
+  // (`AppTabs.ios.tsx`), the custom JS bar on Android + web (`AppTabs.tsx`).
+  return <AppTabs />;
 }

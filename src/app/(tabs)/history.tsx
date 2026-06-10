@@ -18,7 +18,7 @@ export default function HistoryScreen() {
   const empty = state.history.length === 0;
 
   return (
-    <Screen>
+    <Screen tabScreen>
       <AppText variant="label" style={styles.eyebrow}>
         Log
       </AppText>

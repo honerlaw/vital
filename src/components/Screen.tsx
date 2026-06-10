@@ -8,6 +8,7 @@ interface Props {
   scroll?: boolean;
   hasHeader?: boolean;
   center?: boolean;
+  tabScreen?: boolean;
 }
 
 export default function Screen({
@@ -15,13 +16,20 @@ export default function Screen({
   scroll = true,
   hasHeader = false,
   center = false,
+  tabScreen = false,
 }: Props) {
   const insets = useSafeAreaInsets();
+  // On iOS the tab bar is the native UITabBar (025), which auto-insets a tab screen's
+  // ScrollView — so the manual `tabBarHeight` term would double-count. Drop it only on the
+  // iOS scroll path. The non-scroll Settings tab (bare View, no native auto-inset) and every
+  // non-tab consumer (`tabScreen` defaults false) keep the original padding byte-for-byte.
+  const tabBarPad =
+    tabScreen && process.env.EXPO_OS === 'ios' && scroll ? 0 : layout.tabBarHeight;
   const pad = {
     // Under a native stack header the header bar consumes the top safe-area inset (021),
     // so headered screens keep only the design padding. The default path is unchanged.
     paddingTop: hasHeader ? layout.screenPaddingTop : insets.top + layout.screenPaddingTop,
-    paddingBottom: insets.bottom + layout.tabBarHeight + space['2xl'],
+    paddingBottom: insets.bottom + tabBarPad + space['2xl'],
   };
   if (!scroll) {
     return <View style={[styles.flex, styles.base, pad]}>{children}</View>;
