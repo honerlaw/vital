@@ -1,7 +1,14 @@
 # 028 — iOS tab screens: drop the double-counted top safe-area inset
 
 ## Status
-Draft
+Shipped (2026-06-10). Delivered via `minerva:propose-ship-auto` consensus panels (approach,
+whole-proposal, completion, and promote-partition panels all reached consensus; scope and review
+triage resolved via the skip predicate — see `scratchpad.md` archive). Implementation matched
+Approach A exactly (no divergence, no replan). Durable learning folded into
+[[031-pattern-ios-native-tabs-liquid-glass]] "Trap 1" — now covering BOTH safe-area axes, with the
+both-axes lesson and the updated validation status. **On-device notch-clearance verification on
+both UITabBar generations (iOS 26 Liquid Glass + older opaque) remains a hard merge precondition;
+if the native top inset is partial, fall back to Approach B (see below).**
 
 ## Goal
 Remove the large empty band (~47–59pt, the notch / Dynamic Island height) above the
