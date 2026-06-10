@@ -7,7 +7,9 @@
   implementation), [[003-pattern-conforming-code-under-strict-guardrails]],
   [[019-pattern-null-active-program-first-run]] (the first-run null-id semantics, 014),
   [[027-pattern-native-stack-headers-pushed-screens]] (021's native header chrome on the
-  pushed routes this placement defined)
+  pushed routes this placement defined),
+  [[031-pattern-screen-flushbottom-tabbar-inset]] (why the tabs tab bar is a relative-flow
+  sibling — the layout fact the flushBottom padding fix depends on)
 
 Two architectural choices made building VITAL's UI that future work should preserve (or
 consciously revisit), not rediscover.

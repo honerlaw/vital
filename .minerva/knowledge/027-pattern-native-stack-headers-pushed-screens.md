@@ -10,7 +10,9 @@
   lint-clearing techniques this extends with the inline-arrow `headerLeft`),
   [[017-pattern-per-user-state-persistence]] (whose `[state]`-memoized wrapped dispatch
   is why handler effects here re-subscribe per dispatch),
-  [[001-constraint-strict-eslint-guardrails]] (binds every file below)
+  [[001-constraint-strict-eslint-guardrails]] (binds every file below),
+  [[031-pattern-screen-flushbottom-tabbar-inset]] (the sibling `flushBottom` opt-in on the
+  same `Screen`, extending the hasHeader inset-propagation story to the bottom edge)
 
 How work 021 put native expo-router Stack headers on the pushed screens (`program/[id]`,
 `account`, `workout`) and made the live workout's exits dispatch-guaranteed. The option

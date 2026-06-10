@@ -1,7 +1,8 @@
 # 027 — Settings layout: pin Sign out, center profile
 
 ## Status
-Draft
+Shipped (2026-06-10). Delivered via `minerva:propose-ship-auto` consensus panels; durable
+learning in `.minerva/knowledge/031-pattern-screen-flushbottom-tabbar-inset.md`.
 
 ## Goal
 On the Settings tab, pin the "Sign out" button just above the bottom tab bar (a small
