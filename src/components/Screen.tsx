@@ -21,16 +21,26 @@ export default function Screen({
   tabScreen = false,
 }: Props) {
   const insets = useSafeAreaInsets();
-  // On iOS the tab bar is the native UITabBar (025) — an overlay that auto-insets a tab
-  // screen's ScrollView, so the manual `tabBarHeight` term would double-count there. Drop it
-  // only on the iOS scroll path. The non-scroll Settings tab (bare View, no native auto-inset)
-  // and every non-tab consumer (`tabScreen` defaults false) keep the original padding.
+  // On iOS the tab bar is the native UITabBar (025), whose content view controller hosts each
+  // tab's ScrollView with the default contentInsetAdjustmentBehavior — so the native side
+  // auto-insets that ScrollView for the safe area, on BOTH edges. Any manual safe-area term we
+  // also add on this path double-counts. The gate is the iOS tab scroll path; the non-scroll
+  // Settings tab (bare View, no native auto-inset) and every non-tab consumer (`tabScreen`
+  // defaults false) keep the original manual padding.
   const onNativeTabBar = process.env.EXPO_OS === 'ios';
-  const tabBarPad = tabScreen && onNativeTabBar && scroll ? 0 : layout.tabBarHeight;
+  const onNativeTabScroll = tabScreen && onNativeTabBar && scroll;
+  // Bottom: drop the manual `tabBarHeight` (025) — the native bottom inset clears the bar.
+  // `insets.bottom + space['2xl']` stays as trailing scroll space (NOT dropped here).
+  const tabBarPad = onNativeTabScroll ? 0 : layout.tabBarHeight;
   const pad = {
-    // Under a native stack header the header bar consumes the top safe-area inset (021),
-    // so headered screens keep only the design padding. The default path is unchanged.
-    paddingTop: hasHeader ? layout.screenPaddingTop : insets.top + layout.screenPaddingTop,
+    // Top: drop the manual `insets.top` whenever a native consumer already supplied the top
+    // safe-area inset — a native stack header (021, `hasHeader`) or the native tab content
+    // inset (028, `onNativeTabScroll`). Both keep only the design padding; every other path
+    // adds the inset manually. (028 is the symmetric top twin of the 025 bottom fix above.)
+    paddingTop:
+      hasHeader || onNativeTabScroll
+        ? layout.screenPaddingTop
+        : insets.top + layout.screenPaddingTop,
     // flushBottom (027) drops the tab-bar clearance so a bottom-pinned child (Settings' Sign
     // out) sits one design margin above the bar. SAFE ONLY where the bar is relative-flow
     // (Android + web custom TabBar.tsx): the scene ends at the bar's top, so the default

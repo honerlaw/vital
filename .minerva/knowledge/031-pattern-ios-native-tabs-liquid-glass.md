@@ -46,16 +46,36 @@ SDK 56 uses the **compound** element form `NativeTabs.Trigger.Icon` / `NativeTab
 with no `.fill` variant, e.g. `list.bullet`, simply repeats the name); `tintColor` lives on the
 `NativeTabs` host; `Trigger name` must match the route name under `(tabs)`.
 
-## Trap 1 — the shared Screen bottom-pad double-counts under the native bar
+## Trap 1 — the shared Screen safe-area padding double-counts under the native bar (BOTH edges)
 `Screen.tsx` (used by ALL screens, tab and non-tab) hard-coded `layout.tabBarHeight` into its
-bottom padding because the old custom bar was not a real safe-area consumer. The native
-UITabBar **is** one and auto-insets a tab screen's first ScrollView — so the manual term
-double-counts. The fix gates on `tabScreen && process.env.EXPO_OS === 'ios' && scroll`; only
-the three scrolling tab screens opt in (`index` in both its branches, `programs`, `history`).
-**This rests on an assumption not yet validated on a real iOS 26 device** (see followups): that
-the native bar auto-insets the ScrollView. If it turns out false, the fallback is to set
-`disableAutomaticContentInsets` on the triggers and keep the manual padding — that fallback is
-the non-derivable kernel; the conditional itself is in the code.
+bottom padding and adds `insets.top` to its top padding, because the old custom bar was not a
+real safe-area consumer. The native UITabBar's content view controller **is** one and auto-insets
+a tab screen's first ScrollView for the safe area — so any manual safe-area term we also add on
+that path double-counts. The fix gates on `tabScreen && process.env.EXPO_OS === 'ios' && scroll`
+(named `onNativeTabScroll`); only the three scrolling tab screens opt in (`index` in both its
+branches, `programs`, `history`).
+
+**A safe-area double-count has TWO axes, and 025 fixed only one.** Work 025 dropped the manual
+`tabBarHeight` on the BOTTOM but left `insets.top` on the top. The top term survived as a
+~`insets.top` (≈47–59pt) empty band above all three scrolling iOS tab screens until work **028**
+applied the symmetric top fix: `paddingTop: hasHeader || onNativeTabScroll ? screenPaddingTop :
+insets.top + screenPaddingTop` — i.e. when a native consumer already supplies the top inset (a
+stack header via `hasHeader`, or now the native tab content-inset), keep only the 8pt design
+margin. **Lesson: when a native consumer takes over insets, audit TOP and BOTTOM in the same
+change — a one-sided fix leaves the mirror-image bug latent (here, ~7 months).** Note the bottom
+deliberately still keeps `insets.bottom + space['2xl']` as trailing scroll space; only the
+redundant `tabBarHeight`/`insets.top` terms were dropped.
+
+**Validation status (updated by 028):** 025 originally flagged the auto-inset as "not yet validated
+on a real iOS 26 device." The 028 top-whitespace report now *confirms a native top inset is
+applied* — the band is precisely the native top inset summed with the manual `insets.top`, so the
+inset demonstrably exists. What is still UNCONFIRMED on-device is whether that inset is FULL or only
+PARTIAL: if partial, dropping `insets.top` to an 8pt margin could let content sit too close to the
+notch / Dynamic Island. So notch/Dynamic-Island *clearance* (not just "band gone") on BOTH UITabBar
+generations — iOS 26 Liquid Glass and the older opaque fallback — remains a merge precondition for
+028. If that check shows a partial inset, the fallback is approach B: set
+`disableAutomaticContentInsets` on the triggers and own the padding manually — that fallback is the
+non-derivable kernel; the conditional itself is in the code.
 
 ## Trap 2 — non-scroll tab screens get NO native auto-inset
 The Settings tab is `<Screen scroll={false}>` (a bare `View`, with a flex spacer pinning
