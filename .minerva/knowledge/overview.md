@@ -1,9 +1,9 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 030 -->
+<!-- synthesis-watermark: 033 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022 and 024). Theme-grouped
-navigation over the corpus; the entries remain the source of truth.
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024 and 029).
+Theme-grouped navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
 
@@ -43,7 +43,18 @@ work 021 the pushed screens carry chrome-only native stack headers, and a screen
 exit must dispatch (the live workout) follows a four-piece guaranteed-exit recipe — static
 gesture/back locks at the navigator, header chrome in every render branch, an inline
 `headerLeft` arrow, and `BackHandler` routed through the same cancel path
-([[027-pattern-native-stack-headers-pushed-screens]]). Since work 022 a workout records
+([[027-pattern-native-stack-headers-pushed-screens]]); work 029 then moved the workout's day-name
+title INTO that native bar (the eyebrow that blocked a native title was removed app-wide) and
+swapped the bare "Cancel" text for a chevron + a cross-platform, SSR-safe confirm dialog
+(`Platform.OS === 'web' ? window.confirm : Alert.alert`, reached only inside the event/BackHandler
+callback) — the four-piece recipe itself unchanged. On iOS the tab bar is the native `UITabBar`
+with Liquid Glass, confined there behind a Metro platform fork (`AppTabs.ios` via NativeTabs vs the
+custom bar everywhere else, since web NativeTabs is SSR-unstable and Android would lose the brand
+bar) — glass is a property of the UIKit control, not a backdrop veneer
+([[031-pattern-ios-native-tabs-liquid-glass]]). That native overlay bar reshaped the shared
+`Screen`'s bottom padding: a `flushBottom` opt-in pins content one design margin above the
+relative-flow Android/web bar, but is gated OFF on iOS where the overlay needs its inset restored
+([[032-pattern-screen-flushbottom-tabbar-inset]]). Since work 022 a workout records
 per-set weight and actual reps end to end: all numeric coercion lives in the pure `updateSet`
 engine (preserving 017's reducer/wrapper mirror), the catalog's `×` scheme separator is
 U+00D7 (an ASCII-x parser silently no-ops prefill), and prefill is placeholder +
@@ -55,7 +66,11 @@ only done sets) coalescing in `ExerciseBlock` so `SetRow` stays fallback-source-
 and the derivation is a plain const after the render gates because a `useMemo` there would
 violate hook ordering ([[030-pattern-cross-session-weight-prefill]]). Since work 023 the
 Settings tab's generated avatar derives a WCAG-AA-safe background color deterministically
-from the user's email ([[029-pattern-wcag-safe-generated-avatar-colors]]).
+from the user's email ([[029-pattern-wcag-safe-generated-avatar-colors]]). Work 029's green
+hero card surfaced the sibling contrast trap on the inverse surface: text ON an accent fill
+must be OPAQUE white (a translucent label blends toward the fill and fails AA), so dim
+secondary text with size/weight and reserve translucency for non-text dividers
+([[033-pattern-inverted-on-accent-surface]]).
 
 ## Data layer — Postgres as the single source of truth
 
@@ -124,7 +139,7 @@ auto-mirrored from Doppler prd on every release
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 030, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 033, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
