@@ -10,6 +10,16 @@ name: Build and submit iOS
 on:
   workflow_dispatch: {}
 
+# Pin every job (build AND submit) to the same Node as local / eas.json's build
+# profile. The submit job's `npm ci` validates package-lock.json, and the lock is
+# written under npm 11 (Node 24); EAS's default submit image is Node 22 / npm 10,
+# which rejects the same lock over pruned optional platform deps (@emnapi/*, see
+# npm/cli#4828). eas.json submit profiles don't accept a `node` field, so this is
+# the only place to pin it for the submit job.
+defaults:
+  tools:
+    node: 24.13.0
+
 jobs:
   build_ios:
     name: Build iOS
