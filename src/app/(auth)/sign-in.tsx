@@ -82,8 +82,7 @@ export default function SignInScreen() {
 
   return (
     <Screen center>
-      <AppText variant="label">Welcome back</AppText>
-      <AppText variant="screenTitle" style={styles.title}>
+      <AppText variant="screenTitle">
         {verifying ? 'Verify it’s you' : 'Sign in'}
       </AppText>
 
@@ -147,7 +146,6 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { marginTop: space.sm },
   hint: { marginTop: space.lg },
   error: { marginTop: space.lg },
   cta: { marginTop: space.xl },

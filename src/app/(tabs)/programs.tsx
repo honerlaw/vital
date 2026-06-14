@@ -12,13 +12,9 @@ export default function ProgramsScreen() {
   // The `(tabs)/_layout` render-gate holds this screen until `programsStatus === 'ready'` (an empty
   // catalog resolves to `error`, not `ready`), so the catalog here is always present and non-empty.
   const { programs } = state;
-  const eyebrow = `Library / ${String(programs.length).padStart(2, '0')} programs`;
 
   return (
     <Screen tabScreen>
-      <AppText variant="label" style={styles.eyebrow}>
-        {eyebrow}
-      </AppText>
       <AppText variant="screenTitle" style={styles.title}>
         Programs
       </AppText>
@@ -39,7 +35,6 @@ export default function ProgramsScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space.lg },
-  title: { marginTop: space.sm },
+  title: { marginTop: space.lg },
   list: { marginTop: space.xl },
 });

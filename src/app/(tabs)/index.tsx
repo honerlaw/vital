@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
 import Button from '@/components/Button';
-import CornerCard from '@/components/CornerCard';
+import HeroCard from '@/components/HeroCard';
 import ProgramCard from '@/components/ProgramCard';
 import RowItem from '@/components/RowItem';
 import Screen from '@/components/Screen';
@@ -16,7 +16,6 @@ import {
   totalSets,
 } from '@/data/engine';
 import { useAppStore } from '@/state/useAppStore';
-import { dateEyebrow } from '@/utils/dateEyebrow';
 import { colors, space } from '@/theme';
 
 export default function TodayScreen() {
@@ -30,11 +29,6 @@ export default function TodayScreen() {
   if (state.activeProgramId === null) {
     return (
       <Screen tabScreen>
-        {/* Sign out lives on the always-visible Settings tab (023), so the header is just
-            the date eyebrow — same as the session view below. */}
-        <AppText variant="label" style={styles.eyebrow}>
-          {dateEyebrow(new Date())}
-        </AppText>
         <AppText variant="screenTitle" style={styles.title}>
           Choose your program
         </AppText>
@@ -77,30 +71,22 @@ export default function TodayScreen() {
 
   return (
     <Screen tabScreen>
-      <AppText variant="label" style={styles.eyebrow}>
-        {dateEyebrow(new Date())}
-      </AppText>
       <AppText variant="screenTitle" style={styles.title}>
         Today&apos;s session
       </AppText>
 
       <View style={styles.hero}>
-        <CornerCard>
-          <AppText variant="label">{program.name}</AppText>
-          <AppText variant="displayDay" style={styles.day}>
+        <HeroCard>
+          <AppText variant="displayDay" color={colors.onAccent}>
             {day.name}
           </AppText>
-          <StatRow cells={cells} />
+          <StatRow cells={cells} inverted />
           <View style={styles.begin}>
-            <Button label="Begin →" onPress={onBegin} />
+            <Button label="Begin →" onPress={onBegin} variant="onAccent" />
           </View>
-        </CornerCard>
+        </HeroCard>
       </View>
 
-      <View style={styles.sect}>
-        <AppText variant="label">Up next</AppText>
-        <AppText variant="label">{`${program.perWeek}×/wk`}</AppText>
-      </View>
       <View style={styles.list}>
         {upcoming.map((d, i) => (
           <RowItem
@@ -117,18 +103,10 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space.lg },
   chooserBlurb: { marginTop: space.md },
   chooserList: { marginTop: space.lg },
-  title: { marginTop: space.sm },
+  title: { marginTop: space.lg },
   hero: { marginTop: space.lg },
-  day: { marginTop: space.sm },
   begin: { marginTop: space.lg },
-  sect: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: space['3xl'],
-    marginBottom: space.md,
-  },
-  list: { borderTopWidth: 1, borderTopColor: colors.line2 },
+  list: { marginTop: space['3xl'], borderTopWidth: 1, borderTopColor: colors.line2 },
 });
