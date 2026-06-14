@@ -67,7 +67,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <Screen center>
-      <AppText variant="screenTitle" style={styles.title}>Reset password</AppText>
+      <AppText variant="screenTitle">Reset password</AppText>
 
       {codeSent ? (
         <View>
@@ -121,7 +121,6 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { marginTop: space.sm },
   error: { marginTop: space.lg },
   cta: { marginTop: space.xl },
   link: { alignSelf: 'flex-start', paddingVertical: space.md },

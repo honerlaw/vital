@@ -54,7 +54,6 @@ export const radius = {
 export const border = {
   hairline: StyleSheet.hairlineWidth, // light dividers (colors.line)
   thin: 1,                            // default borders (colors.line2)
-  accent: 1.5,                        // corner brackets, active states
 } as const;
 
 /**
