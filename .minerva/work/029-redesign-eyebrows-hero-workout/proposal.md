@@ -1,7 +1,14 @@
 # 029 — Redesign: drop eyebrow overlines, fill the hero card, glass-back the workout
 
 ## Status
-Draft
+Shipped (2026-06-14). Delivered via `minerva:propose-ship-auto` consensus panels. Durable
+learning: `.minerva/knowledge/033-pattern-inverted-on-accent-surface.md` (new) and a dated
+`(029)` addendum on `.minerva/knowledge/027-pattern-native-stack-headers-pushed-screens.md`.
+Review fixes applied before ship: deleted the now-dead `src/utils/dateEyebrow.ts`, removed the
+orphaned `border.accent` theme token (the deleted `CornerCard` was its only consumer), and
+dropped the leftover `marginTop` on the three centered auth screen titles (eyebrow removal made
+the title the first child, where the margin off-centered the form). A forward-looking note about
+the numeric per-week cadence no longer showing on home is in `followups.md`.
 
 ## Goal
 A slight, cohesive redesign in three coordinated parts:

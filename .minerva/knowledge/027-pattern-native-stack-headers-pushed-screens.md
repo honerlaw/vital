@@ -14,7 +14,9 @@
   [[031-pattern-ios-native-tabs-liquid-glass]] (025 reused this entry's inline-arrow lint
   pattern and v56-fragility mandate for the NativeTabs tab bar),
   [[032-pattern-screen-flushbottom-tabbar-inset]] (the sibling `flushBottom` opt-in on the
-  same `Screen`, extending the hasHeader inset-propagation story to the bottom edge)
+  same `Screen`, extending the hasHeader inset-propagation story to the bottom edge),
+  [[033-pattern-inverted-on-accent-surface]] (029 also redesigned the workout exit — see the
+  §"Update 2026-06-14 (029)" addendum below — and 033 is its companion WCAG pattern)
 
 How work 021 put native expo-router Stack headers on the pushed screens (`program/[id]`,
 `account`, `workout`) and made the live workout's exits dispatch-guaranteed. The option
@@ -51,6 +53,31 @@ whose bar is load-bearing (it holds the Cancel exit). Two non-obvious points thi
 This is a scoped UX reversal, not a safety regression: `program/[id]` never had exit
 side-effects, so re-enabling swipe-back/system-back under `headerShown: false` (the §recipe-point-1
 hazard) is *desired* here, unlike `workout`.
+
+### Update 2026-06-14 (029): workout title moves INTO the bar; Cancel → chevron + confirm
+029 removed the JetBrains-Mono eyebrow overlines app-wide, which **dissolved the one constraint**
+in §"Chrome-only hybrid headers" that kept the workout title inline — with no eyebrow there is
+no eyebrow-over-title composition to reproduce, so the day name is now a plain string the native
+`headerTitle` holds. `pushedHeaderOptions.headerTitle` became `'Workout'` (the base fallback for
+the loading/error branches), and the workout screen's in-screen `<Stack.Screen>` overrides it
+with the live day name (derived up-front, guarded by `live && status === 'ready'`, so the
+pre-load branches never read an undefined `day`). The bare `headerLeft` "Cancel" text became a
+Feather `chevron-left` button, and the exit is now **confirmation-gated**.
+**The four-piece guaranteed-exit recipe above is UNCHANGED** — `gestureEnabled:false` +
+`headerBackVisible:false` static in the navigator, the inline-arrow `headerLeft` in every render
+branch, and the single `BackHandler` effect all still route the one `onCancel`. The chevron and
+the confirm dialog slot *into* that recipe; they do not replace it. Two non-derivable points:
+- **The confirm is cross-platform AND SSR-safe.** RN's `Alert` is a no-op on web (the app ships
+  web with SSR), so `onCancel` branches: `Platform.OS === 'web' ? window.confirm(...) : Alert.alert(...)`
+  with `Discard` (destructive → `CANCEL_WORKOUT` then `router.back()`) and `Keep going` (cancel →
+  no-op). Touching `window` is safe **only because the branch runs solely inside the onPress /
+  BackHandler callback — never at render**, so it never executes during the server render. This
+  is the same `Platform.OS === 'web'` guard shape [[033-pattern-inverted-on-accent-surface]]
+  notes the inverted card reuses.
+- **`usePreventRemove` is still not exported** by expo-router ~56, so interception remains via the
+  custom `headerLeft` + `BackHandler` (the §recipe), now wrapping the dialog rather than dispatching
+  directly. A single `onCancel` `useCallback` holds the whole confirm-then-discard flow (the
+  `discard` arrow is local, not a second top-level declaration) to stay within `single-declaration`.
 
 ## The guaranteed-exit screen recipe (workout)
 A screen whose every exit must run a dispatch (CANCEL_WORKOUT, whose absence strands the
