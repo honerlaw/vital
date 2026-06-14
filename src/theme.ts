@@ -21,6 +21,7 @@ export const colors = {
   accent: '#0D8348',      // white text on this = ~4.8:1 (WCAG AA)
   accentSoft: '#E4F5EC',  // tinted background for active tags
   onAccent: '#FFFFFF',
+  onAccentLine: 'rgba(255,255,255,0.24)', // dividers ON an accent fill only (no text → WCAG N/A)
 } as const;
 
 // Spacing scale (px). Use these instead of ad-hoc numbers.

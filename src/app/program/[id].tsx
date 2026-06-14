@@ -80,32 +80,27 @@ export default function ProgramDetailScreen() {
       <AppText variant="body" style={styles.blurb}>
         {program.blurb}
       </AppText>
-      <AppText variant="label" style={styles.meta}>
-        {`${program.cred} / ${program.perWeek} days per week`}
-      </AppText>
 
-      <View style={styles.sect}>
-        <AppText variant="label">The cycle</AppText>
-      </View>
-
-      {program.days.map((day, i) => (
-        <View key={`${day.name}-${i}`} style={styles.dayBlock}>
-          <View style={styles.dayHead}>
-            <AppText variant="exerciseName">
-              {`${String(i + 1).padStart(2, '0')} · ${day.name}`}
-            </AppText>
-            <AppText variant="scheme">{`${day.exercises.length} ex`}</AppText>
-          </View>
-          {day.exercises.map((ex, ei) => (
-            <View key={`${ex.name}-${ei}`} style={styles.exLine}>
-              <AppText variant="scheme">{ex.name}</AppText>
-              <AppText variant="scheme" color={colors.ink}>
-                {ex.scheme}
+      <View style={styles.cycle}>
+        {program.days.map((day, i) => (
+          <View key={`${day.name}-${i}`} style={styles.dayBlock}>
+            <View style={styles.dayHead}>
+              <AppText variant="exerciseName">
+                {`${String(i + 1).padStart(2, '0')} · ${day.name}`}
               </AppText>
+              <AppText variant="scheme">{`${day.exercises.length} ex`}</AppText>
             </View>
-          ))}
-        </View>
-      ))}
+            {day.exercises.map((ex, ei) => (
+              <View key={`${ex.name}-${ei}`} style={styles.exLine}>
+                <AppText variant="scheme">{ex.name}</AppText>
+                <AppText variant="scheme" color={colors.ink}>
+                  {ex.scheme}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
 
       {/* One CTA per context (014): choose (first run, saves without starting a workout),
           begin (this program is active), or switch & begin (starting a workout in a different
@@ -129,8 +124,7 @@ export default function ProgramDetailScreen() {
 const styles = StyleSheet.create({
   title: { marginTop: space.md },
   blurb: { marginTop: space.md },
-  meta: { marginTop: space.md },
-  sect: { marginTop: space['3xl'], marginBottom: space.sm },
+  cycle: { marginTop: space['3xl'] },
   dayBlock: {
     borderTopWidth: border.thin,
     borderTopColor: colors.line2,

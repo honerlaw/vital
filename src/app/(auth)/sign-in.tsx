@@ -82,7 +82,6 @@ export default function SignInScreen() {
 
   return (
     <Screen center>
-      <AppText variant="label">Welcome back</AppText>
       <AppText variant="screenTitle" style={styles.title}>
         {verifying ? 'Verify it’s you' : 'Sign in'}
       </AppText>

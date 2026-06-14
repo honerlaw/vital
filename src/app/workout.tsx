@@ -1,7 +1,7 @@
+import { Feather } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
-import { BackHandler, StyleSheet, TouchableOpacity, View } from 'react-native';
-import AppText from '@/components/AppText';
+import { Alert, BackHandler, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Button from '@/components/Button';
 import ExerciseBlock from '@/components/ExerciseBlock';
 import ProgressBar from '@/components/ProgressBar';
@@ -23,11 +23,27 @@ export default function WorkoutScreen() {
   const restTimer = useRestTimer(REST_SECONDS);
   const live = state.live;
 
-  // The single cancel path (021): the headerLeft Cancel and the Android hardware back both
-  // route through here.
+  // The single cancel path (021): the headerLeft chevron and the Android hardware back both
+  // route through here. 029 gates the exit behind a confirmation — an accidental tap or system
+  // back must not silently discard a live session. The actual discard (CANCEL_WORKOUT, whose
+  // absence strands the session and skips the 015 program-switch revert) runs only on confirm.
+  // ONE useCallback (the discard arrow is local, not a second top-level declaration) keeps this
+  // lint-clean under local/single-declaration. The confirm prompt runs only inside this
+  // event / BackHandler callback, never at SSR render, so the `window.confirm` web branch
+  // (RN's Alert is a no-op on web) reaches `window` only client-side.
   const onCancel = useCallback(() => {
-    dispatch({ type: 'CANCEL_WORKOUT' });
-    router.back();
+    const discard = () => {
+      dispatch({ type: 'CANCEL_WORKOUT' });
+      router.back();
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Cancel workout? Your logged sets will be discarded.')) discard();
+      return;
+    }
+    Alert.alert('Cancel workout?', 'Your logged sets will be discarded.', [
+      { text: 'Keep going', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: discard },
+    ]);
   }, [dispatch, router]);
 
   // Android hardware/system back must run the same cancel path as the header button — a
@@ -49,20 +65,30 @@ export default function WorkoutScreen() {
     };
   }, [onCancel]);
 
-  // The Cancel affordance must exist in EVERY render branch (021) — the navigator
-  // statically disables the swipe gesture and native back button, so this headerLeft is
-  // the screen's only visible exit. Inline arrow (not a top-level component) to satisfy
-  // the single-declaration/no-multi-comp guardrails.
+  // The back affordance + title must exist in EVERY render branch (021) — the navigator
+  // statically disables the swipe gesture and native back button, so this headerLeft is the
+  // screen's only visible exit. The title moved INTO the native bar in 029 (the inline eyebrow
+  // that blocked a native large title is gone), so derive the active day up-front — guarded, so
+  // the loading/error/no-live branches fall back to 'Workout' rather than reading an undefined
+  // day. Inline arrow `headerLeft` (NOT a top-level component) satisfies
+  // single-declaration/no-multi-comp; the Feather chevron rides the iOS liquid-glass bar (031).
+  const status = bootStatus(state);
+  const headerDay =
+    live && status === 'ready'
+      ? getProgram(state.programs, live.programId).days[live.dayIndex]
+      : null;
   const headerScreen = (
     <Stack.Screen
       options={{
+        headerTitle: headerDay ? headerDay.name : 'Workout',
         headerLeft: () => (
           <TouchableOpacity
             onPress={onCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel workout"
+            hitSlop={space.md}
           >
-            <AppText variant="backLink">Cancel</AppText>
+            <Feather name="chevron-left" size={26} color={colors.ink} />
           </TouchableOpacity>
         ),
       }}
@@ -71,8 +97,7 @@ export default function WorkoutScreen() {
 
   // Deep-link / SSR guard: this standalone route is outside the tabs layout, so it carries its own
   // render-gate (combined: catalog + per-user state). Both early returns sit after all hooks, and
-  // both render headerScreen — a bare null would unmount the Cancel chrome exactly when it matters.
-  const status = bootStatus(state);
+  // both render headerScreen — a bare null would unmount the back chrome exactly when it matters.
   if (status !== 'ready') {
     return (
       <>
@@ -115,10 +140,6 @@ export default function WorkoutScreen() {
     <View style={styles.root}>
       {headerScreen}
       <Screen hasHeader>
-        <AppText variant="label">{program.name}</AppText>
-        <AppText variant="screenTitle" style={styles.title}>
-          {day.name}
-        </AppText>
         <ProgressBar pct={progress.pct} done={progress.done} total={progress.total} />
         <View style={styles.blocks}>
           {day.exercises.map((ex, ei) => (
@@ -149,6 +170,5 @@ export default function WorkoutScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  title: { marginTop: space.xs },
   blocks: { marginTop: space.lg },
 });

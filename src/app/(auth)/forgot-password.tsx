@@ -67,7 +67,6 @@ export default function ForgotPasswordScreen() {
 
   return (
     <Screen center>
-      <AppText variant="label">Account recovery</AppText>
       <AppText variant="screenTitle" style={styles.title}>Reset password</AppText>
 
       {codeSent ? (

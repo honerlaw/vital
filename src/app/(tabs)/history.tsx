@@ -19,9 +19,6 @@ export default function HistoryScreen() {
 
   return (
     <Screen tabScreen>
-      <AppText variant="label" style={styles.eyebrow}>
-        Log
-      </AppText>
       <AppText variant="screenTitle" style={styles.title}>
         History
       </AppText>
@@ -46,8 +43,7 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: space.lg },
-  title: { marginTop: space.sm },
+  title: { marginTop: space.lg },
   list: { marginTop: space.xl },
   listBorder: { borderTopWidth: 1, borderTopColor: colors.line2 },
 });

@@ -61,7 +61,6 @@ export default function SignUpScreen() {
 
   return (
     <Screen center>
-      <AppText variant="label">Get started</AppText>
       <AppText variant="screenTitle" style={styles.title}>
         {pendingVerification ? 'Verify email' : 'Create account'}
       </AppText>

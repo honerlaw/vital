@@ -6,13 +6,15 @@ import { recordBootMilestone } from '@/observability/record-boot-milestone';
 import { colors } from '@/theme';
 
 // Chrome for the workout screen (021): a native back-affordance bar themed to the app —
-// white, shadowless, ink chevron with no back text, empty title (large titles stay inline in
-// screen content per the design language). `program/[id]` used to share this, but its bar was
-// blank (back chevron only) and the screen now uses an inline BackButton instead (026); only
-// `workout` keeps the native bar, because its headerLeft holds the Cancel exit.
+// white, shadowless, ink chevron. Since 029 the bar also HOLDS the title: the workout screen
+// overrides `headerTitle` with the live day name via its in-screen `<Stack.Screen>` (the inline
+// eyebrow that once blocked a native title is gone), so `'Workout'` here is only the base
+// fallback before that override applies / in the loading branch. `program/[id]` used to share
+// this, but its bar was blank and the screen now uses an inline BackButton instead (026); only
+// `workout` keeps the native bar, because its headerLeft holds the (confirmed) cancel exit.
 const pushedHeaderOptions = {
   headerShown: true,
-  headerTitle: '',
+  headerTitle: 'Workout',
   headerStyle: { backgroundColor: colors.bg },
   headerShadowVisible: false,
   headerTintColor: colors.ink,
