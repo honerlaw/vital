@@ -1,7 +1,15 @@
 # Proposal: ai-routine-generator
 
 **Date**: 2026-06-22
-**Status**: Draft
+**Status**: Shipped (2026-06-22)
+
+> **As built.** Implemented as designed, with these refinements: LLM calls go through the platform
+> `fetch` (Anthropic Messages API) rather than `@anthropic-ai/sdk` — no new dependency, no
+> lockfile churn (knowledge 024). The rate cap is a per-user `llm_usage` daily-counter table. Per-
+> exercise `progression` is folded INTO the `days` jsonb (not a separate column). Intake answers
+> carry the question `label` so the persisted spec is self-describing and a refine replays it
+> verbatim. Durable patterns promoted to knowledge [[034-pattern-ai-routine-generation]] and
+> [[035-pattern-server-llm-integration]]; deferred items in `followups.md`.
 
 ## Goal
 
