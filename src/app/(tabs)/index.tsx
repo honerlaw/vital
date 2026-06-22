@@ -35,6 +35,12 @@ export default function TodayScreen() {
         <AppText variant="body" style={styles.chooserBlurb}>
           Pick a routine to train with — your next session will always be ready here.
         </AppText>
+        <View style={styles.generate}>
+          <Button
+            label="✨ Generate a custom routine"
+            onPress={() => router.push('/routine/new')}
+          />
+        </View>
         <View style={styles.chooserList}>
           {state.programs.map((program) => (
             <ProgramCard
@@ -104,6 +110,7 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   chooserBlurb: { marginTop: space.md },
+  generate: { marginTop: space.lg },
   chooserList: { marginTop: space.lg },
   title: { marginTop: space.lg },
   hero: { marginTop: space.lg },

@@ -1,11 +1,13 @@
+import { useAuth } from '@clerk/expo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
 import BackButton from '@/components/BackButton';
 import Button from '@/components/Button';
 import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import Tag from '@/components/Tag';
+import { deleteUserProgram } from '@/data/delete-user-program';
 import { bootStatus } from '@/state/boot-status';
 import { useAppStore } from '@/state/useAppStore';
 import { border, colors, space } from '@/theme';
@@ -13,6 +15,7 @@ import { border, colors, space } from '@/theme';
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, dispatch } = useAppStore();
+  const { getToken } = useAuth();
   const router = useRouter();
 
   // Deep-link / SSR guard (standalone route, outside the tabs layout; combined catalog +
@@ -46,6 +49,31 @@ export default function ProgramDetailScreen() {
   }
   const active = program.id === state.activeProgramId;
   const neverChose = state.activeProgramId === null;
+  // Generated programs (030) are deletable; catalog programs are not.
+  const isUserProgram = state.userProgramIds.includes(program.id);
+
+  // Delete a generated routine: confirm, then remove on the server and locally. The reducer falls
+  // the active program back to the null chooser (019) if this was the active one. The confirm runs
+  // only inside the event handler (web `window.confirm` reached client-side only), mirroring the
+  // workout cancel dialog (029).
+  const onDelete = () => {
+    const remove = () => {
+      deleteUserProgram(getToken, program.id)
+        .then(() => {
+          dispatch({ type: 'REMOVE_USER_PROGRAM', id: program.id });
+          router.replace('/');
+        })
+        .catch(() => undefined);
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Delete this routine? This cannot be undone.')) remove();
+      return;
+    }
+    Alert.alert('Delete routine?', 'This cannot be undone.', [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: remove },
+    ]);
+  };
 
   // First run (014): selecting saves the choice as the active program — no forced workout.
   const onChoose = () => {
@@ -117,6 +145,11 @@ export default function ProgramDetailScreen() {
           />
         )}
       </View>
+      {isUserProgram ? (
+        <View style={styles.deleteCta}>
+          <Button label="Delete routine" onPress={onDelete} />
+        </View>
+      ) : null}
     </Screen>
   );
 }
@@ -143,4 +176,5 @@ const styles = StyleSheet.create({
     paddingVertical: space.xs,
   },
   cta: { marginTop: space.lg },
+  deleteCta: { marginTop: space.md },
 });

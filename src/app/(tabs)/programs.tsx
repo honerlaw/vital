@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
+import Button from '@/components/Button';
 import ProgramCard from '@/components/ProgramCard';
 import Screen from '@/components/Screen';
 import { useAppStore } from '@/state/useAppStore';
@@ -18,6 +19,9 @@ export default function ProgramsScreen() {
       <AppText variant="screenTitle" style={styles.title}>
         Programs
       </AppText>
+      <View style={styles.generate}>
+        <Button label="✨ Generate a custom routine" onPress={() => router.push('/routine/new')} />
+      </View>
       <View style={styles.list}>
         {programs.map((program) => (
           <ProgramCard
@@ -36,5 +40,6 @@ export default function ProgramsScreen() {
 
 const styles = StyleSheet.create({
   title: { marginTop: space.lg },
-  list: { marginTop: space.xl },
+  generate: { marginTop: space.xl },
+  list: { marginTop: space.lg },
 });

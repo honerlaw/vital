@@ -9,10 +9,36 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type AppState } from '@/data/types';
+import { type AppState, type Program } from '@/data/types';
 import { DEFAULT_STATE } from '@/state/default-state';
 import { reducer } from '@/state/reducer';
 import { SAMPLE_PROGRAMS } from '@/test-support/programs';
+
+// A generated program fixture (030): structurally a Program, with progression on its exercise.
+const USER_PROG: Program = {
+  id: 'gen-1',
+  name: 'My Custom Routine',
+  tag: 'Strength',
+  cred: 'Generated for you',
+  perWeek: 3,
+  blurb: 'A personalized routine.',
+  days: [
+    {
+      name: 'Day A',
+      exercises: [
+        {
+          name: 'Squat',
+          sets: 3,
+          scheme: '3×5',
+          progression: {
+            startWeight: 135,
+            rule: { kind: 'linear', increment: 5, frequency: 'per-session' },
+          },
+        },
+      ],
+    },
+  ],
+};
 
 void test('HYDRATE_PROGRAMS with a non-empty catalog becomes ready, keeps a present id', () => {
   const chosen: AppState = { ...DEFAULT_STATE, activeProgramId: 'bbr' };
@@ -33,7 +59,13 @@ void test('HYDRATE_PROGRAMS keeps a null active id null (never-chose → chooser
 });
 
 void test('HYDRATE_PROGRAMS normalizes an absent active id to the first program', () => {
-  const stale: AppState = { ...DEFAULT_STATE, activeProgramId: 'removed-program' };
+  // Re-point only fires once ALL hydrations are ready (030), so the sibling statuses are ready.
+  const stale: AppState = {
+    ...DEFAULT_STATE,
+    activeProgramId: 'removed-program',
+    userStateStatus: 'ready',
+    userProgramsStatus: 'ready',
+  };
   const next = reducer(stale, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   assert.equal(next.programsStatus, 'ready');
   assert.equal(next.activeProgramId, SAMPLE_PROGRAMS[0].id);
@@ -84,7 +116,9 @@ void test('HYDRATE_USER_STATE after the catalog: keeps a present id, stores the 
 });
 
 void test('HYDRATE_USER_STATE after catalog: normalizes an absent id, PRESERVES the map', () => {
-  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const base = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  // Generated programs already resolved (030) so the re-point can fire on this hydrate.
+  const ready: AppState = { ...base, userProgramsStatus: 'ready' };
   const next = reducer(ready, {
     type: 'HYDRATE_USER_STATE',
     payload: { activeProgramId: 'removed-program', cursors: { 'removed-program': 2 }, history: [] },
@@ -100,7 +134,9 @@ void test('HYDRATE_USER_STATE before the catalog: raw id stored, later HYDRATE n
     payload: { activeProgramId: 'stale-id', cursors: { 'stale-id': 1 }, history: [] },
   });
   assert.equal(next.activeProgramId, 'stale-id'); // catalog not ready yet — stored raw
-  const then = reducer(next, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  // Generated programs resolved (030) so the catalog hydrate is the last gate and re-points.
+  const ready2: AppState = { ...next, userProgramsStatus: 'ready' };
+  const then = reducer(ready2, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   assert.equal(then.activeProgramId, SAMPLE_PROGRAMS[0].id); // normalized by the later hydrate
   assert.deepEqual(then.cursors, { 'stale-id': 1 });
 });
@@ -221,6 +257,58 @@ void test('SWITCH_AND_START_WORKOUT resumes position and records switchedFrom (0
   assert.deepEqual(switched.cursors, { bbr: 1, gzclp: 0 }); // a switch never mutates the map
   // In-catalog guard mirrors SET_ACTIVE_PROGRAM:
   assert.equal(reducer(hydrated, { type: 'SWITCH_AND_START_WORKOUT', id: 'nope' }), hydrated);
+});
+
+void test('HYDRATE_USER_PROGRAMS merges generated programs and dedups by id', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const next = reducer(ready, { type: 'HYDRATE_USER_PROGRAMS', programs: [USER_PROG, USER_PROG] });
+  assert.equal(next.userProgramsStatus, 'ready');
+  assert.equal(next.userProgramIds.length, 1); // deduped
+  assert.equal(next.programs.length, SAMPLE_PROGRAMS.length + 1);
+  assert.ok(next.programs.some((p) => p.id === 'gen-1'));
+});
+
+void test('a generated active program survives normalization once all ready (030)', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const withState = reducer(ready, {
+    type: 'HYDRATE_USER_STATE',
+    payload: { activeProgramId: 'gen-1', cursors: {}, history: [] },
+  });
+  // User programs not loaded yet → the generated id is preserved, not re-pointed to the catalog.
+  assert.equal(withState.activeProgramId, 'gen-1');
+  const merged = reducer(withState, { type: 'HYDRATE_USER_PROGRAMS', programs: [USER_PROG] });
+  // Now present in the merged set → kept (NOT converged to the first catalog program).
+  assert.equal(merged.activeProgramId, 'gen-1');
+});
+
+void test('ADD_USER_PROGRAM appends a saved program and dedups a double-add', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const added = reducer(ready, { type: 'ADD_USER_PROGRAM', program: USER_PROG });
+  assert.ok(added.userProgramIds.includes('gen-1'));
+  assert.ok(added.programs.some((p) => p.id === 'gen-1'));
+  const again = reducer(added, { type: 'ADD_USER_PROGRAM', program: USER_PROG });
+  assert.equal(again, added); // same reference — dedup no-op
+});
+
+void test('REMOVE_USER_PROGRAM removes it and falls an active deletion back to null (019)', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const added = reducer(ready, { type: 'ADD_USER_PROGRAM', program: USER_PROG });
+  const active = reducer(added, { type: 'SET_ACTIVE_PROGRAM', id: 'gen-1' });
+  assert.equal(active.activeProgramId, 'gen-1'); // a generated program can be active
+  const removed = reducer(active, { type: 'REMOVE_USER_PROGRAM', id: 'gen-1' });
+  assert.equal(removed.activeProgramId, null); // active deletion → chooser (019)
+  assert.ok(!removed.programs.some((p) => p.id === 'gen-1'));
+  assert.ok(!removed.userProgramIds.includes('gen-1'));
+});
+
+void test('RESET_USER_STATE drops generated programs but leaves the catalog', () => {
+  const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
+  const added = reducer(ready, { type: 'ADD_USER_PROGRAM', program: USER_PROG });
+  const reset = reducer(added, { type: 'RESET_USER_STATE' });
+  assert.equal(reset.userProgramIds.length, 0);
+  assert.equal(reset.userProgramsStatus, 'loading');
+  assert.ok(!reset.programs.some((p) => p.id === 'gen-1'));
+  assert.equal(reset.programs.length, SAMPLE_PROGRAMS.length);
 });
 
 void test('CANCEL_WORKOUT reverts a committed switch; a plain cancel does not (015)', () => {

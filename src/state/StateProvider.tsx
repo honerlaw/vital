@@ -2,6 +2,7 @@ import { useAuth } from '@clerk/expo';
 import { ReactNode, useEffect, useMemo, useReducer } from 'react';
 import { finishSession } from '@/data/engine';
 import { fetchPrograms } from '@/data/programs-api';
+import { fetchUserPrograms } from '@/data/fetch-user-programs';
 import { fetchUserState } from '@/data/fetch-user-state';
 import { postSession } from '@/data/post-session';
 import { putUserState } from '@/data/put-user-state';
@@ -54,14 +55,36 @@ export default function StateProvider({ children }: { children: ReactNode }) {
     };
   }, [isLoaded, isSignedIn, getToken, state.userStateStatus]);
 
-  // Watchdog milestone: boot-ready when BOTH startup fetches have landed — recorded
-  // here from a transition-observing effect because bootStatus() is a pure selector
-  // re-evaluated every render and must stay side-effect-free.
+  // Hydrate the user's generated programs (030) once Clerk is loaded AND signed in — same
+  // status-keyed shape as the per-user-state effect (the route is requireAuth). A failure lands in
+  // the ordinary 'error' path; retry is user-initiated only.
   useEffect(() => {
-    if (state.programsStatus === 'ready' && state.userStateStatus === 'ready') {
+    if (!isLoaded || !isSignedIn || state.userProgramsStatus !== 'loading') return;
+    let cancelled = false;
+    fetchUserPrograms(getToken)
+      .then((programs) => {
+        if (!cancelled) dispatch({ type: 'HYDRATE_USER_PROGRAMS', programs });
+      })
+      .catch(() => {
+        if (!cancelled) dispatch({ type: 'HYDRATE_USER_PROGRAMS_ERROR' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, getToken, state.userProgramsStatus]);
+
+  // Watchdog milestone: boot-ready when ALL startup fetches have landed — recorded here from a
+  // transition-observing effect because bootStatus() is a pure selector re-evaluated every render
+  // and must stay side-effect-free.
+  useEffect(() => {
+    if (
+      state.programsStatus === 'ready' &&
+      state.userStateStatus === 'ready' &&
+      state.userProgramsStatus === 'ready'
+    ) {
       recordBootMilestone('boot-ready');
     }
-  }, [state.programsStatus, state.userStateStatus]);
+  }, [state.programsStatus, state.userStateStatus, state.userProgramsStatus]);
 
   // Sign-out: clear the per-user fields so they can't leak into the next account's session.
   // Transition-keyed (effects fire on dep change, not every render); the dispatch is deferred
@@ -120,9 +143,13 @@ export default function StateProvider({ children }: { children: ReactNode }) {
         // the reducer re-points to the first program; converge the server too. Forwards
         // `action.payload.cursors` (the just-arrived server map) — pre-reduce `state.cursors`
         // is the stale boot seed `{}` here and would wipe the user's rotation map (015).
+        // Only persist a re-point once ALL hydrations are ready, so a generated active program
+        // (merged once `userProgramsStatus === 'ready'`) is matched against the full set, never
+        // wrongly converged to the first catalog program during the load window (030).
         const serverId = action.payload.activeProgramId;
         if (
           state.programsStatus === 'ready' &&
+          state.userProgramsStatus === 'ready' &&
           serverId !== null &&
           !state.programs.some((p) => p.id === serverId)
         ) {
@@ -134,9 +161,14 @@ export default function StateProvider({ children }: { children: ReactNode }) {
         // be true after the user-state reduction stored it (015). Null-guarded (014): a
         // never-chose user must NOT be auto-PUT to the first program — `.some(p => p.id ===
         // null)` is false, so without the guard this branch would fire.
+        // Mirror the reducer: only converge once all hydrations are ready, and NEVER re-point an
+        // active id that is a known generated program (030) — it isn't in the catalog by design,
+        // so the catalog-membership check alone would wrongly converge it.
         if (
           state.userStateStatus === 'ready' &&
+          state.userProgramsStatus === 'ready' &&
           state.activeProgramId !== null &&
+          !state.userProgramIds.includes(state.activeProgramId) &&
           action.programs.length > 0 &&
           !action.programs.some((p) => p.id === state.activeProgramId)
         ) {

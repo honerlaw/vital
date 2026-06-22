@@ -7,10 +7,51 @@
 
 export type ProgramTag = 'Strength' | 'Muscle Growth' | 'Full Body';
 
+/**
+ * Closed progression vocabulary (030). The LLM generator may only SELECT and parameterize from
+ * this fixed discriminated union — it never emits executable logic — so the engine that APPLIES
+ * progression is a finite, unit-testable set (`@/data/engine/progressionTarget`). A guard
+ * (`isProgressionRule`) rejects any unknown `kind` via an exhaustive never-branch. Weights are
+ * lb (the app is lb-only, 028). Each rule is a pure function of `(rule, that exercise's history)`.
+ */
+export type ProgressionRule =
+  | { kind: 'linear'; increment: number; frequency: 'per-session' | 'per-week' }
+  | { kind: 'double-progression'; repLow: number; repHigh: number; increment: number }
+  | {
+      kind: 'amrap-driven';
+      baseIncrement: number;
+      bonusThresholdReps: number;
+      bonusIncrement: number;
+    };
+
+/**
+ * Optional deload, composable onto any rule (030): after `triggerConsecutiveFails` consecutive
+ * failed sessions for an exercise, drop the computed target by `dropPct` percent.
+ */
+export interface DeloadModifier {
+  triggerConsecutiveFails: number;
+  dropPct: number;
+}
+
+/**
+ * Per-exercise progression metadata carried ONLY by generated programs (030). `startWeight` is
+ * the session-1 anchor (LLM-prescribed from intake); it is consulted only when the exercise has
+ * NO logged history yet, and never overrides a typed value or logged performance — nothing
+ * clamps (028/030 invariant). Curated catalog programs omit this field entirely.
+ */
+export interface ExerciseProgression {
+  startWeight: number | null;
+  rule: ProgressionRule;
+  deload?: DeloadModifier;
+}
+
 export interface Exercise {
   name: string;
   sets: number;
   scheme: string; // display string, e.g. "3×5", "5×3+", "3×8-12"
+  // Generated programs only (030); absent on catalog exercises (keeps them untouched). When
+  // present, the engine computes a history-derived progression target as the prefill placeholder.
+  progression?: ExerciseProgression;
 }
 
 export interface WorkoutDay {
@@ -98,9 +139,18 @@ export interface UserStatePayload {
 
 /** Top-level app state (drive this from Context/reducer or a store). */
 export interface AppState {
-  programs: Program[];       // the catalog, hydrated from GET /api/programs at startup
+  // The catalog (GET /api/programs) MERGED with this user's generated programs (030,
+  // GET /api/me/programs). A single array so the engine, cursors, and history machinery treat
+  // both kinds uniformly; `userProgramIds` records which entries are user-owned (deletable, and
+  // the partition each hydration must preserve).
+  programs: Program[];
   programsStatus: ProgramsStatus;
   userStateStatus: ProgramsStatus; // per-user state hydration, same loading/ready/error shape
+  // Per-user generated programs hydration (030), same loading/ready/error shape. Boot readiness
+  // waits on this too so a saved generated program that is the active program resolves before any
+  // stale-active re-point fires.
+  userProgramsStatus: ProgramsStatus;
+  userProgramIds: string[]; // ids in `programs` that are user-generated (030)
   activeProgramId: string | null; // null = the user has never chosen a program (014)
   // Per-program rotation positions (015): cursors[id] = that program's NEXT workout day
   // index; a missing key reads as 0. Switching the active program never mutates this map.

@@ -6,70 +6,111 @@ import {
 } from '@/data/engine';
 import { AppState } from '@/data/types';
 import { Action } from '@/state/actions';
+import { normalizeActiveId } from '@/state/normalize-active-id';
 
 export const reducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
     case 'HYDRATE_PROGRAMS': {
-      const programs = action.programs;
+      const catalog = action.programs;
       // An empty catalog is treated as unavailable so the render-gate shows the error view rather
       // than the home tab trying to resolve a now-absent active program.
-      if (programs.length === 0) {
-        return { ...state, programs, programsStatus: 'error' };
+      if (catalog.length === 0) {
+        return { ...state, programs: catalog, programsStatus: 'error' };
       }
-      // null = "never chose" and MUST stay null so the Today chooser shows (014). The check sits
-      // BEFORE the `.some()` re-point: `.some(p => p.id === null)` is false, so falling through
-      // would silently re-point a never-chose user to the first program — the exact bug 014 fixes.
-      // A stale NON-null id (program removed from the catalog) still re-points to the first
-      // program: that user already chose once, so we converge rather than re-ask.
-      const activeProgramId =
-        state.activeProgramId === null || programs.some((p) => p.id === state.activeProgramId)
-          ? state.activeProgramId
-          : programs[0].id;
-      return { ...state, programs, programsStatus: 'ready', activeProgramId };
+      // Preserve any already-merged generated programs (030) — the catalog fetch replaces only the
+      // catalog partition. The active-id re-point is centralized in `normalizeActiveId`, which
+      // only fires once ALL hydrations are ready (so a generated active program isn't dropped
+      // before its own fetch lands) and keeps a null id null (014).
+      const userPortion = state.programs.filter((p) => state.userProgramIds.includes(p.id));
+      const next: AppState = {
+        ...state,
+        programs: [...catalog, ...userPortion],
+        programsStatus: 'ready',
+      };
+      return { ...next, activeProgramId: normalizeActiveId(next) };
     }
     case 'HYDRATE_PROGRAMS_ERROR':
       return { ...state, programsStatus: 'error' };
     case 'HYDRATE_USER_STATE': {
       const { activeProgramId, cursors, history } = action.payload;
-      const catalogReady = state.programsStatus === 'ready';
-      // Mirror HYDRATE_PROGRAMS' normalization so the two fetches can land in either order:
-      // a STALE server id (absent from a ready catalog) re-points to the first program; with
-      // the catalog not yet ready, the raw server id is stored and HYDRATE_PROGRAMS normalizes
-      // later. A null id (no row — the user never chose) STAYS null so the Today chooser shows
-      // (014). Normalization PRESERVES the cursor map — switching never mutates it (015).
-      let nextActiveId: string | null;
-      if (activeProgramId !== null) {
-        nextActiveId =
-          !catalogReady || state.programs.some((p) => p.id === activeProgramId)
-            ? activeProgramId
-            : state.programs[0].id;
-      } else {
-        nextActiveId = null;
-      }
-      return {
+      // Store the raw server id, then let `normalizeActiveId` re-point it iff all hydrations are
+      // ready and it's stale (absent from the merged set). A null id STAYS null (014).
+      const next: AppState = {
         ...state,
         userStateStatus: 'ready',
-        activeProgramId: nextActiveId,
+        activeProgramId,
         cursors,
         history,
       };
+      return { ...next, activeProgramId: normalizeActiveId(next) };
     }
     case 'HYDRATE_USER_STATE_ERROR':
       return { ...state, userStateStatus: 'error' };
+    case 'HYDRATE_USER_PROGRAMS': {
+      // Merge the user's generated programs (030) into the single `programs` array, keeping the
+      // current catalog partition. Dedup by id so a reload never produces duplicate cursor slots.
+      const catalogPortion = state.programs.filter((p) => !state.userProgramIds.includes(p.id));
+      const seen = new Set<string>();
+      const userPrograms = action.programs.filter((p) => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+      const next: AppState = {
+        ...state,
+        programs: [...catalogPortion, ...userPrograms],
+        userProgramIds: userPrograms.map((p) => p.id),
+        userProgramsStatus: 'ready',
+      };
+      return { ...next, activeProgramId: normalizeActiveId(next) };
+    }
+    case 'HYDRATE_USER_PROGRAMS_ERROR':
+      return { ...state, userProgramsStatus: 'error' };
+    case 'ADD_USER_PROGRAM': {
+      // A just-saved generated program (030). Dedup by id (a double-tap must not duplicate it).
+      if (state.programs.some((p) => p.id === action.program.id)) return state;
+      return {
+        ...state,
+        programs: [...state.programs, action.program],
+        userProgramIds: [...state.userProgramIds, action.program.id],
+      };
+    }
+    case 'REMOVE_USER_PROGRAM': {
+      // Delete a generated program (030). History is self-contained (028), so this is safe; if the
+      // deleted program was active, fall back to the null chooser (019).
+      if (!state.userProgramIds.includes(action.id)) return state;
+      return {
+        ...state,
+        programs: state.programs.filter((p) => p.id !== action.id),
+        userProgramIds: state.userProgramIds.filter((pid) => pid !== action.id),
+        activeProgramId: state.activeProgramId === action.id ? null : state.activeProgramId,
+      };
+    }
     case 'RESET_USER_STATE': {
-      // Sign-out: clear exactly the per-user fields (incl. a live session — it must not leak
-      // to the next account) and re-arm the user-state fetch. Catalog fields are untouched so
-      // the gate doesn't re-error. Idempotent: same reference back when nothing to reset
-      // (React bails out), so a mount-time dispatch while signed out is a no-op.
+      // Sign-out: clear exactly the per-user fields (incl. a live session — it must not leak to the
+      // next account, and the generated programs which are per-user too) and re-arm both per-user
+      // fetches. Catalog fields are untouched so the gate doesn't re-error. Idempotent: same
+      // reference back when nothing to reset, so a mount-time dispatch while signed out is a no-op.
       const nothingToReset =
         state.activeProgramId === null &&
         Object.keys(state.cursors).length === 0 &&
         state.history.length === 0 &&
         state.live === null &&
-        state.userStateStatus === 'loading';
+        state.userStateStatus === 'loading' &&
+        state.userProgramsStatus === 'loading' &&
+        state.userProgramIds.length === 0;
       if (nothingToReset) return state;
+      // Drop the generated-program partition but keep the catalog reference stable when there is
+      // nothing to drop (so existing reference-equality expectations on the catalog hold).
+      const programs =
+        state.userProgramIds.length === 0
+          ? state.programs
+          : state.programs.filter((p) => !state.userProgramIds.includes(p.id));
       return {
         ...state,
+        programs,
+        userProgramIds: [],
+        userProgramsStatus: 'loading',
         activeProgramId: null,
         cursors: {},
         history: [],
@@ -79,14 +120,21 @@ export const reducer = (state: AppState, action: Action): AppState => {
     }
     case 'RETRY_HYDRATE': {
       // Only meaningful from an error view; resets ONLY the statuses currently in 'error' (a
-      // healthy catalog is never refetched, and vice versa). The no-op path keeps double-taps
-      // idempotent and preserves the invariant that mount and error→loading are the only ways
-      // into 'loading' (the status-keyed effects refetch whenever their status is 'loading').
-      if (state.programsStatus !== 'error' && state.userStateStatus !== 'error') return state;
+      // healthy fetch is never refetched). The no-op path keeps double-taps idempotent and
+      // preserves the invariant that mount and error→loading are the only ways into 'loading'.
+      if (
+        state.programsStatus !== 'error' &&
+        state.userStateStatus !== 'error' &&
+        state.userProgramsStatus !== 'error'
+      ) {
+        return state;
+      }
       return {
         ...state,
         programsStatus: state.programsStatus === 'error' ? 'loading' : state.programsStatus,
         userStateStatus: state.userStateStatus === 'error' ? 'loading' : state.userStateStatus,
+        userProgramsStatus:
+          state.userProgramsStatus === 'error' ? 'loading' : state.userProgramsStatus,
       };
     }
     case 'START_WORKOUT': {
@@ -122,20 +170,16 @@ export const reducer = (state: AppState, action: Action): AppState => {
       return { ...state, activeProgramId, live: null };
     }
     case 'SET_ACTIVE_PROGRAM': {
-      // Ignore an id that isn't in the hydrated catalog — upholds the activeProgramId-in-catalog
-      // invariant HYDRATE_PROGRAMS establishes, so the trusted `getProgram` lookups can't throw.
+      // Ignore an id that isn't in the merged program set (catalog + generated, 030) — upholds the
+      // activeProgramId-resolvable invariant so the trusted `getProgram` lookups can't throw.
       if (!state.programs.some((p) => p.id === action.id)) return state;
       // Only the id changes — each program keeps its place in the cursor map (015).
       return { ...state, activeProgramId: action.id };
     }
     case 'SWITCH_AND_START_WORKOUT': {
-      // Switch + start as ONE reducer case (015) — replaces 014's adjacent-dispatch pair, whose
-      // correctness depended on event-handler batching. Same in-catalog guard as
-      // SET_ACTIVE_PROGRAM; resumes the target program's own position (missing key = day 0) and
+      // Switch + start as ONE reducer case (015). Same in-set guard as SET_ACTIVE_PROGRAM (now over
+      // the merged set); resumes the target program's own position (missing key = day 0) and
       // records the previous id on the session so CANCEL can revert the committed switch.
-      // Same-id no-op: only reachable via a double-tap race (the detail screen dispatches this
-      // from the !active branch) — without it the second dispatch would clobber `switchedFrom`
-      // with the just-switched id and CANCEL would "revert" forward.
       if (action.id === state.activeProgramId) return state;
       if (!state.programs.some((p) => p.id === action.id)) return state;
       const program = getProgram(state.programs, action.id);

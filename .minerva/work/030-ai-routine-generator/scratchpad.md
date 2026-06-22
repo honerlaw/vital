@@ -21,3 +21,20 @@
 - ADD_USER_PROGRAM / hydrate merge must dedupe by program id (avoid duplicate cursor slots on reload).
 - Define `successfulCompletions` in the engine (v1: every done working set met/exceeded target reps).
 - Weight units: lb-only in v1; no unit field needed (consistent with knowledge 028).
+
+## Work log 2026-06-22
+
+- LLM calls go through the platform `fetch` (Anthropic Messages API), NOT `@anthropic-ai/sdk` —
+  no new dependency, no package-lock churn (avoids the npm10/11 lockfile trap, knowledge 024).
+  Model pinned to `claude-sonnet-4-6` in `src/server/llm/model.ts`.
+- Progression is derived statelessly from history (`progressionTarget` + per-rule engine modules);
+  no persisted progression counter. Verified by 12 engine unit tests.
+- Generated programs MERGE into `AppState.programs` (single array) + `userProgramIds`; the
+  active-id re-point now waits on all THREE hydrations (catalog + user-state + user-programs) via
+  `normalizeActiveId`, so a generated active program isn't dropped during the load window.
+- OPS FOLLOW-UP (not code): `ANTHROPIC_API_KEY` must be set in Doppler (local) and DO App Platform
+  prod server env. It is server-only — NEVER `EXPO_PUBLIC_*`. Without it the routine routes 502 and
+  the client falls back to the catalog (no brick).
+- Migration `1782168584621_user-programs.sql` is additive; it runs via the prod pre-deploy migrate
+  job (knowledge 010). Not yet applied to any live DB from here.
+- Verify gates all green: typecheck, `eslint --max-warnings 0`, 90 unit tests, `expo export -p web`.
