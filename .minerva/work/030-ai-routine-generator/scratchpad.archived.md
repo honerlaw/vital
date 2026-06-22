@@ -58,3 +58,5 @@
 ## Panel decisions 2026-06-22 (promote)
 
 - [2/3 accept, skeptic dissented] promote partition + TODO disposition: PROMOTE 034/035, MERGE as-built note, TODO→followups.md, DISCARD run noise. Skeptic low concerns (logged): consider splitting the intake pattern into its own entry; add one-line glosses for "three-hydration gate" / "strict-writer guard"; name the `label` field precisely. All advisory entry-polish, deferrable.
+
+- [synthesis] refreshed overview.md (watermark 033->035; 2 entries synthesized: 034, 035)

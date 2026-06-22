@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 033 -->
+<!-- synthesis-watermark: 035 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024 and 029).
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029 and 030).
 Theme-grouped navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -136,6 +136,24 @@ env vars come from the Doppler CLI, with the local Postgres hardcoded in Docker 
 auto-mirrored from Doppler prd on every release
 ([[021-decision-gh-actions-ios-release-orchestration]]). Unit tests run offline via
 `node --import tsx --test` over `src/**/*.test.ts` ([[012-pattern-src-unit-tests-node-tsx]]).
+
+## AI-assisted routine generation — an LLM author over the deterministic engine
+
+Since work 030 the app generates per-user workout routines with an LLM while keeping the engine
+deterministic. Progression became a CLOSED, parameterized vocabulary (`linear` /
+`double-progression` / `amrap-driven` + a `deload` modifier) that the LLM only selects from,
+applied STATELESSLY as a pure function of history — a generated `Exercise.progression` is optional
+(so the curated catalog is untouched) and supplies a new top rung on the prefill chain, extending
+rather than replacing the 024/030 model. Generated programs are persisted per-user and MERGE into
+the single program array, so the per-program cursor (020) and history (028) machinery treats them
+like catalog programs; the active-program re-point now waits on all three hydrations so a generated
+active program survives boot (generalizing 014/015/019). The intake is an LLM-planned,
+natively-rendered question graph with a deterministic fixed-spine fallback, and refinement is
+structured re-prompt knobs on an unpersisted draft ([[034-pattern-ai-routine-generation]]). This
+rides the app's first server-side LLM integration: Anthropic reached via `fetch` (no SDK, no
+lockfile churn 024), the key server-only (never `EXPO_PUBLIC_*`), LLM JSON validated through
+cast-free strict-writer guards (028) with one retry then a 502 the client degrades around, behind a
+fail-open per-user daily rate cap ([[035-pattern-server-llm-integration]]).
 
 ## Limitations
 
