@@ -8,7 +8,7 @@ import ProgressBar from '@/components/ProgressBar';
 import RestTimerBar from '@/components/RestTimerBar';
 import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
-import { getProgram, lastLoggedWeight, sessionProgress } from '@/data/engine';
+import { getProgram, lastLoggedWeight, progressionTarget, sessionProgress } from '@/data/engine';
 import { type SetPatch } from '@/data/engine/updateSet';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { bootStatus } from '@/state/boot-status';
@@ -115,11 +115,17 @@ export default function WorkoutScreen() {
   const program = getProgram(state.programs, live.programId);
   const day = program.days[live.dayIndex];
   const progress = sessionProgress(live);
-  // Cross-session weight prefill (024): the chain's lowest rung, per exercise. Plain
-  // derivation, NOT useMemo — this sits after the early-return render gates where a hook
-  // would violate hook rules (004), and the React Compiler memoizes it anyway (history only
-  // mutates on FINISH, which navigates away, so this is effectively computed once).
-  const historyWeights = day.exercises.map((ex) => lastLoggedWeight(state.history, ex.name));
+  // Weight prefill source, per exercise. For a generated exercise (030) this is the
+  // progression-derived target (startWeight advanced by logged history); for a catalog exercise it
+  // is the last logged weight (024). Either way it is the chain's history rung, coalesced in
+  // ExerciseBlock below the in-session prior set — a placeholder, never a clamp (028). Plain
+  // derivation, NOT useMemo — this sits after the early-return render gates where a hook would
+  // violate hook rules (004), and the React Compiler memoizes it anyway.
+  const historyWeights = day.exercises.map((ex) =>
+    ex.progression
+      ? progressionTarget(ex.progression, state.history, ex.name)
+      : lastLoggedWeight(state.history, ex.name),
+  );
 
   const onPatch = (ei: number, si: number, patch: SetPatch) => {
     // All coercion happens in the pure engine (022); this handler only forwards the patch

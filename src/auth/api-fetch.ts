@@ -16,7 +16,7 @@ import { apiBaseUrl } from '@/auth/api-base';
 type GetSessionToken = () => Promise<string | null>;
 
 interface ApiFetchInit {
-  method?: 'PUT' | 'POST';
+  method?: 'PUT' | 'POST' | 'DELETE';
   body?: string;
 }
 

@@ -7,6 +7,9 @@
  * runtime dependency.
  */
 export { isProgramTag } from '@/data/guards/isProgramTag';
+export { isProgressionRule } from '@/data/guards/isProgressionRule';
+export { isDeloadModifier } from '@/data/guards/isDeloadModifier';
+export { isExerciseProgression } from '@/data/guards/isExerciseProgression';
 export { isExercise } from '@/data/guards/isExercise';
 export { isWorkoutDay } from '@/data/guards/isWorkoutDay';
 export { isWorkoutDayArray } from '@/data/guards/isWorkoutDayArray';
@@ -19,3 +22,10 @@ export { isSessionLog } from '@/data/guards/isSessionLog';
 export { isSessionLogArray } from '@/data/guards/isSessionLogArray';
 export { isCursorMap } from '@/data/guards/isCursorMap';
 export { isUserStatePayload } from '@/data/guards/isUserStatePayload';
+export { isQuestionOption } from '@/data/guards/isQuestionOption';
+export { isShowCondition } from '@/data/guards/isShowCondition';
+export { isQuestion } from '@/data/guards/isQuestion';
+export { isQuestionGraph } from '@/data/guards/isQuestionGraph';
+export { isIntakeAnswer } from '@/data/guards/isIntakeAnswer';
+export { isIntakeSpec } from '@/data/guards/isIntakeSpec';
+export { isRoutineKnob } from '@/data/guards/isRoutineKnob';
