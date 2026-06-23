@@ -150,8 +150,9 @@ like catalog programs; the active-program re-point now waits on all three hydrat
 active program survives boot (generalizing 014/015/019). The intake is an LLM-planned,
 natively-rendered question graph with a deterministic fixed-spine fallback, and refinement is
 structured re-prompt knobs on an unpersisted draft ([[034-pattern-ai-routine-generation]]). This
-rides the app's first server-side LLM integration: Anthropic reached via `fetch` (no SDK, no
-lockfile churn 024), the key server-only (never `EXPO_PUBLIC_*`), LLM JSON validated through
+rides the app's first server-side LLM integration: an LLM reached via `fetch` through OpenRouter
+(no SDK, no lockfile churn 024; any model is a config value — 031), the key server-only (never
+`EXPO_PUBLIC_*`), LLM JSON validated through
 cast-free strict-writer guards (028) with one retry then a 502 the client degrades around, behind a
 fail-open per-user daily rate cap ([[035-pattern-server-llm-integration]]).
 

@@ -1,27 +1,28 @@
 /**
- * Pull the first text block out of an Anthropic Messages API response (030). The body arrives
- * typed `unknown`; this narrows through `in`/`typeof` checks (cast-free) and throws if no text
- * block is present, so a surprise response shape fails loudly rather than flowing on untyped.
+ * Pull the assistant message text out of an OpenRouter / OpenAI-compatible Chat Completions
+ * response (031). The body arrives typed `unknown`; narrows through `in`/`typeof` checks
+ * (cast-free) and throws if no `choices[0].message.content` string is present, so a surprise shape
+ * fails loudly rather than flowing on untyped.
  */
-export function extractClaudeText(body: unknown): string {
-  if (typeof body !== 'object' || body === null || !('content' in body)) {
-    throw new Error('Anthropic response has no content');
+export function extractText(body: unknown): string {
+  if (typeof body !== 'object' || body === null || !('choices' in body)) {
+    throw new Error('LLM response has no choices');
   }
-  const content = body.content;
-  if (!Array.isArray(content)) throw new Error('Anthropic content is not an array');
-  // Re-type to unknown[] so each block narrows cast-free (Array.isArray widens to any[]).
-  const blocks: unknown[] = content;
-  for (const block of blocks) {
-    if (
-      typeof block === 'object' &&
-      block !== null &&
-      'type' in block &&
-      block.type === 'text' &&
-      'text' in block &&
-      typeof block.text === 'string'
-    ) {
-      return block.text;
-    }
+  const choices = body.choices;
+  if (!Array.isArray(choices) || choices.length === 0) {
+    throw new Error('LLM choices is empty or not an array');
   }
-  throw new Error('Anthropic response has no text block');
+  const first: unknown = choices[0];
+  if (
+    typeof first === 'object' &&
+    first !== null &&
+    'message' in first &&
+    typeof first.message === 'object' &&
+    first.message !== null &&
+    'content' in first.message &&
+    typeof first.message.content === 'string'
+  ) {
+    return first.message.content;
+  }
+  throw new Error('LLM response has no message content');
 }
