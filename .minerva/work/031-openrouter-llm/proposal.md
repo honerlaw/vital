@@ -1,6 +1,6 @@
 # 031 — Route LLM calls through OpenRouter (provider-agnostic)
 
-- Status: Draft
+- Status: Shipped (2026-06-22)
 - Date: 2026-06-22
 - Branch: 031-openrouter-llm
 
