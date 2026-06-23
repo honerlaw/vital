@@ -1,7 +1,7 @@
 # Proposal: food-tracking-foundation
 
 **Date**: 2026-06-22
-**Status**: Draft
+**Status**: Shipped (2026-06-22)
 
 ## Goal
 
@@ -48,7 +48,7 @@ Food Facts barcode), which keeps the v1 serving model uniform.
 New `food_log_entries` table:
 
 - `id uuid` primary key (server-minted, not client/LLM)
-- `user_id text` — Clerk subject
+- `clerk_user_id text` — Clerk subject (shipped column name)
 - `logged_on date` — the diary day, computed in the user's **local timezone** client-side
 - `name text`
 - `quantity numeric`
@@ -59,7 +59,7 @@ New `food_log_entries` table:
 - `source text` — `'usda' | 'manual'`
 - `source_ref text null` — USDA `fdcId` when `source = 'usda'`
 - `created_at timestamptz` — default `now()`, used as the in-day ordering key
-- Index on `(user_id, logged_on)`
+- Index on `(clerk_user_id, logged_on)`
 
 ### Routes (one-function-per-file in `src/server/routes/`, re-exported by `src/app/api/**`)
 
@@ -103,6 +103,26 @@ mappers (knowledge 014), strict-writer validation of all inputs (knowledge 028):
 
 Branded/packaged foods, barcode scanning, AI text/photo capture, calorie/macro targets, the
 in-vs-out dashboard, meal grouping, edit-in-place, and a calendar date picker.
+
+### As shipped (deltas from the design)
+
+The design above shipped intact; the durable shape is captured in
+`.minerva/knowledge/036-pattern-food-tracking-foundation.md`. Two implementation realities and the
+review-phase hardening are worth recording here:
+
+- **pg numeric/date gotcha:** node-pg returns `numeric` as a STRING and `date` as a local-midnight
+  `Date`, so the routes `SELECT … ::text` every uuid/date/numeric column and a `numericColumn`
+  helper coerces the numerics in the mapper.
+- **`useFoodLog` keeps a date-stamped snapshot and derives entries/status in render** (not a bare
+  `entries` array): a snapshot counts only when its date matches the requested day, so a pending
+  day-switch shows empty + loading rather than the previous day's data under the new day's header.
+- **Review-phase hardening (triage panel 3/3):** `isLocalDay` validates a day for format AND
+  real-calendar validity (impossible dates → 400, not a Postgres 500), used by the POST guard and
+  the GET route; `quantity` and serving `grams` must be `> 0`; `name`/`servingLabel` are
+  length-capped (200/100); and a failed add now shows an inline "couldn't save" message in both the
+  search and manual panels (a failed delete stays a silent v1 choice — it reconciles on refocus).
+- **Android/web tab icon is Feather `coffee`** (Feather has no utensil glyph); iOS uses the proper
+  SF Symbol `fork.knife`.
 
 ## Success criteria
 

@@ -1,8 +1,1 @@
-# Scratchpad: food-tracking-foundation
-
-> **Ephemeral working memory.** Most of what lands here is noise — small
-> decisions that don't matter, dead ends, momentary confusion. At feature
-> completion, run `minerva:promote`: significant items get promoted to
-> `.minerva/knowledge/`, `proposal.md` gets updated to match reality, and
-> the raw scratchpad is archived.
-
+> Promoted 2026-06-22 — durable knowledge in `.minerva/knowledge/036-pattern-food-tracking-foundation.md`; proposal rewritten "As shipped" (Status Shipped); deferred work in `followups.md`; raw working notes in `scratchpad.archived.md`.

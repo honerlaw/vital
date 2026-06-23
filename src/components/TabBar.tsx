@@ -13,6 +13,9 @@ const ICONS: Record<string, FeatherName> = {
   index: 'home',
   programs: 'list',
   history: 'clock',
+  // Feather has no utensil glyph; 'coffee' is the closest food/consumption mark. iOS uses the
+  // native SF Symbol 'fork.knife' (AppTabs.ios.tsx) instead.
+  nutrition: 'coffee',
   settings: 'settings',
 };
 
@@ -20,6 +23,7 @@ const LABELS: Record<string, string> = {
   index: 'Today',
   programs: 'Programs',
   history: 'History',
+  nutrition: 'Nutrition',
   settings: 'Settings',
 };
 
