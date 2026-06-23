@@ -1,0 +1,1 @@
+> Promoted 2026-06-22 — durable knowledge in `.minerva/knowledge/036-pattern-food-tracking-foundation.md`; proposal rewritten "As shipped" (Status Shipped); deferred work in `followups.md`; raw working notes in `scratchpad.archived.md`.

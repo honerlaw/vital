@@ -11,6 +11,7 @@ export default function AppTabs() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="programs" />
       <Tabs.Screen name="history" />
+      <Tabs.Screen name="nutrition" />
       <Tabs.Screen name="settings" />
     </Tabs>
   );

@@ -12,6 +12,7 @@ const TABS = [
   { name: 'index', label: 'Today', sf: { default: 'house', selected: 'house.fill' } },
   { name: 'programs', label: 'Programs', sf: { default: 'list.bullet', selected: 'list.bullet' } },
   { name: 'history', label: 'History', sf: { default: 'clock', selected: 'clock.fill' } },
+  { name: 'nutrition', label: 'Nutrition', sf: { default: 'fork.knife', selected: 'fork.knife' } },
   { name: 'settings', label: 'Settings', sf: { default: 'gearshape', selected: 'gearshape.fill' } },
 ] as const;
 

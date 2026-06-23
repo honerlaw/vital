@@ -54,6 +54,9 @@ export default function RootNavigator() {
         {/* No `options` → inherits the Stack default `headerShown: false` (026): the blank
             chrome-only header is gone; the screen renders its own inline BackButton. */}
         <Stack.Screen name="program/[id]" />
+        {/* Add-food flow (032): a top-level route off the Nutrition tab, same inline-BackButton
+            chrome as program/[id] (no native header). */}
+        <Stack.Screen name="nutrition/add" />
         {/* A live workout's only exits must run the cancel/finish dispatches (021): the
             swipe gesture and native back button are disabled HERE — statically, so the
             lock can't be lost to an in-screen early return — and the screen supplies its
