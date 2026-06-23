@@ -13,11 +13,8 @@
  * USDA exposes one). The client multiplies by the chosen grams to get the absolute numbers it logs.
  */
 import { type FoodSearchResult, type FoodServingOption } from '@/data/food-types';
+import { buildUsdaSearchUrl } from '@/server/build-usda-search-url';
 import { usdaNutrientValue } from '@/server/usda-nutrient-value';
-
-const SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
-const DATA_TYPES = 'Foundation,SR Legacy,Survey (FNDDS)';
-const PAGE_SIZE = '25';
 
 export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResult[]> {
   const apiKey: unknown = process.env.USDA_API_KEY;
@@ -25,13 +22,7 @@ export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResu
     throw new Error('USDA_API_KEY is not set');
   }
 
-  const params = new URLSearchParams({
-    api_key: apiKey,
-    query: queryText,
-    dataType: DATA_TYPES,
-    pageSize: PAGE_SIZE,
-  });
-  const res = await fetch(`${SEARCH_URL}?${params.toString()}`);
+  const res = await fetch(buildUsdaSearchUrl(apiKey, queryText));
   if (!res.ok) {
     throw new Error(`USDA search failed (${String(res.status)})`);
   }
