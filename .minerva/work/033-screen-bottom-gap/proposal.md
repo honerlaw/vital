@@ -1,7 +1,14 @@
 # 033 — Screen bottom edge: drop the redundant tab-bar / safe-area gap
 
 ## Status
-Draft
+Shipped (2026-06-23). Delivered via `minerva:propose-ship-quick` (main-model decisions; no
+escalations). Implementation matched Approach A exactly — no divergence, no replan. Review
+surfaced one finding (a stale intro comment in `Screen.tsx`), fixed in place. Durable learning
+promoted to [[037-pattern-screen-bottom-clearance-model]]; the now-stale claims in
+[[031-pattern-ios-native-tabs-liquid-glass]] "Trap 1" and
+[[032-pattern-screen-flushbottom-tabbar-inset]] were corrected with reciprocal links.
+**Open: on-device iOS confirmation of the post-fix bottom clearance (see Open Questions) — lower
+risk than 028's top precondition because the reported gap already proves the native inset is full.**
 
 ## Goal
 Remove the empty band (~tab-bar height) at the bottom of the scroll content on every

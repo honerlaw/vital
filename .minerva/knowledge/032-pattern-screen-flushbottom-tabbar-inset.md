@@ -6,7 +6,9 @@
 - Related: [[027-pattern-native-stack-headers-pushed-screens]] (the sibling `hasHeader`
   inset-propagation opt-in on the same `Screen` component — same default-false discipline),
   [[005-decision-vital-state-and-nav-boundaries]] (tabs vs top-level routes — why the tab
-  bar is a relative-flow sibling of the scene in the first place)
+  bar is a relative-flow sibling of the scene in the first place),
+  [[037-pattern-screen-bottom-clearance-model]] (033 generalized this bottom-padding model and
+  changed how Settings keeps its iOS clearance — see the updated "coupling" note below)
 
 Why `Screen` grew a third opt-in padding prop, and the layout fact that makes it correct.
 
@@ -42,9 +44,10 @@ iOS (`!onNativeTabBar`): the iOS path falls through to `insets.bottom + tabBarPa
 restoring the clearance and staying byte-identical to the default. The inset is restored, not
 dropped — exactly as the original caveat demanded.
 
-Mechanically, Settings is protected on iOS by TWO independent facts, neither of which is the
-`tabScreen` auto-inset path (Settings never passes `tabScreen`): on the flush branch by
-`!onNativeTabBar`, and on the else branch by `scroll === false` (the `tabScreen && … && scroll`
-gate that zeroes `tabBarPad` requires `scroll`, so a non-scroll screen keeps the full
-`tabBarHeight` term regardless). Both routes land on the full safe padding that clears the
-overlay.
+Mechanically, on iOS Settings takes the else branch (`flushBottom && !onNativeTabBar` is false
+there) and lands on the full `insets.bottom + tabBarHeight + space['2xl']` that clears the
+overlay. **Updated by 033** ([[037-pattern-screen-bottom-clearance-model]]): originally Settings
+got its `tabBarHeight` implicitly, because every `tabScreen=false` screen did. 033 made non-tab
+screens reserve no clearance (`!tabScreen → 0`), so Settings now **passes `tabScreen`** to keep
+that `tabBarHeight` — the earlier "Settings never passes `tabScreen`" claim is superseded. The
+outcome is unchanged (byte-identical padding on every platform); only the route to it moved.
