@@ -12,7 +12,9 @@
   boot-hydration model the food diary deliberately does NOT use), [[004-pattern-expo56-react-compiler-hook-rules]]
   (deferred-setState — the hook updates state only in the async resolution),
   [[031-pattern-ios-native-tabs-liquid-glass]] (registering the new Nutrition tab on both bars),
-  [[005-decision-vital-state-and-nav-boundaries]] (the add-food flow is a top-level route, not a tab)
+  [[005-decision-vital-state-and-nav-boundaries]] (the add-food flow is a top-level route, not a tab),
+  [[038-pattern-urlsearchparams-plus-space-gateway-400]] (the search proxy's request-URL 400 bug —
+  the `+`-vs-`%20` space encoding USDA's gateway rejects)
 
 How VITAL added food / calorie tracking (032) as a new Nutrition tab. This is **Unit 1 of 4** — a
 foundation that later additive units build on: 2 = barcode (Open Food Facts), 3 = AI capture
