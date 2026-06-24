@@ -2,7 +2,7 @@
 
 <!-- synthesis-watermark: 040 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030, 033, 034 and 040).
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030, 033, 039 and 040).
 Theme-grouped navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -159,11 +159,12 @@ rides the app's first server-side LLM integration: an LLM reached via `fetch` th
 (no SDK, no lockfile churn 024; any model is a config value — 031), the key server-only (never
 `EXPO_PUBLIC_*`), LLM JSON validated through
 cast-free strict-writer guards (028) with one retry then a 502 the client degrades around, behind a
-fail-open per-user daily rate cap ([[035-pattern-server-llm-integration]]). Work 034 then made that
-generation streamable and cancellable: the buffered `callLlm` base streams over SSE
-(Expo Router → OpenRouter → `expo/fetch`) with structural progress derived from the partial JSON,
-and the workout exit recipe (027) is adapted into a per-phase dynamic lock so an in-flight
-generation can be cancelled cleanly ([[038-pattern-llm-sse-streaming-and-cancel]]).
+fail-open per-user daily rate cap ([[035-pattern-server-llm-integration]]). Work 034 then made
+generation stream: a `stream: true` SSE sibling of `callLlm` yields assistant deltas (buffered
+across chunk boundaries, `[DONE]`-terminated) with `requireAuth` + the daily cap running BEFORE the
+`text/event-stream` opens (so a 401/429 is still a plain JSON `Response`), structural progress
+parsed from the partial text, and every in-flight phase cancellable — adapting 027's static workout
+exit recipe into a per-phase dynamic lock ([[038-pattern-llm-sse-streaming-and-cancel]]).
 
 ## Nutrition — food & calorie tracking
 
@@ -182,22 +183,27 @@ node-pg's string/Date coercion). Routes are `requireAuth`-gated; `/api/me/food-s
 FoodData Central behind a server-only `USDA_API_KEY` (the 035 key discipline), restricted to generic
 data types for a uniform per-100 g basis, and degrades to manual entry on any USDA failure (502).
 This is Unit 1 of 4 (barcode / AI-capture / targets to follow), with AI capture planned as
-LLM-as-parser over database-as-source-of-truth ([[036-pattern-food-tracking-foundation]]). The USDA
-proxy needed two follow-ups on the same `/foods/search` response: its request URL 400'd because
-`URLSearchParams` encodes spaces as `+` and USDA's nginx gateway rejects the `+%28` sequence in
-`Survey (FNDDS)` — so query strings are built with `encodeURIComponent` (`%20`), never
-`URLSearchParams` ([[038-pattern-urlsearchparams-plus-space-gateway-400]]); and serving sizes were
-stuck at "100 g" for FNDDS beverages (which carry a null top-level `servingSize`), fixed by reading
-the response's `foodMeasures[]` household portions ("1 cup (8 fl oz)", "1 fl oz", "1 small/medium/large",
-each with an authoritative `gramWeight` and a USDA `rank`) into `servingOptions` — a server-only
-change the slim `{label,grams}` shape and existing macro math absorbed untouched
+LLM-as-parser over database-as-source-of-truth ([[036-pattern-food-tracking-foundation]]). That
+search proxy then 502'd ~half the time for three units: USDA's `api.data.gov` gateway
+**intermittently** 400s a GET whose query string carries the parenthesized `dataType=Survey (FNDDS)`
+value (in any encoding — a load-balanced flake, not a request-shape bug). Two URL-encoding fixes
+missed it by verifying single-shot and catching a lucky 200; the durable fix is to **POST a JSON
+body** (`dataType` as an array), bypassing the query-string path, and to verify intermittent gateway
+bugs with N repeated live requests, not one ([[039-pattern-usda-gateway-intermittent-400-post-fix]],
+superseding the wrong [[038-pattern-urlsearchparams-plus-space-gateway-400]]). Separately, serving
+sizes were stuck at "100 g" for FNDDS beverages, which carry a null top-level `servingSize`: reading
+the same POST response's `foodMeasures[]` household portions ("1 cup (8 fl oz)", "1 fl oz",
+"1 small/medium/large", each with an authoritative `gramWeight` and a USDA `rank`) into
+`servingOptions` makes a real consumer portion pickable — a server-only change the slim
+`{label,grams}` shape and existing macro math absorbed untouched
 ([[040-pattern-usda-household-serving-portions]]).
 
 ## Limitations
 
 The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 040, not
-body content — in-place edits to already-synthesized entries do not
-move it, and a stale body with a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
+body content — in-place edits to already-synthesized entries do not move it, and a stale body with
+a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
-decision and a pattern) — a pre-conventions artifact; links here use full stems, so navigation is
-unambiguous.
+decision and a pattern) and two numbered 038 (the LLM-SSE-streaming pattern and the now-superseded
+URLSearchParams-gateway-400 pattern) — pre-conventions / parallel-unit numbering artifacts; links
+here use full stems, so navigation is unambiguous.

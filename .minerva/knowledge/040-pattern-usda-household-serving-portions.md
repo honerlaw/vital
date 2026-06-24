@@ -5,8 +5,8 @@
 - Work unit: 040-usda-household-portions
 - Related: [[036-pattern-food-tracking-foundation]] (the search proxy this extends — 036 built
   `servingOptions` from only the `100 g` base + top-level gram `servingSize`; this enriches it),
-  [[038-pattern-urlsearchparams-plus-space-gateway-400]] (same USDA `/foods/search` response, a
-  different field of it), [[014-pattern-server-pg-access-expo-routes]] (the cast-free `unknown`
+  [[039-pattern-usda-gateway-intermittent-400-post-fix]] (the current `/foods/search` transport —
+  a POST whose JSON response this reads the `foodMeasures[]` field of), [[014-pattern-server-pg-access-expo-routes]] (the cast-free `unknown`
   narrowing idiom reused for the third-party measure objects), [[002-pattern-eslint-strict-config-gotchas]]
   (the `local/single-declaration` rule that forced the parse loop to be inlined rather than a
   second top-level function)
