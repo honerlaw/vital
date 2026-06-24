@@ -1,7 +1,13 @@
 # 039 — USDA food search: switch GET→POST to kill the intermittent gateway 400
 
 ## Status
-Draft
+Shipped (2026-06-24). Delivered via `minerva:propose-ship-quick` (main-model decisions; no
+escalations). Implementation matched the Approach exactly — no divergence, no replan. Review
+surfaced no code FIX findings; the one action item was knowledge reconciliation. Durable learning
+promoted to [[039-pattern-usda-gateway-intermittent-400-post-fix]], which **supersedes** the wrong
+[[038-pattern-urlsearchparams-plus-space-gateway-400]] (now banner-marked) with a reciprocal link
+fix on [[036-pattern-food-tracking-foundation]]. Verified live with the real key: `searchUsdaFoods`
+8/8 → 200 with a valid 25-food body; POST curl 15/15.
 
 ## Goal
 Make the nutrition-tab food search (`GET /api/me/food-search` → `searchUsdaFoods`) reliably reach

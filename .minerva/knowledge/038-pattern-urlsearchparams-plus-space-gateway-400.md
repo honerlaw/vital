@@ -1,8 +1,19 @@
 # Pattern: URLSearchParams encodes spaces as `+` — some gateways 400 it; build query strings with `encodeURIComponent`
 
+> ⚠ **SUPERSEDED by [[039-pattern-usda-gateway-intermittent-400-post-fix]] (2026-06-24).** The
+> core diagnosis below is **wrong**. The USDA 400 is **not** deterministic and **not** caused by
+> the `+`-vs-`%20` space encoding — it is an **intermittent (~50%) load-balanced flake** at USDA's
+> `api.data.gov` gateway, triggered by the parenthesized `dataType=Survey (FNDDS)` value in *any*
+> encoding (`%20%28` and raw `(` both flake). The single-row bisect table below was sampled
+> single-shot and got lucky 200s — re-running each row ×12 shows ~50% 400s. The `encodeURIComponent`
+> URL builder this entry recommends was deleted in 039; the durable fix is **POST with a JSON body**.
+> The one still-correct lesson here — *single-shot live verification is insufficient* — is carried
+> forward (and corrected) in 039. Kept for the audit trail of the second failed fix.
+
 - Type: pattern
 - Date: 2026-06-24
 - Work unit: 038-usda-search-space-encoding
+- Superseded-by: [[039-pattern-usda-gateway-intermittent-400-post-fix]]
 - Related: [[036-pattern-food-tracking-foundation]] (the USDA `/api/me/food-search` proxy whose
   request URL this fixes)
 
