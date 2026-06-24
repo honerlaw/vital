@@ -1,7 +1,14 @@
 # 038 — USDA food search 400: encode spaces as %20, not `+`
 
 ## Status
-Draft
+Shipped (2026-06-24). Delivered via `minerva:propose-ship-quick` (main-model decisions; no
+escalations). Implementation matched the Approach exactly — no divergence, no replan. Review
+surfaced no findings; the `+`-space pattern is isolated to this one builder (`src/` has no other
+`URLSearchParams` query-string construction). Durable learning promoted to
+[[038-pattern-urlsearchparams-plus-space-gateway-400]] with a reciprocal link from
+[[036-pattern-food-tracking-foundation]]. **Open: final confirmation against live USDA needs the
+real `USDA_API_KEY` (DEMO_KEY is rate-limited to 429, which already proves the fixed form clears
+the nginx 400); the no-`+` unit test is the CI-side guard.**
 
 ## Goal
 Make the nutrition-tab food search (`GET /api/me/food-search` → `searchUsdaFoods` →
