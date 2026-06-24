@@ -82,16 +82,19 @@ void test('measures with non-positive or non-finite grams or empty text are skip
   ]);
 });
 
-void test('unranked measures sink below ranked ones', () => {
+void test('unranked measures sink below ranked ones, keeping input order among themselves', () => {
   const options = buildServingOptions({
     foodMeasures: [
-      { disseminationText: 'no rank', gramWeight: 50 },
+      { disseminationText: 'no rank a', gramWeight: 50 },
       { disseminationText: 'ranked', gramWeight: 60, rank: 1 },
+      { disseminationText: 'no rank b', gramWeight: 70 },
     ],
   });
+  // Two unranked entries must NOT trip the Infinity-Infinity=NaN comparator footgun.
   assert.deepEqual(options, [
     { label: 'ranked', grams: 60 },
-    { label: 'no rank', grams: 50 },
+    { label: 'no rank a', grams: 50 },
+    { label: 'no rank b', grams: 70 },
     { label: '100 g', grams: 100 },
   ]);
 });

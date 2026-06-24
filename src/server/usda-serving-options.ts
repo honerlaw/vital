@@ -22,6 +22,9 @@ import { type FoodServingOption } from '@/data/food-types';
 const QUANTITY_NOT_SPECIFIED = 'quantity not specified';
 /** Keep the chip row bounded — generic foods can list many measures. */
 const MAX_HOUSEHOLD_PORTIONS = 6;
+/** Sort key for a measure USDA didn't rank — a large finite value so it sinks last WITHOUT the
+ * `Infinity - Infinity = NaN` comparator footgun when two measures are both unranked. */
+const UNRANKED = Number.MAX_SAFE_INTEGER;
 
 interface RankedPortion {
   option: FoodServingOption;
@@ -57,7 +60,7 @@ export function buildServingOptions(food: unknown): FoodServingOption[] {
         if (typeof gram !== 'number' || !Number.isFinite(gram) || gram <= 0) continue;
 
         const rawRank = 'rank' in measure ? measure.rank : undefined;
-        const rank = typeof rawRank === 'number' && Number.isFinite(rawRank) ? rawRank : Infinity;
+        const rank = typeof rawRank === 'number' && Number.isFinite(rawRank) ? rawRank : UNRANKED;
 
         ranked.push({ option: { label: text, grams: gram }, rank });
       }
