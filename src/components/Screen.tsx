@@ -10,6 +10,7 @@ interface Props {
   center?: boolean;
   flushBottom?: boolean;
   tabScreen?: boolean;
+  keyboardAware?: boolean;
 }
 
 export default function Screen({
@@ -19,6 +20,7 @@ export default function Screen({
   center = false,
   flushBottom = false,
   tabScreen = false,
+  keyboardAware = false,
 }: Props) {
   const insets = useSafeAreaInsets();
   // On iOS the tab bar is the native UITabBar (025), whose content view controller hosts each
@@ -65,9 +67,10 @@ export default function Screen({
       // Taps on touchables (e.g. a set's done toggle, 022) must fire on the first tap even
       // while the keyboard is up — 'handled' keeps plain background taps dismissing as before.
       keyboardShouldPersistTaps="handled"
-      // Centered forms (023): on iOS this scrolls the focused field clear of the keyboard
-      // (no-op on Android, where the default `resize` mode re-centers the shrunken viewport).
-      automaticallyAdjustKeyboardInsets={center}
+      // Centered forms (023) AND opt-in keyboardAware screens (034, the routine intake form): on
+      // iOS this scrolls the focused field clear of the keyboard (no-op on Android, where the
+      // default `resize` mode re-flows the shrunken viewport so lower inputs stay reachable).
+      automaticallyAdjustKeyboardInsets={center || keyboardAware}
     >
       {children}
     </ScrollView>

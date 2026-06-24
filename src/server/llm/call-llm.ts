@@ -13,7 +13,7 @@ import { extractText } from '@/server/llm/extract-text';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
-export async function callLlm(system: string, user: string): Promise<string> {
+export async function callLlm(system: string, user: string, signal?: AbortSignal): Promise<string> {
   const key: unknown = process.env.OPENROUTER_API_KEY;
   if (typeof key !== 'string' || key.length === 0) {
     throw new Error('OPENROUTER_API_KEY is not set');
@@ -21,6 +21,7 @@ export async function callLlm(system: string, user: string): Promise<string> {
   const model = process.env.OPENROUTER_MODEL ?? LLM_MODEL;
   const res = await fetch(ENDPOINT, {
     method: 'POST',
+    signal,
     headers: {
       authorization: `Bearer ${key}`,
       'content-type': 'application/json',
