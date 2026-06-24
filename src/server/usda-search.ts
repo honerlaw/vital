@@ -9,11 +9,14 @@
  * Scope is GENERIC foods only — Foundation / SR Legacy / Survey (FNDDS) — so the per-100 g macro
  * basis is uniform and results stay clean; branded/packaged foods are deferred to the Open Food
  * Facts barcode unit. Each hit is reduced to a slim `FoodSearchResult`: per-100 g macros plus a
- * `servingOptions` list that always carries a `100 g` base (and the food's own gram serving when
- * USDA exposes one). The client multiplies by the chosen grams to get the absolute numbers it logs.
+ * `servingOptions` list. `buildServingOptions` (040) reads USDA's household measures
+ * (`foodMeasures[]` — "1 cup (8 fl oz)", "1 fl oz", "1 small/medium/large") into that list so a
+ * beverage isn't stuck at "100 g"; it always still carries a `100 g` base. The client multiplies
+ * by the chosen grams to get the absolute numbers it logs.
  */
-import { type FoodSearchResult, type FoodServingOption } from '@/data/food-types';
+import { type FoodSearchResult } from '@/data/food-types';
 import { buildUsdaSearchUrl } from '@/server/build-usda-search-url';
+import { buildServingOptions } from '@/server/usda-serving-options';
 import { usdaNutrientValue } from '@/server/usda-nutrient-value';
 
 export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResult[]> {
@@ -47,18 +50,6 @@ export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResu
     if (fdcId.length === 0) continue;
 
     const nutrients = 'foodNutrients' in food ? food.foodNutrients : undefined;
-    const servingOptions: FoodServingOption[] = [{ label: '100 g', grams: 100 }];
-    const servingSize = 'servingSize' in food ? food.servingSize : undefined;
-    const servingUnit = 'servingSizeUnit' in food ? food.servingSizeUnit : undefined;
-    if (
-      typeof servingSize === 'number' &&
-      Number.isFinite(servingSize) &&
-      servingSize > 0 &&
-      typeof servingUnit === 'string' &&
-      servingUnit.toLowerCase() === 'g'
-    ) {
-      servingOptions.push({ label: `${String(servingSize)} g`, grams: servingSize });
-    }
 
     results.push({
       fdcId,
@@ -67,7 +58,7 @@ export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResu
       proteinPer100g: usdaNutrientValue(nutrients, '203'),
       carbsPer100g: usdaNutrientValue(nutrients, '205'),
       fatPer100g: usdaNutrientValue(nutrients, '204'),
-      servingOptions,
+      servingOptions: buildServingOptions(food),
     });
   }
   return results;
