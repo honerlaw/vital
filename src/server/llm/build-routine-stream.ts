@@ -69,7 +69,7 @@ export function buildRoutineStream(config: RoutineStreamConfig): Response {
           result = config.finalize(extractJson(buffer));
         } catch {
           send('retry', {});
-          const retryText = await callLlm(config.system, config.user + RETRY_NUDGE);
+          const retryText = await callLlm(config.system, config.user + RETRY_NUDGE, config.signal);
           result = config.finalize(extractJson(retryText));
         }
         send('done', result);

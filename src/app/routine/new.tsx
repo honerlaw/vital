@@ -180,8 +180,10 @@ export default function NewRoutineScreen() {
     if (!draft || !spec) return;
     const controller = new AbortController();
     abortRef.current = controller;
+    setRetrying(false);
+    setProgress(null);
     setPhase('saving');
-    saveUserProgram(getToken, draft, spec)
+    saveUserProgram(getToken, draft, spec, controller.signal)
       .then((saved) => {
         if (controller.signal.aborted) return;
         dispatch({ type: 'ADD_USER_PROGRAM', program: saved });
