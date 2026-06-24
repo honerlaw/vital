@@ -12,7 +12,9 @@
   [[002-pattern-eslint-strict-config-gotchas]] (the data-const exemption the `TABS` map relies
   on — `local/single-declaration` counts only function/class/component declarators),
   [[016-pattern-ssr-safe-startup-hydration-gate]] (the boot render-gate `(tabs)/_layout` keeps
-  above `<AppTabs/>`, so SSR is unaffected by the swap)
+  above `<AppTabs/>`, so SSR is unaffected by the swap),
+  [[037-pattern-screen-bottom-clearance-model]] (033 completed "Trap 1"'s bottom half — also
+  dropping `insets.bottom` on the iOS tab-scroll path)
 
 How work 025 gave iOS the real Apple Liquid Glass tab bar. The file layout and option names are
 readable from `components/AppTabs(.ios).tsx` and `components/Screen.tsx`; this entry preserves
@@ -62,9 +64,12 @@ applied the symmetric top fix: `paddingTop: hasHeader || onNativeTabScroll ? scr
 insets.top + screenPaddingTop` — i.e. when a native consumer already supplies the top inset (a
 stack header via `hasHeader`, or now the native tab content-inset), keep only the 8pt design
 margin. **Lesson: when a native consumer takes over insets, audit TOP and BOTTOM in the same
-change — a one-sided fix leaves the mirror-image bug latent (here, ~7 months).** Note the bottom
-deliberately still keeps `insets.bottom + space['2xl']` as trailing scroll space; only the
-redundant `tabBarHeight`/`insets.top` terms were dropped.
+change — a one-sided fix leaves the mirror-image bug latent (here, ~7 months).** 025/028 dropped
+the redundant `tabBarHeight`/`insets.top` terms but kept the bottom `insets.bottom + space['2xl']`
+as "trailing scroll space" — which [[037-pattern-screen-bottom-clearance-model]] (033) later found
+was the SAME double-count: the native inset covers the bottom safe area too, so iOS tab-scroll now
+keeps only `space['2xl']`. The kept `insets.bottom` was the bottom twin of the dropped `insets.top`
+— the both-axes lesson applied a third time.
 
 **Validation status (updated by 028):** 025 originally flagged the auto-inset as "not yet validated
 on a real iOS 26 device." The 028 top-whitespace report now *confirms a native top inset is

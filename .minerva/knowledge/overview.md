@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 035 -->
+<!-- synthesis-watermark: 037 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029 and 030).
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030 and 033).
 Theme-grouped navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -54,7 +54,12 @@ bar) — glass is a property of the UIKit control, not a backdrop veneer
 ([[031-pattern-ios-native-tabs-liquid-glass]]). That native overlay bar reshaped the shared
 `Screen`'s bottom padding: a `flushBottom` opt-in pins content one design margin above the
 relative-flow Android/web bar, but is gated OFF on iOS where the overlay needs its inset restored
-([[032-pattern-screen-flushbottom-tabbar-inset]]). Since work 022 a workout records
+([[032-pattern-screen-flushbottom-tabbar-inset]]). Work 033 then generalized that bottom-padding
+model into one rule — reserve tab-bar clearance ONLY for `tabScreen` screens whose bar actually
+overlaps the content — so the pushed non-tab screens and the signed-out `(auth)` screens reserve
+nothing, and iOS tab-scroll drops `insets.bottom` too (the native inset already covers it,
+completing 031 "Trap 1"'s bottom half); Settings now passes `tabScreen` to keep its iOS overlay
+clearance ([[037-pattern-screen-bottom-clearance-model]]). Since work 022 a workout records
 per-set weight and actual reps end to end: all numeric coercion lives in the pure `updateSet`
 engine (preserving 017's reducer/wrapper mirror), the catalog's `×` scheme separator is
 U+00D7 (an ASCII-x parser silently no-ops prefill), and prefill is placeholder +
@@ -156,9 +161,28 @@ rides the app's first server-side LLM integration: an LLM reached via `fetch` th
 cast-free strict-writer guards (028) with one retry then a 502 the client degrades around, behind a
 fail-open per-user daily rate cap ([[035-pattern-server-llm-integration]]).
 
+## Nutrition — food & calorie tracking
+
+Since work 032 the app has a Nutrition tab backed by a date-scoped food diary — its FIRST
+fetch-on-mount per-user resource, deliberately NOT boot-hydrated into the reducer like active
+program / cursors / history, because a diary is many-entries-per-day-forever. `useFoodLog(date)`
+holds a single date-stamped snapshot written only inside the async resolution (the 004
+deferred-setState rule), driven by `useFocusEffect` so a date change or a return from the add-food
+route re-fetches with no double fetch; `entries`/`status` derive in render and only count a
+snapshot whose `date` matches, so a pending day-switch shows empty+loading rather than the prior
+day's totals. `food_log_entries` (one additive migration, no-FK soft `clerk_user_id` ref like 017)
+keys on a **local** `YYYY-MM-DD` day computed client-side (never `toISOString`), and snapshots the
+four macros **absolute at log time** so a later USDA re-fetch can't rewrite a past total (the 028
+self-containment idea applied to nutrition; `numeric`/`date` columns are `::text`-selected to dodge
+node-pg's string/Date coercion). Routes are `requireAuth`-gated; `/api/me/food-search` proxies USDA
+FoodData Central behind a server-only `USDA_API_KEY` (the 035 key discipline), restricted to generic
+data types for a uniform per-100 g basis, and degrades to manual entry on any USDA failure (502).
+This is Unit 1 of 4 (barcode / AI-capture / targets to follow), with AI capture planned as
+LLM-as-parser over database-as-source-of-truth ([[036-pattern-food-tracking-foundation]]).
+
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 033, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 037, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a

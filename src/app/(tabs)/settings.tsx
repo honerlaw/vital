@@ -14,15 +14,17 @@ import { space } from '@/theme';
  * the scene, so the scene ends at the bar's top — flushBottom (Screen.tsx) drops the redundant
  * tab-bar clearance so Sign out pins just above the bar. On iOS the native UITabBar is an
  * overlay (025), so flushBottom is gated off there and the screen keeps the full safe inset
- * that clears the bar. The flex:1 `center` region holds the avatar/email block vertically
- * centered between the title and Sign out on every platform.
+ * that clears the bar. `tabScreen` is what reserves that iOS clearance now that non-tab screens
+ * reserve none (Screen.tsx `!tabScreen` branch): this is the one non-scroll tab whose content
+ * sits under the overlay (031, Trap 2), so it must opt in. The flex:1 `center` region holds the
+ * avatar/email block vertically centered between the title and Sign out on every platform.
  */
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { user } = useUser();
 
   return (
-    <Screen scroll={false} flushBottom>
+    <Screen scroll={false} flushBottom tabScreen>
       <AppText variant="screenTitle" style={styles.title}>Settings</AppText>
       <View style={styles.center}>
         {user !== null && user !== undefined ? (
