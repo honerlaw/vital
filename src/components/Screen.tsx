@@ -24,9 +24,9 @@ export default function Screen({
   // On iOS the tab bar is the native UITabBar (025), whose content view controller hosts each
   // tab's ScrollView with the default contentInsetAdjustmentBehavior — so the native side
   // auto-insets that ScrollView for the safe area, on BOTH edges. Any manual safe-area term we
-  // also add on this path double-counts. The gate is the iOS tab scroll path; the non-scroll
-  // Settings tab (bare View, no native auto-inset) and every non-tab consumer (`tabScreen`
-  // defaults false) keep the original manual padding.
+  // also add on the iOS tab scroll path therefore double-counts. `onNativeTabScroll` is that
+  // path; how each remaining class of screen pads is spelled out at `tabBarPad` /
+  // `designMarginOnly` below.
   const onNativeTabBar = process.env.EXPO_OS === 'ios';
   const onNativeTabScroll = tabScreen && onNativeTabBar && scroll;
   // Manual tab-bar clearance is reserved ONLY for tab screens whose bar actually overlaps the
