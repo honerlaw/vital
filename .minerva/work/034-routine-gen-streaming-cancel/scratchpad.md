@@ -54,3 +54,35 @@
    `<Stack.Screen>` gesture lock + `BackHandler`.
 5. Keyboard: `Screen` `keyboardAware` prop on the questions phase.
 6. Verify success criteria on a native build; lint/typecheck/tests.
+
+## Implementation outcome 2026-06-23
+
+Files added: `src/server/llm/scan-progress.ts` (+`.test.ts`, 8 tests), `src/server/llm/stream-llm.ts`,
+`src/server/llm/build-routine-stream.ts`, `src/auth/auth-headers.ts`, `src/data/stream-routine.ts`,
+`src/components/ConfirmDialog.tsx`.
+Files changed: the 3 routine routes (→ SSE), the 3 data-API wrappers (→ streamRoutine), `apiFetch`
+(authHeaders + optional signal), `Screen` (`keyboardAware` prop), `src/app/routine/new.tsx` (streaming
+progress UI, cancel/ConfirmDialog, per-phase rewind, gesture lock + BackHandler, keyboardAware form).
+
+Verification (mechanically run here):
+- `npm test` → 110/110 pass (incl. 8 new scanner tests: nested objects, chunk-boundary + mid-scalar
+  perWeek, string-embedded braces, escaped quotes, empty/absent array, monotonic prefix scan).
+- `npm run typecheck` → clean (incl. expo/fetch streaming response types under SDK 56).
+- `npm run lint` → clean (`--max-warnings 0`; conformed to single-declaration by inlining helpers,
+  004 hook rules by `genOrigin`-as-state + abort ref touched only in handlers/effects + setState only
+  in async/listener callbacks).
+
+NOT verifiable in this environment (require the user's native EAS dev-client build + a live
+OPENROUTER_API_KEY + DB; flagged at Phase 2 start):
+- Task-1 GO/NO-GO spike: DO-ingress non-buffering + native expo/fetch incremental delivery + EOF
+  detection. Code wired for GO; NO-GO fallback is essentially today's behavior (static loading text).
+- On-device success criteria: live streaming checklist, keyboard reachability, iOS swipe / Android
+  back lock, upstream-abort-on-cancel.
+- Local SSE curl was NOT run: the routes are auth-gated (Clerk) + need a live OPENROUTER_API_KEY and
+  Postgres; a faithful curl isn't reproducible here without those secrets.
+
+Deliberate divergence (judged NOT load-bearing → no replan panel): the progress checklist shows a
+count-based "Day N of N" (N = streamed `perWeek`) rather than each day's *name*. The proposal's
+Goal/Approach mentioned day names, but capturing them would change the tested scanner contract + SSE
+payload + client type for marginal UX gain; the success criterion is count-based ("Day N of N where
+N == perWeek"), which the implementation meets. Logged for the review phase.

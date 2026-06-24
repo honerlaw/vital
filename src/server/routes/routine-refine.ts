@@ -1,12 +1,14 @@
 /**
- * `POST /api/me/routine/refine` (030) — regenerate a draft program from the SAME spec plus the
- * structured re-prompt knobs. Stateless: the client owns the draft and re-sends the full spec on
- * every call. Body `{ spec, knobs }` is validated (strict-writer, 028 → 400). Auth-enforced and
- * rate-capped; LLM/parse failure → 502.
+ * `POST /api/me/routine/refine` (030; streamed since 034) — regenerate a draft program from the
+ * SAME spec plus the structured re-prompt knobs, STREAMING structural progress as Server-Sent
+ * Events. Stateless: the client owns the draft and re-sends the full spec every call. Auth + the
+ * daily cap run FIRST (401/429/400 = plain JSON before any stream bytes). Body `{ spec, knobs }` is
+ * validated (strict-writer, 028 → 400). The stream emits `progress` (days + `perWeek`), a terminal
+ * `done` carrying the `mapLlmProgram`-validated draft, or a terminal `error`.
  */
 import { isIntakeSpec, isRoutineKnob } from '@/data/guards';
+import { buildRoutineStream } from '@/server/llm/build-routine-stream';
 import { generatePrompt } from '@/server/llm/generate-prompt';
-import { requestJson } from '@/server/llm/request-json';
 import { mapLlmProgram } from '@/server/llm-program-mapper';
 import { withinDailyLlmCap } from '@/server/rate-limit';
 import { requireAuth } from '@/server/requireAuth';
@@ -35,11 +37,17 @@ export async function POST(request: Request): Promise<Response> {
     if (!(await withinDailyLlmCap(auth.userId))) {
       return Response.json({ error: 'Daily limit reached' }, { status: 429 });
     }
-    const { system, user } = generatePrompt(body.spec, body.knobs);
-    const raw = await requestJson(system, user);
-    return Response.json(mapLlmProgram(raw, globalThis.crypto.randomUUID()));
   } catch (error) {
-    console.error('POST /api/me/routine/refine failed:', error);
+    console.error('POST /api/me/routine/refine cap check failed:', error);
     return Response.json({ error: 'Bad Gateway' }, { status: 502 });
   }
+  const { system, user } = generatePrompt(body.spec, body.knobs);
+  return buildRoutineStream({
+    system,
+    user,
+    signal: request.signal,
+    arrayKey: 'days',
+    scalarKey: 'perWeek',
+    finalize: (raw) => mapLlmProgram(raw, globalThis.crypto.randomUUID()),
+  });
 }
