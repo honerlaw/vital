@@ -96,18 +96,22 @@ export default function NewRoutineScreen() {
     return () => sub.remove();
   }, [inFlight]);
 
+  // iOS swipe-back + Android back are locked ONLY while in flight (027 recipe, adapted from a
+  // static lock to a per-phase one). Rendered in EVERY branch — incl. the boot-gate one below, since
+  // the plan fetch is already in flight there — so an early return can't desync it.
+  const gestureLock = <Stack.Screen options={{ gestureEnabled: !inFlight }} />;
+
   // Standalone route (outside the tabs layout) → carry the combined render-gate (030: incl. user
   // programs). After all hooks.
   const status = bootStatus(state);
   if (status !== 'ready') {
     return (
-      <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} back />
+      <>
+        {gestureLock}
+        <CatalogStatus status={status} onRetry={() => dispatch({ type: 'RETRY_HYDRATE' })} back />
+      </>
     );
   }
-
-  // iOS swipe-back + Android back are locked ONLY while in flight (027 recipe, adapted from a
-  // static lock to a per-phase one). Rendered in EVERY branch so an early return can't desync it.
-  const gestureLock = <Stack.Screen options={{ gestureEnabled: !inFlight }} />;
 
   const visible = (q: Question): boolean => {
     if (!q.showWhen) return true;
