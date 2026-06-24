@@ -6,4 +6,4 @@
 - [decided] whole-proposal soundness: pure function, evidence-backed by live USDA bisect (`+%28`→400, `%20%28`→200); sound, no escalation.
 - [decided] review triage: no findings; `+`-space pattern isolated to this one builder (grep confirmed no other `URLSearchParams` query-string construction in `src/`).
 - [decided] promote partition: PROMOTE the gateway-encoding gotcha → 038 knowledge entry (reciprocal link to 036); DISCARD quick-decision noise; TODO live-USDA confirmation kept as proposal Open Question (no separate followups.md).
-- [synthesis] (recorded at Phase 4.5)
+- [synthesis] no-op (below threshold — 1 un-synthesized entry, no link-rot; overview stays at watermark 037)
