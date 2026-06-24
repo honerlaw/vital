@@ -1,7 +1,9 @@
 # Proposal: routine-gen-streaming-cancel
 
 **Date**: 2026-06-23
-**Status**: Draft
+**Status**: Shipped (2026-06-23) — streaming path UNVERIFIED on device; the on-device GO/NO-GO
+streaming spike is still pending (see `followups.md`). All mechanically-checkable gates pass
+(lint, typecheck, 110/110 tests).
 
 ## Goal
 
@@ -11,9 +13,10 @@ the intake-form keyboard. Three coordinated changes to the routine-generation wi
 `/refine`):
 
 1. **Real SSE streaming progress** on the plan / generate / refine waits, shown as a
-   structural checklist: generate & refine show "Day N of perWeek" plus each day's name as
-   it streams in; plan shows a growing "Designed N questions" count. Today these phases
-   render a single static line of text (`new.tsx:133-143`).
+   structural checklist: generate & refine show a count-based "Day N of N" (N = the streamed
+   `perWeek`); plan shows a growing "Designed N questions" count. (Per-day *name* labels were
+   deferred — see `followups.md` — as a non-load-bearing trim; the criterion is count-based.)
+   Previously these phases rendered a single static line of text.
 2. **Cancel / back at any in-flight point**, gated by a reusable themed `ConfirmDialog`,
    with smart per-phase rewind that preserves the user's data and propagates the abort to
    the server's upstream OpenRouter call.
@@ -34,122 +37,45 @@ the intake-form keyboard. Three coordinated changes to the routine-generation wi
 
 ## Approach
 
-**Approach A — server-computed SSE.** Chosen (approach panel, 3/3) over a raw-token-proxy
-variant that would duplicate the server mapper on the client and break the
-server-owns-validation boundary of [[034-pattern-ai-routine-generation]] /
-[[035-pattern-server-llm-integration]]; and over a buffered/time-based heuristic, excluded
-by the user's explicit "real streaming + structural counts" direction.
+**What shipped (server-computed SSE — Approach A).** Chosen over a raw-token-proxy (would
+duplicate the mapper client-side, breaking the server-owns-validation boundary of
+[[034-pattern-ai-routine-generation]] / [[035-pattern-server-llm-integration]]) and a
+buffered/time-based heuristic (excluded by the "real streaming + structural counts"
+direction). The full durable design — SSE frame protocol, the progress-only partial-JSON
+scanner, streaming retry ownership, `expo/fetch` + `AbortController` consumption with the
+signal threaded to the upstream OpenRouter call, the per-phase dynamic gesture lock, and the
+DO-ingress GO/NO-GO risk — is captured in
+[[038-pattern-llm-sse-streaming-and-cancel]]. Summary of what landed:
 
-### Sequencing — Task 1 is a GO/NO-GO streaming spike
-
-A thin end-to-end SSE proof: a route emits timed `:`-heartbeat + tick frames; a **native
-EAS dev-client build** ([[018-decision-eas-ios-release-workflow]]) consumes them via
-`expo/fetch` and logs each as it lands. **GO/NO-GO criteria:** (a) frames arrive
-incrementally on a native build (the DigitalOcean App Platform ingress,
-[[006-decision-digitalocean-app-platform-hosting]], does not buffer the response); (b)
-`request.signal` / `AbortController` aborts the upstream fetch; (c) an EOF without a
-terminal frame is detectable by the client, so a dropped connection surfaces a recoverable
-error rather than a frozen screen. **NO-GO fallback** (a fully accepted, shippable
-outcome — not a re-vote trigger): keep the routes buffered JSON and show an indeterminate
-"Working…" progress state; cancel still works via `AbortController` on the buffered
-request, and the keyboard + cancel value still ship. The spike outcome is recorded in the
-scratchpad.
-
-### Server
-
-- A **streaming `callLlm` variant** (`stream: true` on the OpenRouter Chat Completions
-  call, yielding token deltas) with `request.signal` threaded into the upstream `fetch`.
-- Each route handler order is **explicit**: `await requireAuth`
-  ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]) → `await
-  withinDailyLlmCap` → **then** construct and return the `text/event-stream` `Response`. A
-  401 / 429 / 400 is a plain JSON `Response` emitted **before any stream bytes**.
-- **Retry ownership.** The streaming route calls the streaming `callLlm` **directly** and
-  owns a single non-streamed `callLlm` retry on end-of-stream parse/validation failure. It
-  does **not** reuse `requestJson` (whose opaque internal retry would make the server fire
-  up to 4 upstream calls while the client believes 2). `requestJson` is retained **only**
-  for the NO-GO buffered fallback. `progress` events come only from the first streaming
-  attempt; during the retry the client holds the last progress snapshot under "Tightening
-  things up…"; a second failure emits a terminal `error`. (No mid-stream retry — the client
-  never discards partial progress.)
-- A **dedicated, unit-tested progress scanner** (string-literal / escape / unicode aware)
-  that tracks brace/bracket **depth** to count completed elements of a single named
-  **top-level** array per schema (`days[]` for generate/refine, `questions[]` for plan —
-  correctly ignoring the nested `exercises[]` / `sets[]` / `progression` objects), and
-  extracts the scalar `perWeek` early. It computes progress snapshots **only**, never
-  validation. Node/tsx unit tests ([[012-pattern-src-unit-tests-node-tsx]]) cover the
-  nested-object case, a `perWeek` value split across a chunk boundary (including mid-scalar,
-  e.g. `"perWeek": ` / `3` — the scanner holds the incomplete token), and per-schema
-  element counting.
-- **SSE event protocol:** `progress` (structural snapshot) emitted as elements complete; a
-  terminal `done` carrying the **fully validated + mapped** `Program` / `QuestionGraph`
-  (reusing the existing server `mapLlmProgram` / `isQuestionGraph`); or a terminal `error`
-  with a typed reason. Periodic `:` keep-alive heartbeats hold the connection through the DO
-  ingress during long calls.
-
-### Client
-
-- A thin **`streamRoutine()` helper** using `expo/fetch` + `AbortController` (not
-  `apiFetch`, which wraps the global `fetch` that cannot stream a native response body). To
-  avoid duplicating auth, a small shared `authHeaders(getToken)` helper is factored out of
-  `apiFetch` and used by **both** `apiFetch` and `streamRoutine`; `streamRoutine` composes
-  the full URL via `apiBaseUrl()` independently (the extraction must not absorb the base-URL
-  logic). It parses typed SSE frames (split on `\n\n`, read `data:` lines, ignore `:`
-  keep-alive comments), yields progress snapshots, resolves with the final validated object,
-  and surfaces a recoverable error on `error` or a non-terminal EOF.
-- The three data-API functions (`fetchRoutinePlan` / `generateRoutine` / `refineRoutine`)
-  become thin wrappers over `streamRoutine`; the client stays dumb (no validation/mapping).
-- `apiFetch`'s `ApiFetchInit` is extended with an optional `signal?: AbortSignal` (used only
-  by the NO-GO buffered fallback path).
-- Per-chunk `setProgress` happens inside `streamRoutine`'s **async** stream-reading loop
-  (awaited reads), never synchronously in a `useEffect` body — satisfying
-  `react-hooks/set-state-in-effect` ([[004-pattern-expo56-react-compiler-hook-rules]]).
-
-### Cancel / back UX
-
-Modeled on the workout **guaranteed-exit recipe**
-([[027-pattern-native-stack-headers-pushed-screens]]), adapted from a **static** lock to a
-**per-phase dynamic** lock (legitimate here because `routine/new`'s `answers` / `draft` /
-`spec` are ephemeral screen state, not reducer side-effects like the live workout).
-
-- A reusable themed **`ConfirmDialog`** component (RN `Modal` + theme, its own file in
-  `src/components/`). State-driven visibility; web/SSR-safe ([[016-pattern-ssr-safe-startup-hydration-gate]])
-  because it renders nothing until opened and never touches `window` at render. This is the
-  user's chosen themed alternative to the workout screen's `Platform`-branched
-  `Alert` / `window.confirm`.
-- A single derived **`inFlight`** boolean (true for `loading-plan` / `generating` /
-  `saving`). A **Cancel** affordance on every in-flight loading screen opens the dialog.
-- Smart per-phase rewind via a **`returnTo`** value held in **`useState`** (not `useRef` —
-  [[004-pattern-expo56-react-compiler-hook-rules]] bans reading `.current` in the render
-  body), set when a generation/save starts and read **only in the cancel handler**:
-  `generating(initial)→questions` (answers kept), `generating(refine)→preview` (prior draft
-  kept), `saving→preview`, `loading-plan→exit` wizard. `answers` / `draft` / `spec` already
-  live in screen-level `useState` (`new.tsx:43-47`) and survive phase transitions — **no
-  phase-machine refactor**.
-- Confirming cancel aborts the in-flight `AbortController` (which aborts the upstream
-  OpenRouter call) and applies the rewind.
-- **iOS swipe-back + Android back are locked only while `inFlight`:** an in-screen
-  `<Stack.Screen options={{ gestureEnabled: !inFlight }} />` element is rendered in **every**
-  render branch (the "every branch" discipline of
-  [[027-pattern-native-stack-headers-pushed-screens]], so an early return can't desync the
-  option), and a single `BackHandler` effect (`react-native`; `usePreventRemove` is **not**
-  exported by expo-router ~56 and `@react-navigation/native` is not installed — 027) returns
-  `true` and routes to the same cancel-confirm flow while `inFlight`, written to the 004 hook
-  rules. The `gestureEnabled` option name is v56-fragile → pin it against the v56 docs
-  (AGENTS.md mandate).
-
-### Keyboard
-
-Add a **`keyboardAware`** prop to `Screen` that enables `automaticallyAdjustKeyboardInsets`
-— the mechanism the centered auth forms already use (introduced in work unit 023, see the
-`Screen.tsx:68-70` comment) — independent of `center`; apply it to the questions phase (the
-`Screen` ScrollView already sets `keyboardShouldPersistTaps="handled"`). Decoupling the
-existing combined `center` condition at `Screen.tsx:70` is a one-line change.
-
-### File decomposition (strict single-declaration — [[001-constraint-strict-eslint-guardrails]] / [[002-pattern-eslint-strict-config-gotchas]])
-
-`streamRoutine`, `authHeaders`, the progress scanner (+ its test), the streaming `callLlm`
-variant, and `ConfirmDialog` each get their own file. SSE event types live with the other
-routine types (type/data declarations are single-declaration-exempt, per 027).
+- **Server.** A streaming `callLlm` variant (`stream-llm.ts`, `stream:true` + `request.signal`
+  threaded upstream); each route (`plan`/`generate`/`refine`) runs `requireAuth` →
+  `withinDailyLlmCap` → THEN returns a `text/event-stream` `Response` (`build-routine-stream.ts`),
+  so 401/429/400 stay plain JSON. A unit-tested string/escape/unicode-aware depth scanner
+  (`scan-progress.ts`) counts completed top-level array elements per schema (`days[]` /
+  `questions[]`) + extracts `perWeek` early; it reports progress only — final validation stays
+  server-side via `mapLlmProgram` / `isQuestionGraph`. Typed SSE frames: `progress` / `retry` /
+  terminal `done` (validated+mapped) / terminal `error`, plus `:` keep-alive heartbeats. The
+  streaming route owns its single non-streamed retry directly (NOT via `requestJson`, which would
+  4× the upstream calls).
+- **Client.** A thin `streamRoutine()` (`stream-routine.ts`) over `expo/fetch` + `AbortController`
+  (RN global `fetch` can't stream a native body) parses the frames and forwards
+  `onProgress` / `onRetry`; the three data-API functions became wrappers; a shared
+  `authHeaders(getToken)` was extracted (used by both `apiFetch` and `streamRoutine`); `apiFetch`
+  gained an optional `signal`.
+- **Cancel / back.** A themed `ConfirmDialog` (RN `Modal`, web/SSR-safe); a derived `inFlight`
+  flag; per-phase rewind via a `genOrigin` `useState` read only in the cancel handler
+  (initial→questions, refine→preview, saving→preview, loading-plan→exit) — no phase-machine
+  refactor (state already screen-level `useState`). Cancel aborts the `AbortController` (upstream
+  OpenRouter call + the save POST). iOS swipe + Android back are locked only while `inFlight` via
+  an in-screen `<Stack.Screen options={{ gestureEnabled: !inFlight }} />` rendered in EVERY branch
+  (incl. the boot-gate) + a `BackHandler` effect (`usePreventRemove` unavailable in expo-router
+  ~56), all written to the 004 hook rules.
+- **Keyboard.** `Screen` gained a `keyboardAware` prop decoupling
+  `automaticallyAdjustKeyboardInsets` from `center`; applied to the intake (`questions`) phase.
+- **Deviation:** the progress checklist is count-based "Day N of N", not per-day *names* (deferred;
+  `followups.md`). **Not verified on device:** the Task-1 GO/NO-GO streaming spike (DO buffering +
+  native `expo/fetch`) is pending — see Status + `followups.md`; the NO-GO fallback is the
+  pre-034 buffered behavior.
 
 ## Success criteria
 
