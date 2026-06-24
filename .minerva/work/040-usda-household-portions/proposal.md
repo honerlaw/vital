@@ -1,7 +1,7 @@
 # Proposal: usda-household-portions
 
 **Date**: 2026-06-24
-**Status**: Draft
+**Status**: Shipped (2026-06-24)
 
 ## Goal
 
@@ -35,7 +35,9 @@ Enrich the server-side search mapper to read USDA `foodMeasures[]` into `serving
 
 A pure, unit-testable `buildServingOptions(food: unknown): FoodServingOption[]` (mirrors the
 existing pure helpers `usdaNutrientValue` / `buildUsdaSearchUrl`; knowledge 012 test discipline).
-From an `unknown` USDA food object it returns, in this order:
+The measure-parse loop is **inlined** into this one function rather than split into a second named
+helper, because the `local/single-declaration` strict-lint rule (knowledge 002) counts every
+top-level declaration. From an `unknown` USDA food object it returns, in this order:
 
 1. **Household portions** from `food.foodMeasures[]`, each narrowed cast-free: an object with a
    non-empty `disseminationText` (string) and a finite `gramWeight > 0`. Sorted by USDA `rank`

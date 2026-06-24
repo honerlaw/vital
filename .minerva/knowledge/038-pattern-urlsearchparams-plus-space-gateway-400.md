@@ -4,7 +4,8 @@
 - Date: 2026-06-24
 - Work unit: 038-usda-search-space-encoding
 - Related: [[036-pattern-food-tracking-foundation]] (the USDA `/api/me/food-search` proxy whose
-  request URL this fixes)
+  request URL this fixes), [[040-pattern-usda-household-serving-portions]] (a different field of
+  the same USDA `/foods/search` response — its `foodMeasures[]` household portions)
 
 ## The gotcha
 `URLSearchParams.toString()` serializes a space as `+` (the `application/x-www-form-urlencoded`

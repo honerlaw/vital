@@ -14,7 +14,9 @@
   [[031-pattern-ios-native-tabs-liquid-glass]] (registering the new Nutrition tab on both bars),
   [[005-decision-vital-state-and-nav-boundaries]] (the add-food flow is a top-level route, not a tab),
   [[038-pattern-urlsearchparams-plus-space-gateway-400]] (the search proxy's request-URL 400 bug —
-  the `+`-vs-`%20` space encoding USDA's gateway rejects)
+  the `+`-vs-`%20` space encoding USDA's gateway rejects),
+  [[040-pattern-usda-household-serving-portions]] (extends this proxy's `servingOptions` to read
+  USDA's `foodMeasures[]` household portions so beverages aren't stuck at "100 g")
 
 How VITAL added food / calorie tracking (032) as a new Nutrition tab. This is **Unit 1 of 4** — a
 foundation that later additive units build on: 2 = barcode (Open Food Facts), 3 = AI capture
