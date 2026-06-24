@@ -7,7 +7,9 @@
   blamed `+`-vs-`%20` space encoding; the real cause is intermittent, not encoding)
 - Related: [[036-pattern-food-tracking-foundation]] (the USDA `/api/me/food-search` proxy this fixes),
   [[035-pattern-server-llm-integration]] (same server-only key-discipline boundary;
-  `USDA_API_KEY` is read from `process.env`, never `EXPO_PUBLIC_*`)
+  `USDA_API_KEY` is read from `process.env`, never `EXPO_PUBLIC_*`),
+  [[040-pattern-usda-household-serving-portions]] (reads the `foodMeasures[]` field of this POST
+  response's JSON into selectable serving portions)
 
 ## The bug
 USDA FoodData Central's `api.data.gov` gateway (api-umbrella / ApacheTrafficServer fronting nginx —

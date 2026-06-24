@@ -16,7 +16,9 @@
   [[039-pattern-usda-gateway-intermittent-400-post-fix]] (the real search-proxy 400 fix — POST a JSON
   body; the USDA gateway intermittently 400s parenthesized GET query values),
   [[038-pattern-urlsearchparams-plus-space-gateway-400]] (⚠ superseded — the second wrong diagnosis
-  of that same 400)
+  of that same 400),
+  [[040-pattern-usda-household-serving-portions]] (extends this proxy's `servingOptions` to read
+  USDA's `foodMeasures[]` household portions so beverages aren't stuck at "100 g")
 
 How VITAL added food / calorie tracking (032) as a new Nutrition tab. This is **Unit 1 of 4** — a
 foundation that later additive units build on: 2 = barcode (Open Food Facts), 3 = AI capture

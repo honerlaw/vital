@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 039 -->
+<!-- synthesis-watermark: 040 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030, 033 and 039).
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030, 033, 039 and 040).
 Theme-grouped navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -190,11 +190,17 @@ value (in any encoding — a load-balanced flake, not a request-shape bug). Two 
 missed it by verifying single-shot and catching a lucky 200; the durable fix is to **POST a JSON
 body** (`dataType` as an array), bypassing the query-string path, and to verify intermittent gateway
 bugs with N repeated live requests, not one ([[039-pattern-usda-gateway-intermittent-400-post-fix]],
-superseding the wrong [[038-pattern-urlsearchparams-plus-space-gateway-400]]).
+superseding the wrong [[038-pattern-urlsearchparams-plus-space-gateway-400]]). Separately, serving
+sizes were stuck at "100 g" for FNDDS beverages, which carry a null top-level `servingSize`: reading
+the same POST response's `foodMeasures[]` household portions ("1 cup (8 fl oz)", "1 fl oz",
+"1 small/medium/large", each with an authoritative `gramWeight` and a USDA `rank`) into
+`servingOptions` makes a real consumer portion pickable — a server-only change the slim
+`{label,grams}` shape and existing macro math absorbed untouched
+([[040-pattern-usda-household-serving-portions]]).
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 039, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 040, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a

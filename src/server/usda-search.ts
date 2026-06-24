@@ -9,8 +9,10 @@
  * Scope is GENERIC foods only — Foundation / SR Legacy / Survey (FNDDS) — so the per-100 g macro
  * basis is uniform and results stay clean; branded/packaged foods are deferred to the Open Food
  * Facts barcode unit. Each hit is reduced to a slim `FoodSearchResult`: per-100 g macros plus a
- * `servingOptions` list that always carries a `100 g` base (and the food's own gram serving when
- * USDA exposes one). The client multiplies by the chosen grams to get the absolute numbers it logs.
+ * `servingOptions` list built by `buildServingOptions` (040), which reads USDA's household measures
+ * (`foodMeasures[]` — "1 cup (8 fl oz)", "1 fl oz", "1 small/medium/large") so a beverage isn't
+ * stuck at "100 g"; it always still carries a `100 g` base. The client multiplies by the chosen
+ * grams to get the absolute numbers it logs.
  *
  * Transport is POST with a JSON body (039), NOT GET with a query string. USDA's `api.data.gov`
  * gateway (api-umbrella / ApacheTrafficServer fronting nginx) intermittently returns 400 — ~50%
@@ -22,7 +24,8 @@
  * the query string (the form the live test used). The bug is invisible to CI — it never hits the
  * live USDA API.
  */
-import { type FoodSearchResult, type FoodServingOption } from '@/data/food-types';
+import { type FoodSearchResult } from '@/data/food-types';
+import { buildServingOptions } from '@/server/usda-serving-options';
 import { usdaNutrientValue } from '@/server/usda-nutrient-value';
 
 const SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
@@ -64,18 +67,6 @@ export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResu
     if (fdcId.length === 0) continue;
 
     const nutrients = 'foodNutrients' in food ? food.foodNutrients : undefined;
-    const servingOptions: FoodServingOption[] = [{ label: '100 g', grams: 100 }];
-    const servingSize = 'servingSize' in food ? food.servingSize : undefined;
-    const servingUnit = 'servingSizeUnit' in food ? food.servingSizeUnit : undefined;
-    if (
-      typeof servingSize === 'number' &&
-      Number.isFinite(servingSize) &&
-      servingSize > 0 &&
-      typeof servingUnit === 'string' &&
-      servingUnit.toLowerCase() === 'g'
-    ) {
-      servingOptions.push({ label: `${String(servingSize)} g`, grams: servingSize });
-    }
 
     results.push({
       fdcId,
@@ -84,7 +75,7 @@ export async function searchUsdaFoods(queryText: string): Promise<FoodSearchResu
       proteinPer100g: usdaNutrientValue(nutrients, '203'),
       carbsPer100g: usdaNutrientValue(nutrients, '205'),
       fatPer100g: usdaNutrientValue(nutrients, '204'),
-      servingOptions,
+      servingOptions: buildServingOptions(food),
     });
   }
   return results;
