@@ -9,6 +9,7 @@
 
 - [decided] review triage: 1 FIX applied — rank sort used `Infinity` for unranked measures, so two unranked entries hit `Infinity - Infinity = NaN` (undefined sort order). Replaced with `Number.MAX_SAFE_INTEGER` sentinel + a two-unranked regression test. Other observations (label-only dedup, rare servingSize/portion gram overlap) IGNORE — by-design, harmless.
 - [decided] completion verification: all 5 success criteria met against the diff (lint/typecheck clean, 119 tests pass incl. 9 new). No divergence, no replan.
+- [synthesis] refreshed overview.md (watermark 037→040; folded in 038 SSE-streaming, 038 URLSearchParams-400, 040 household-portions; link_rot empty).
 
 ## Review finding 2026-06-24
 - [FIX, applied] usda-serving-options.ts: `Infinity` unranked-rank sentinel → NaN comparator for multiple unranked measures; switched to `Number.MAX_SAFE_INTEGER`, regression test added.
