@@ -29,9 +29,20 @@ export default function Screen({
   // defaults false) keep the original manual padding.
   const onNativeTabBar = process.env.EXPO_OS === 'ios';
   const onNativeTabScroll = tabScreen && onNativeTabBar && scroll;
-  // Bottom: drop the manual `tabBarHeight` (025) — the native bottom inset clears the bar.
-  // `insets.bottom + space['2xl']` stays as trailing scroll space (NOT dropped here).
-  const tabBarPad = onNativeTabScroll ? 0 : layout.tabBarHeight;
+  // Manual tab-bar clearance is reserved ONLY for tab screens whose bar actually overlaps the
+  // scroll content: the Android/web custom bar, and the iOS non-scroll Settings tab sitting
+  // under the native UITabBar overlay (031, Trap 2). iOS *scrolling* tab screens get clearance
+  // from the native UITabBar auto-inset instead (so 0 here, 025), and NON-tab screens —
+  // program/[id], workout, routine (root-Stack siblings pushed OVER the tabs) and the signed-out
+  // (auth) screens — have no bar at all, so they reserve nothing. Reserving `tabBarHeight` on
+  // those non-tab screens was a pure ~64pt empty gap below the last item; `!tabScreen` drops it.
+  const tabBarPad = onNativeTabScroll || !tabScreen ? 0 : layout.tabBarHeight;
+  // The iOS native auto-inset already covers the safe area too, so a scrolling iOS tab screen
+  // needs neither `tabBarHeight` NOR `insets.bottom` — only a design margin. Adding insets.bottom
+  // there double-counted the native inset, leaving a ~tab-bar-height trailing gap at the end of
+  // scroll. flushBottom (027) likewise keeps only the margin for a bottom-pinned child on the
+  // Android/web relative-flow bar.
+  const designMarginOnly = onNativeTabScroll || (flushBottom && !onNativeTabBar);
   const pad = {
     // Top: drop the manual `insets.top` whenever a native consumer already supplied the top
     // safe-area inset — a native stack header (021, `hasHeader`) or the native tab content
@@ -41,16 +52,7 @@ export default function Screen({
       hasHeader || onNativeTabScroll
         ? layout.screenPaddingTop
         : insets.top + layout.screenPaddingTop,
-    // flushBottom (027) drops the tab-bar clearance so a bottom-pinned child (Settings' Sign
-    // out) sits one design margin above the bar. SAFE ONLY where the bar is relative-flow
-    // (Android + web custom TabBar.tsx): the scene ends at the bar's top, so the default
-    // expression double-counts insets.bottom + tabBarHeight. On iOS the bar is the native
-    // UITabBar overlay (025) — content runs under it and a non-scroll screen gets no auto-inset
-    // — so flushBottom is gated off there (restoring the inset, per 032), leaving the iOS path
-    // byte-identical to the default.
-    paddingBottom: flushBottom && !onNativeTabBar
-      ? space['2xl']
-      : insets.bottom + tabBarPad + space['2xl'],
+    paddingBottom: designMarginOnly ? space['2xl'] : insets.bottom + tabBarPad + space['2xl'],
   };
   if (!scroll) {
     return <View style={[styles.flex, styles.base, pad]}>{children}</View>;
