@@ -13,6 +13,9 @@ import { DEFAULT_STATE } from '@/state/default-state';
 import { SAMPLE_PROGRAMS } from '@/test-support/programs';
 
 const NOW = '2026-06-05T12:00:00.000Z';
+// Session start (041): 24m30s before NOW → durationSec 1470. Determinism holds because both
+// timestamps are injected, not read from the wall clock.
+const START = '2026-06-05T11:35:30.000Z';
 
 const doneSet = (weight: number | null, reps: number | null): SetEntry => ({
   done: true,
@@ -37,6 +40,7 @@ const liveState: AppState = {
       [doneSet(95, 5), plannedSet, plannedSet],
     ],
     switchedFrom: null,
+    startedAtISO: START,
   },
 };
 
@@ -50,6 +54,14 @@ void test('finishSession stamps the injected nowISO and advances the live progra
   assert.equal(log.programId, SAMPLE_PROGRAMS[0].id);
   // advanceCursor wraps around the rotation: (4 + 1) % days.length.
   assert.equal(nextCursor, (4 + 1) % SAMPLE_PROGRAMS[0].days.length);
+});
+
+void test('finishSession computes durationSec from startedAtISO → nowISO (041)', () => {
+  const { log } = finishSession(liveState, NOW);
+  assert.equal(log.durationSec, 1470); // 24m30s between START and NOW
+  // Floored at zero: a finish stamped BEFORE start (clock skew) never logs a negative.
+  const backwards = finishSession(liveState, '2026-06-05T11:00:00.000Z');
+  assert.equal(backwards.log.durationSec, 0);
 });
 
 void test('finishSession projects the per-set log: zipped by index, unit lb (022)', () => {
@@ -80,6 +92,7 @@ void test('finishSession advances the FINISHED program own pointer only (015)', 
       dayIndex: 0,
       sets: [[doneSet(225, 3)]],
       switchedFrom: null,
+      startedAtISO: START,
     },
   };
   const { nextCursor } = finishSession(adHoc, NOW);

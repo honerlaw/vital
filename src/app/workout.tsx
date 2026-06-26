@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 import { Alert, BackHandler, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import AppText from '@/components/AppText';
 import Button from '@/components/Button';
 import ExerciseBlock from '@/components/ExerciseBlock';
 import ProgressBar from '@/components/ProgressBar';
@@ -10,7 +11,9 @@ import CatalogStatus from '@/components/CatalogStatus';
 import Screen from '@/components/Screen';
 import { getProgram, lastLoggedWeight, progressionTarget, sessionProgress } from '@/data/engine';
 import { type SetPatch } from '@/data/engine/updateSet';
+import { useElapsedSeconds } from '@/hooks/useElapsedSeconds';
 import { useRestTimer } from '@/hooks/useRestTimer';
+import { formatDuration } from '@/utils/formatDuration';
 import { bootStatus } from '@/state/boot-status';
 import { useAppStore } from '@/state/useAppStore';
 import { colors, space } from '@/theme';
@@ -22,6 +25,9 @@ export default function WorkoutScreen() {
   const router = useRouter();
   const restTimer = useRestTimer(REST_SECONDS);
   const live = state.live;
+  // Live elapsed time (041) — ticks from the session's start stamp. Called unconditionally (above
+  // the early-return gates); a null start (no live session) yields 0 and schedules no interval.
+  const elapsedSec = useElapsedSeconds(live ? live.startedAtISO : null);
 
   // The single cancel path (021): the headerLeft chevron and the Android hardware back both
   // route through here. 029 gates the exit behind a confirmation — an accidental tap or system
@@ -145,7 +151,11 @@ export default function WorkoutScreen() {
   return (
     <View style={styles.root}>
       {headerScreen}
-      <Screen hasHeader>
+      <Screen hasHeader keyboardAware>
+        <View style={styles.elapsedRow}>
+          <AppText variant="label">Elapsed</AppText>
+          <AppText variant="statValue">{formatDuration(elapsedSec)}</AppText>
+        </View>
         <ProgressBar pct={progress.pct} done={progress.done} total={progress.total} />
         <View style={styles.blocks}>
           {day.exercises.map((ex, ei) => (
@@ -177,4 +187,9 @@ export default function WorkoutScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   blocks: { marginTop: space.lg },
+  elapsedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
 });

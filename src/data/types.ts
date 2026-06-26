@@ -101,6 +101,11 @@ export interface SessionLog {
   programName: string;
   dayName: string;
   dateISO: string;
+  // Total elapsed wall-clock seconds from session start to finish (041). OPTIONAL at every trust
+  // boundary: sessions logged before 041 have no `duration_sec` value (null → omitted), exactly
+  // like the 022 `exercises`/`unit` fields. `finishSession` computes it from `live.startedAtISO`;
+  // a missing value renders as "no duration", never an error.
+  durationSec?: number;
   exercises?: SessionExerciseLog[];
   unit?: 'lb';
 }
@@ -120,6 +125,10 @@ export interface LiveSession {
   dayIndex: number;
   sets: SetEntry[][];
   switchedFrom: string | null;
+  // ISO timestamp stamped at the Begin tap (041), the anchor for the in-session elapsed timer and
+  // the finish-time duration. Injected at the dispatch site (like `FINISH_WORKOUT`'s `nowISO`) so
+  // `startSession` stays pure and the reducer/write-through compute identical durations.
+  startedAtISO: string;
 }
 
 /** Catalog hydration state: loading until the first fetch resolves, then ready or error. */

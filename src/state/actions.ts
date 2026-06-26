@@ -15,9 +15,11 @@ export type Action =
   | { type: 'REMOVE_USER_PROGRAM'; id: string }
   | { type: 'RESET_USER_STATE' }
   | { type: 'RETRY_HYDRATE' }
-  | { type: 'START_WORKOUT'; dayIndex: number }
+  // `nowISO` (041): the session start timestamp, stamped at the dispatch site so `startSession`
+  // stays pure — same determinism contract as `FINISH_WORKOUT`'s `nowISO`.
+  | { type: 'START_WORKOUT'; dayIndex: number; nowISO: string }
   | { type: 'UPDATE_SET'; ei: number; si: number; patch: SetPatch }
   | { type: 'FINISH_WORKOUT'; nowISO: string }
   | { type: 'CANCEL_WORKOUT' }
   | { type: 'SET_ACTIVE_PROGRAM'; id: string }
-  | { type: 'SWITCH_AND_START_WORKOUT'; id: string };
+  | { type: 'SWITCH_AND_START_WORKOUT'; id: string; nowISO: string };

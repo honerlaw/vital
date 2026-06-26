@@ -143,7 +143,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
       // transitively keeps finishSession safe: `live` only ever exists after a non-null start.
       if (state.activeProgramId === null) return state;
       const program = getProgram(state.programs, state.activeProgramId);
-      return { ...state, live: startSession(program, action.dayIndex) };
+      return { ...state, live: startSession(program, action.dayIndex, action.nowISO) };
     }
     case 'UPDATE_SET': {
       if (!state.live) return state;
@@ -187,7 +187,10 @@ export const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         activeProgramId: action.id,
-        live: { ...startSession(program, dayIndex), switchedFrom: state.activeProgramId },
+        live: {
+          ...startSession(program, dayIndex, action.nowISO),
+          switchedFrom: state.activeProgramId,
+        },
       };
     }
   }

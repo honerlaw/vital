@@ -78,6 +78,20 @@ void test('rowToSessionLog DEGRADES on malformed set_log — never throws (boot 
   }
 });
 
+void test('rowToSessionLog attaches a valid duration_sec, omits null/malformed (041)', () => {
+  // Finite, non-negative integer attaches.
+  assert.deepEqual(rowToSessionLog({ ...coreRow(), duration_sec: 1470 }), {
+    ...CORE_LOG,
+    durationSec: 1470,
+  });
+  // NULL (pre-041 rows) → omitted, no error.
+  assert.deepEqual(rowToSessionLog({ ...coreRow(), duration_sec: null }), CORE_LOG);
+  // Malformed (negative / non-finite / wrong type) degrades to no-duration, never throws.
+  assert.deepEqual(rowToSessionLog({ ...coreRow(), duration_sec: -5 }), CORE_LOG);
+  assert.deepEqual(rowToSessionLog({ ...coreRow(), duration_sec: Number.NaN }), CORE_LOG);
+  assert.deepEqual(rowToSessionLog({ ...coreRow(), duration_sec: 'junk' }), CORE_LOG);
+});
+
 void test('rowToSessionLog still throws on malformed CORE columns (server fault)', () => {
   assert.throws(() => rowToSessionLog({ ...coreRow(), program_id: 42 }));
   assert.throws(() => rowToSessionLog({ ...coreRow(), finished_at: '2026-06-05' }));

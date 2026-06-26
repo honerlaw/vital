@@ -33,6 +33,16 @@ void test('sanitizeSessionLog passes legacy entries through untouched', () => {
   assert.deepEqual(sanitizeSessionLog(CORE), CORE);
 });
 
+void test('sanitizeSessionLog keeps a valid durationSec, drops a malformed one (041)', () => {
+  assert.deepEqual(sanitizeSessionLog({ ...CORE, durationSec: 1470 }), {
+    ...CORE,
+    durationSec: 1470,
+  });
+  // A negative / non-finite duration degrades to no-duration (mirrors the server mapper).
+  assert.deepEqual(sanitizeSessionLog({ ...CORE, durationSec: -1 }), CORE);
+  assert.deepEqual(sanitizeSessionLog({ ...CORE, durationSec: Number.POSITIVE_INFINITY }), CORE);
+});
+
 void test('sanitizeSessionLog drops malformed optional fields, keeps the core entry', () => {
   const wireEntries: unknown[] = [
     { ...CORE, exercises: 'junk', unit: 'lb' },

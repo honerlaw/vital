@@ -18,6 +18,9 @@ export interface FinishedSessionBody {
   dateISO: string;
   cursor: number;
   activeProgramId: string;
+  // Elapsed seconds (041): present on every new-client finish (spread from the finishSession
+  // log); optional so the type matches the wire contract, where pre-041 clients send none.
+  durationSec?: number;
   // Per-set log (022): present on every new-client finish (the wrapper spreads the
   // finishSession log, which always carries both); optional so the type matches the wire
   // contract, where pre-022 clients send neither.

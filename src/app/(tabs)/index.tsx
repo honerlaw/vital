@@ -65,7 +65,8 @@ export default function TodayScreen() {
   const upcoming = getUpcoming(program, cursor, 3);
 
   const onBegin = () => {
-    dispatch({ type: 'START_WORKOUT', dayIndex });
+    // nowISO stamped here (041) — the session start anchor, like FINISH_WORKOUT's nowISO.
+    dispatch({ type: 'START_WORKOUT', dayIndex, nowISO: new Date().toISOString() });
     router.push('/workout');
   };
 
