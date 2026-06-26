@@ -12,5 +12,6 @@ export { progressionTarget } from '@/data/engine/progressionTarget';
 export { successfulCompletions } from '@/data/engine/successfulCompletions';
 export { consecutiveFails } from '@/data/engine/consecutiveFails';
 export { sessionProgress } from '@/data/engine/sessionProgress';
+export { sessionVolume } from '@/data/engine/sessionVolume';
 export { finishSession } from '@/data/engine/finishSession';
 export { cadenceDayLabel } from '@/data/engine/cadenceDayLabel';

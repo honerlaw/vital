@@ -26,8 +26,8 @@ import { requireAuth } from '@/server/requireAuth';
 const INSERT_SESSION_AND_CURSOR =
   'WITH ins AS (' +
   'INSERT INTO workout_sessions ' +
-  '(clerk_user_id, program_id, program_name, day_name, finished_at, set_log) ' +
-  'VALUES ($1, $2, $3, $4, $5, $8::jsonb)' +
+  '(clerk_user_id, program_id, program_name, day_name, finished_at, set_log, duration_sec) ' +
+  'VALUES ($1, $2, $3, $4, $5, $8::jsonb, $9::integer)' +
   ') ' +
   'INSERT INTO user_state (clerk_user_id, active_program_id, cursors) ' +
   'VALUES ($1, $6, jsonb_build_object($2::text, $7::integer)) ' +
@@ -61,6 +61,20 @@ export async function POST(request: Request): Promise<Response> {
     typeof body.activeProgramId !== 'string'
   ) {
     return Response.json({ error: 'Invalid body' }, { status: 400 });
+  }
+  // Optional elapsed seconds (041): absent → null (pre-041 clients). Present must be a
+  // non-negative, finite integer — the strict writer rejects NaN/Infinity/negative/float before
+  // bad data reaches append-only history (same posture as the set_log validation below).
+  let durationSec: number | null = null;
+  if ('durationSec' in body) {
+    if (
+      typeof body.durationSec !== 'number' ||
+      !Number.isInteger(body.durationSec) ||
+      body.durationSec < 0
+    ) {
+      return Response.json({ error: 'Invalid body' }, { status: 400 });
+    }
+    durationSec = body.durationSec;
   }
   // Optional per-set log (022): absent → accept ('{}', no per-set data — old clients).
   // Present-but-malformed → explicit 400; a body carrying set data never silently degrades
@@ -99,6 +113,7 @@ export async function POST(request: Request): Promise<Response> {
       body.activeProgramId,
       body.cursor,
       setLogJson,
+      durationSec,
     ]);
     return Response.json({ ok: true });
   } catch (error) {

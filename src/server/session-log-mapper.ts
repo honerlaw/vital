@@ -31,6 +31,17 @@ export function rowToSessionLog(row: UnknownRow): SessionLog {
 
   const log: SessionLog = { programId, programName, dayName, dateISO: finishedAt.toISOString() };
 
+  // Best-effort duration_sec (041) — pg returns an integer column as a JS number, NULL (pre-041
+  // rows) as null. Attach only a finite, non-negative value; anything else degrades to "no
+  // duration" rather than 500ing the boot-gating history list (same tolerant-reader posture as
+  // set_log below).
+  const durationSec = row['duration_sec'];
+  if (typeof durationSec === 'number' && Number.isFinite(durationSec) && durationSec >= 0) {
+    log.durationSec = durationSec;
+  } else if (durationSec !== null && durationSec !== undefined) {
+    console.error('workout_sessions.duration_sec malformed — serving log without duration');
+  }
+
   // Best-effort set_log (022) — pg parses jsonb into a JS value already.
   const setLog = row['set_log'];
   if (typeof setLog === 'object' && setLog !== null && !Array.isArray(setLog)) {

@@ -11,3 +11,6 @@
   + derive — dominant (no client math on hydrate, no redundancy with finished_at).
 - [decided] approach issue 4 storage: derive volume client-side from set_log — dominant (zero schema
   change; precomputed column rejected as drift-prone denormalization).
+- [decided] completion verification: all 5 success criteria met against the diff — no divergence, no
+  replan. lint/typecheck clean, 127 tests pass, `expo export -p web` builds, PPL migration JSON
+  validated (6 days, conforms to {name,sets,scheme}).

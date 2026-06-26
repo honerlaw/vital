@@ -17,6 +17,15 @@ export function sanitizeSessionLog(log: SessionLog): SessionLog {
     dayName: log.dayName,
     dateISO: log.dateISO,
   };
+  // Elapsed seconds (041): attach only a finite, non-negative number — a malformed value degrades
+  // to "no duration", mirroring the server mapper's tolerant read.
+  if (
+    typeof log.durationSec === 'number' &&
+    Number.isFinite(log.durationSec) &&
+    log.durationSec >= 0
+  ) {
+    out.durationSec = log.durationSec;
+  }
   if (isSessionExerciseLogArray(log.exercises) && log.exercises.length > 0 && log.unit === 'lb') {
     out.exercises = log.exercises;
     out.unit = log.unit;

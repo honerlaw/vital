@@ -18,11 +18,22 @@ export const finishSession = (
   const live = state.live;
   const program = getProgram(state.programs, live.programId);
   const day = program.days[live.dayIndex];
+  // Elapsed wall-clock (041): finish − start, floored at 0 (a clock that went backwards must not
+  // log a negative). Both timestamps come from `Date.toISOString()` at their dispatch sites;
+  // Date.parse is the inverse. Defensive `Number.isFinite` guards keep a malformed anchor from
+  // emitting NaN into history (the server validator would 400 it).
+  const startedMs = Date.parse(live.startedAtISO);
+  const finishedMs = Date.parse(nowISO);
+  const durationSec =
+    Number.isFinite(startedMs) && Number.isFinite(finishedMs)
+      ? Math.max(0, Math.round((finishedMs - startedMs) / 1000))
+      : 0;
   const log: SessionLog = {
     programId: program.id,
     programName: program.name,
     dayName: day.name,
     dateISO: nowISO,
+    durationSec,
     // Per-set log (022): zip the day's exercises with `live.sets` BY INDEX — aligned because
     // startSession seeds `sets` from this same exercises array and no action resizes it.
     // ALL set rows are persisted, incl. untouched ones (planned-vs-actual stays visible;

@@ -14,6 +14,11 @@ import { DEFAULT_STATE } from '@/state/default-state';
 import { reducer } from '@/state/reducer';
 import { SAMPLE_PROGRAMS } from '@/test-support/programs';
 
+// Session start stamp (041): START_WORKOUT / SWITCH_AND_START_WORKOUT carry the dispatch-site
+// timestamp, mirroring FINISH_WORKOUT's nowISO. The exact value is immaterial to these reducer
+// contracts (they assert active-id/cursor/live transitions, not duration).
+const START_ISO = '2026-06-05T11:00:00.000Z';
+
 // A generated program fixture (030): structurally a Program, with progression on its exercise.
 const USER_PROG: Program = {
   id: 'gen-1',
@@ -171,7 +176,7 @@ void test('RESET_USER_STATE resets the five per-user fields, leaves the catalog 
       ],
     },
   });
-  const started = reducer(hydrated, { type: 'START_WORKOUT', dayIndex: 0 });
+  const started = reducer(hydrated, { type: 'START_WORKOUT', dayIndex: 0, nowISO: START_ISO });
   const reset = reducer(started, { type: 'RESET_USER_STATE' });
   assert.equal(reset.activeProgramId, null); // back to never-chose — the next account must be asked
   assert.deepEqual(reset.cursors, {});
@@ -206,18 +211,20 @@ void test('START_WORKOUT is a no-op while no program is chosen (reducer contract
   // for the type system and for finishSession's safety: live only exists after a non-null start.
   const ready = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   assert.equal(ready.activeProgramId, null);
-  assert.equal(reducer(ready, { type: 'START_WORKOUT', dayIndex: 0 }), ready);
+  assert.equal(reducer(ready, { type: 'START_WORKOUT', dayIndex: 0, nowISO: START_ISO }), ready);
 });
 
 void test('FINISH_WORKOUT uses the injected nowISO for the history entry', () => {
   const hydrated = reducer(DEFAULT_STATE, { type: 'HYDRATE_PROGRAMS', programs: SAMPLE_PROGRAMS });
   const ready = reducer(hydrated, { type: 'SET_ACTIVE_PROGRAM', id: 'bbr' });
-  const started = reducer(ready, { type: 'START_WORKOUT', dayIndex: 0 });
+  const started = reducer(ready, { type: 'START_WORKOUT', dayIndex: 0, nowISO: START_ISO });
   const finished = reducer(started, {
     type: 'FINISH_WORKOUT',
     nowISO: '2026-06-05T12:00:00.000Z',
   });
   assert.equal(finished.history[0].dateISO, '2026-06-05T12:00:00.000Z');
+  // Elapsed (041): START_ISO (11:00) → finish (12:00) = 3600s, computed in finishSession.
+  assert.equal(finished.history[0].durationSec, 3600);
   assert.equal(finished.live, null);
   assert.deepEqual(finished.cursors, { bbr: 1 }); // the finished program's own pointer advanced
 });
@@ -248,7 +255,11 @@ void test('SWITCH_AND_START_WORKOUT resumes position and records switchedFrom (0
     type: 'HYDRATE_USER_STATE',
     payload: { activeProgramId: 'gzclp', cursors: { bbr: 1, gzclp: 0 }, history: [] },
   });
-  const switched = reducer(hydrated, { type: 'SWITCH_AND_START_WORKOUT', id: 'bbr' });
+  const switched = reducer(hydrated, {
+    type: 'SWITCH_AND_START_WORKOUT',
+    id: 'bbr',
+    nowISO: START_ISO,
+  });
   assert.equal(switched.activeProgramId, 'bbr');
   assert.notEqual(switched.live, null);
   assert.equal(switched.live?.programId, 'bbr');
@@ -256,7 +267,10 @@ void test('SWITCH_AND_START_WORKOUT resumes position and records switchedFrom (0
   assert.equal(switched.live?.switchedFrom, 'gzclp');
   assert.deepEqual(switched.cursors, { bbr: 1, gzclp: 0 }); // a switch never mutates the map
   // In-catalog guard mirrors SET_ACTIVE_PROGRAM:
-  assert.equal(reducer(hydrated, { type: 'SWITCH_AND_START_WORKOUT', id: 'nope' }), hydrated);
+  assert.equal(
+    reducer(hydrated, { type: 'SWITCH_AND_START_WORKOUT', id: 'nope', nowISO: START_ISO }),
+    hydrated,
+  );
 });
 
 void test('HYDRATE_USER_PROGRAMS merges generated programs and dedups by id', () => {
@@ -318,13 +332,17 @@ void test('CANCEL_WORKOUT reverts a committed switch; a plain cancel does not (0
     payload: { activeProgramId: 'gzclp', cursors: { bbr: 1, gzclp: 2 }, history: [] },
   });
   // Switch-then-cancel: the previous program comes back, with its cursor intact in the map.
-  const switched = reducer(hydrated, { type: 'SWITCH_AND_START_WORKOUT', id: 'bbr' });
+  const switched = reducer(hydrated, {
+    type: 'SWITCH_AND_START_WORKOUT',
+    id: 'bbr',
+    nowISO: START_ISO,
+  });
   const reverted = reducer(switched, { type: 'CANCEL_WORKOUT' });
   assert.equal(reverted.activeProgramId, 'gzclp');
   assert.equal(reverted.live, null);
   assert.deepEqual(reverted.cursors, { bbr: 1, gzclp: 2 });
   // Plain start-then-cancel: the active program stays.
-  const started = reducer(hydrated, { type: 'START_WORKOUT', dayIndex: 0 });
+  const started = reducer(hydrated, { type: 'START_WORKOUT', dayIndex: 0, nowISO: START_ISO });
   const cancelled = reducer(started, { type: 'CANCEL_WORKOUT' });
   assert.equal(cancelled.activeProgramId, 'gzclp');
   assert.equal(cancelled.live, null);

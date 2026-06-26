@@ -87,12 +87,15 @@ export default function ProgramDetailScreen() {
   // the target program's own position (per-program cursors; switching never zeroes progress),
   // and records the previous id on the session so cancelling reverts the switch.
   const onBegin = () => {
+    // nowISO stamped here (041) — the session start anchor, like FINISH_WORKOUT's nowISO.
+    const nowISO = new Date().toISOString();
     if (!active) {
-      dispatch({ type: 'SWITCH_AND_START_WORKOUT', id: program.id });
+      dispatch({ type: 'SWITCH_AND_START_WORKOUT', id: program.id, nowISO });
     } else {
       dispatch({
         type: 'START_WORKOUT',
         dayIndex: (state.cursors[program.id] ?? 0) % program.days.length,
+        nowISO,
       });
     }
     router.push('/workout');

@@ -21,6 +21,7 @@ const base = (): LiveSession => ({
     [{ done: false, weight: null, reps: null }],
   ],
   switchedFrom: null,
+  startedAtISO: '2026-06-05T11:00:00.000Z',
 });
 
 void test('updateSet patches only the addressed set; pure (input untouched)', () => {

@@ -3,6 +3,7 @@ import AppText from '@/components/AppText';
 import EmptyState from '@/components/EmptyState';
 import HistoryRow from '@/components/HistoryRow';
 import Screen from '@/components/Screen';
+import { sessionVolume } from '@/data/engine';
 import { useAppStore } from '@/state/useAppStore';
 import { historyDate } from '@/utils/historyDate';
 import { colors, space } from '@/theme';
@@ -34,6 +35,8 @@ export default function HistoryScreen() {
               date={historyDate(log.dateISO)}
               exercises={log.exercises}
               unit={log.unit}
+              durationSec={log.durationSec}
+              volume={sessionVolume(log)}
             />
           ))
         )}

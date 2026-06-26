@@ -18,7 +18,8 @@ import { rowToUserStateMeta } from '@/server/user-state-mapper';
 const SELECT_STATE =
   'SELECT active_program_id, cursors FROM user_state WHERE clerk_user_id = $1';
 const SELECT_SESSIONS =
-  'SELECT program_id, program_name, day_name, finished_at, set_log FROM workout_sessions ' +
+  'SELECT program_id, program_name, day_name, finished_at, duration_sec, set_log ' +
+  'FROM workout_sessions ' +
   'WHERE clerk_user_id = $1 ORDER BY finished_at DESC, id DESC';
 
 export async function GET(request: Request): Promise<Response> {
