@@ -63,14 +63,19 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Invalid body' }, { status: 400 });
   }
   // Optional elapsed seconds (041): absent → null (pre-041 clients). Present must be a
-  // non-negative, finite integer — the strict writer rejects NaN/Infinity/negative/float before
-  // bad data reaches append-only history (same posture as the set_log validation below).
+  // non-negative, finite integer within the `int4` column range — the strict writer rejects
+  // NaN/Infinity/negative/float AND an absurd over-int4 value (which would otherwise overflow on
+  // INSERT and 500 rather than 400) before bad data reaches append-only history. The cap (366
+  // days) is generous for any real session yet far below int4 max, so a genuine finish never trips
+  // it. Same strict-writer posture as the set_log validation below.
+  const MAX_DURATION_SEC = 366 * 24 * 60 * 60;
   let durationSec: number | null = null;
   if ('durationSec' in body) {
     if (
       typeof body.durationSec !== 'number' ||
       !Number.isInteger(body.durationSec) ||
-      body.durationSec < 0
+      body.durationSec < 0 ||
+      body.durationSec > MAX_DURATION_SEC
     ) {
       return Response.json({ error: 'Invalid body' }, { status: 400 });
     }

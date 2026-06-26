@@ -4,6 +4,7 @@ import AppText from '@/components/AppText';
 import HistorySetList from '@/components/HistorySetList';
 import { type SessionExerciseLog } from '@/data/types';
 import { formatDuration } from '@/utils/formatDuration';
+import { groupThousands } from '@/utils/groupThousands';
 import { border, colors, radius, space } from '@/theme';
 
 interface Props {
@@ -31,10 +32,10 @@ export default function HistoryRow({
   const [expanded, setExpanded] = useState(false);
   const expandable = exercises !== undefined && exercises.length > 0;
   // Summary stats (041): elapsed time (when tracked) and total volume (when any set was weighted),
-  // joined " · ". Omitted entirely on legacy sessions that carry neither — the row reads as before.
+  // joined with a middot. Omitted on legacy sessions that carry neither — the row reads as before.
   const stats: string[] = [];
   if (durationSec !== undefined) stats.push(formatDuration(durationSec));
-  if (volume > 0) stats.push(`${volume.toLocaleString('en-US')} ${unit ?? 'lb'}`);
+  if (volume > 0) stats.push(`${groupThousands(volume)} ${unit ?? 'lb'}`);
   return (
     <View style={styles.wrap}>
       <TouchableOpacity

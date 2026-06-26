@@ -14,3 +14,18 @@
 - [decided] completion verification: all 5 success criteria met against the diff — no divergence, no
   replan. lint/typecheck clean, 127 tests pass, `expo export -p web` builds, PPL migration JSON
   validated (6 days, conforms to {name,sets,scheme}).
+
+## Review triage 2026-06-26
+
+Two passes: minerva audit (spec fidelity + knowledge compliance) + independent adversarial code
+review of the full diff. Reviewer found NO high/med bugs; durationSec round-trip, SQL param order
+($1–$9), migration immutability/ordering, hook rules + SSR safety, finishSession determinism,
+sessionVolume, and all nowISO dispatch sites verified clean.
+
+- [FIX] (pre-review, self-caught) volume number formatting used `Number.toLocaleString('en-US')` —
+  Hermes `Intl.NumberFormat` digit-grouping is engine-inconsistent and the codebase renders numbers
+  via plain `String(Math.round())`. Replaced with a tested `groupThousands` util.
+- [FIX] LOW (reviewer): durationSec validator accepted over-`int4` values → would 500 on INSERT
+  rather than 400. Added a 366-day upper bound (generous for any real session, far below int4 max).
+- [IGNORE] cosmetic: an instantly-finished session shows "0:00" in history — expected.
+- [synthesis] pending (Phase 4.5).
