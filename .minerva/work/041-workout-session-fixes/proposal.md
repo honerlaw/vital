@@ -2,7 +2,10 @@
 
 ## Status
 
-Draft
+Shipped (2026-06-26). Delivered via `minerva:propose-ship-quick` (main-model decisions; one user
+escalation — the PPL 6-day-vs-3-day structure, resolved to full canonical 6-day A/B). All four
+fixes landed as built (no divergence, no replan). Durable learnings promoted to
+[[041-pattern-session-duration-and-volume]].
 
 ## Goal
 
