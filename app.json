@@ -41,6 +41,13 @@
       "expo-secure-store",
       "expo-web-browser",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Vital uses your photos to detect the workout equipment you have.",
+          "cameraPermission": "Vital uses your camera to detect the workout equipment you have."
+        }
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "organization": "onerlaw-llc",

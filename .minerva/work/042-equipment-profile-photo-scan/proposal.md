@@ -1,7 +1,7 @@
 # Proposal: equipment-profile-photo-scan
 
 **Date**: 2026-06-28
-**Status**: Draft
+**Status**: Shipped (2026-06-28)
 
 ## Goal
 
@@ -43,6 +43,12 @@ Approach 1 — static canon constant + dedicated `user_equipment` table.
 
 **Native / config**
 - Add `expo-image-picker` via `npx expo install` (SDK-56-compatible pin; respects the lockfile-heal discipline). Configure camera + photo-library permission strings and the picker plugin in app config. Requires a **dev-client rebuild** before the feature runs on device.
+
+**Shipped as (delta from design):**
+- Implemented exactly as designed, with two additive refinements surfaced during work:
+  - Added **`expo-image-manipulator`** (alongside `expo-image-picker`) to perform the named client-side downscale (~1024px JPEG) before upload — the concrete mechanism for the proposal's "client downscale" line.
+  - The Settings scan passes an **`AbortSignal`** and aborts on unmount, so leaving mid-scan can't keep consuming a daily LLM slot (matches the 034 routine-flow cancel discipline).
+- Durable patterns captured in `.minerva/knowledge/042-pattern-equipment-profile-and-vision-passthrough.md`. Non-blocking follow-ups recorded in `followups.md`.
 
 ## Success criteria
 
