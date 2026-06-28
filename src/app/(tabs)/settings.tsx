@@ -1,4 +1,5 @@
 import { useAuth, useUser } from '@clerk/expo';
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import AppText from '@/components/AppText';
 import Avatar from '@/components/Avatar';
@@ -22,6 +23,7 @@ import { space } from '@/theme';
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { user } = useUser();
+  const router = useRouter();
 
   return (
     <Screen scroll={false} flushBottom tabScreen>
@@ -36,6 +38,9 @@ export default function SettingsScreen() {
           </View>
         ) : null}
       </View>
+      <View style={styles.actionSpacer}>
+        <Button label="Manage equipment" onPress={() => router.push('/settings/equipment')} />
+      </View>
       <Button label="Sign out" onPress={() => { void signOut(); }} />
     </Screen>
   );
@@ -46,4 +51,5 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   profile: { alignItems: 'center' },
   email: { marginTop: space.lg },
+  actionSpacer: { marginBottom: space.md },
 });

@@ -7,10 +7,12 @@ import BackButton from '@/components/BackButton';
 import Button from '@/components/Button';
 import CatalogStatus from '@/components/CatalogStatus';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import EquipmentPicker from '@/components/EquipmentPicker';
 import GeneratedProgramPreview from '@/components/GeneratedProgramPreview';
 import QuestionControl from '@/components/QuestionControl';
 import RoutineKnobBar from '@/components/RoutineKnobBar';
 import Screen from '@/components/Screen';
+import { EQUIPMENT_LABELS } from '@/data/equipment-catalog';
 import { fetchRoutinePlan } from '@/data/routine-plan-api';
 import { generateRoutine } from '@/data/routine-generate-api';
 import { refineRoutine } from '@/data/routine-refine-api';
@@ -47,6 +49,10 @@ export default function NewRoutineScreen() {
   const [phase, setPhase] = useState<Phase>('loading-plan');
   const [graph, setGraph] = useState<QuestionGraph | null>(null);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  // Equipment (042) is no longer an intake question — it is pre-filled from the saved profile and
+  // editable just for this routine (no write-back to the profile). Seeded once from the
+  // boot-hydrated slice; the screen is reached only after the boot gate, so it is populated.
+  const [equipment, setEquipment] = useState<string[]>(state.equipment);
   const [draft, setDraft] = useState<Program | null>(null);
   const [spec, setSpec] = useState<IntakeSpec | null>(null);
   const [progress, setProgress] = useState<RoutineProgress | null>(null);
@@ -119,15 +125,31 @@ export default function NewRoutineScreen() {
     return Array.isArray(prior) ? prior.includes(q.showWhen.equals) : prior === q.showWhen.equals;
   };
 
+  const toggleEquipment = (id: string): void => {
+    setEquipment((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   const buildSpec = (): IntakeSpec => {
     const out: IntakeAnswer[] = [];
     for (const q of graph?.questions ?? []) {
+      // Equipment is injected from the profile editor below, never from a graph question (042) —
+      // skip a stray planner-emitted `equipment` question so it can't double-count.
+      if (q.id === 'equipment') continue;
       if (!visible(q)) continue;
       const v = answers[q.id];
       if (v === undefined) continue;
       if (typeof v === 'string' && v.length === 0) continue;
       if (Array.isArray(v) && v.length === 0) continue;
       out.push({ questionId: q.id, label: q.prompt, value: v });
+    }
+    // Inject the (possibly-overridden) equipment selection as readable canon labels; an empty
+    // selection omits equipment entirely, matching the prior multi-select's empty behavior.
+    if (equipment.length > 0) {
+      out.push({
+        questionId: 'equipment',
+        label: 'What equipment do you have?',
+        value: equipment.map((id) => EQUIPMENT_LABELS[id] ?? id),
+      });
     }
     return { answers: out };
   };
@@ -354,8 +376,9 @@ export default function NewRoutineScreen() {
   }
 
   // 'questions' (and the brief window before the draft resolves). keyboardAware keeps every input +
-  // the Generate button reachable with the keyboard open (034).
-  const questions = (graph?.questions ?? []).filter(visible);
+  // the Generate button reachable with the keyboard open (034). Equipment is filtered out of the
+  // graph questions — it renders as the pre-filled profile editor below instead (042).
+  const questions = (graph?.questions ?? []).filter((q) => q.id !== 'equipment').filter(visible);
   return (
     <>
       {gestureLock}
@@ -376,6 +399,15 @@ export default function NewRoutineScreen() {
             onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
           />
         ))}
+        <View style={styles.equipment}>
+          <AppText variant="exerciseName" style={styles.equipmentPrompt}>
+            Equipment
+          </AppText>
+          <AppText variant="bodySub" style={styles.equipmentHint}>
+            From your profile — tweak it just for this routine.
+          </AppText>
+          <EquipmentPicker selected={equipment} onToggle={toggleEquipment} />
+        </View>
         <View style={styles.cta}>
           <Button label="Generate routine →" onPress={() => runGenerate(buildSpec())} />
         </View>
@@ -387,6 +419,9 @@ export default function NewRoutineScreen() {
 const styles = StyleSheet.create({
   title: { marginTop: space.lg },
   blurb: { marginTop: space.md },
+  equipment: { marginTop: space.xl },
+  equipmentPrompt: { marginBottom: space.xs },
+  equipmentHint: { marginBottom: space.sm },
   eyebrow: { marginTop: space.lg, marginBottom: space.md },
   knobs: { marginTop: space['2xl'] },
   cta: { marginTop: space['2xl'] },

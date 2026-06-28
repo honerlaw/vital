@@ -38,3 +38,7 @@ export { isFoodLogEntryArray } from '@/data/guards/isFoodLogEntryArray';
 export { isFoodServingOption } from '@/data/guards/isFoodServingOption';
 export { isFoodSearchResult } from '@/data/guards/isFoodSearchResult';
 export { isFoodSearchResultArray } from '@/data/guards/isFoodSearchResultArray';
+export { isCanonicalEquipmentId } from '@/data/guards/isCanonicalEquipmentId';
+export { isEquipmentProfile } from '@/data/guards/isEquipmentProfile';
+export { isEquipmentUpdate } from '@/data/guards/isEquipmentUpdate';
+export { isEquipmentScanRequest } from '@/data/guards/isEquipmentScanRequest';

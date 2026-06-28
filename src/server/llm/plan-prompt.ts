@@ -20,14 +20,14 @@ const SYSTEM_LINES = [
   '  primary_goal (single-select: lose fat / build muscle / get stronger / general fitness)',
   '  days_per_week (single-select: 2,3,4,5,6)',
   '  session_length (single-select: 30, 45, 60, 75+ minutes)',
-  '  equipment (multi-select: barbell, dumbbells, machines, cables, bodyweight, kettlebell)',
   '  experience (single-select: beginner / intermediate / advanced)',
   '  sex (single-select: male / female / other)',
   '  bodyweight_lb (number, unit "lb"), height_in (number, unit "in")',
   '  injuries (text, maxLength 200)',
   '  current working weights (number, unit "lb") for squat, bench, deadlift, overhead press',
-  'Add 2-4 BRANCH questions via showWhen (e.g. a barbell-specific question when equipment includes',
-  'barbell). Keep the whole thing to 12-18 questions. Output ONLY the JSON object.',
+  'Do NOT ask about equipment — it is collected separately from the user profile.',
+  'Add 2-4 BRANCH questions via showWhen (e.g. a goal-specific follow-up when primary_goal equals',
+  'lose_fat). Keep the whole thing to 12-18 questions. Output ONLY the JSON object.',
 ];
 
 export function planPrompt(): { system: string; user: string } {

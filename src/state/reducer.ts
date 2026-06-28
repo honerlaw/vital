@@ -66,6 +66,16 @@ export const reducer = (state: AppState, action: Action): AppState => {
     }
     case 'HYDRATE_USER_PROGRAMS_ERROR':
       return { ...state, userProgramsStatus: 'error' };
+    case 'HYDRATE_EQUIPMENT':
+      // The saved equipment profile (042). No normalize step — the list is independent of the
+      // catalog; the picker tolerates a since-retired id by filtering it out at render.
+      return { ...state, equipment: action.items, equipmentStatus: 'ready' };
+    case 'HYDRATE_EQUIPMENT_ERROR':
+      return { ...state, equipmentStatus: 'error' };
+    case 'SET_EQUIPMENT':
+      // Local convergence after a Settings save (042) — the PUT already persisted; this only keeps
+      // the slice (and the routine intake pre-fill) in sync without a refetch.
+      return { ...state, equipment: action.items };
     case 'ADD_USER_PROGRAM': {
       // A just-saved generated program (030). Dedup by id (a double-tap must not duplicate it).
       if (state.programs.some((p) => p.id === action.program.id)) return state;
@@ -98,7 +108,9 @@ export const reducer = (state: AppState, action: Action): AppState => {
         state.live === null &&
         state.userStateStatus === 'loading' &&
         state.userProgramsStatus === 'loading' &&
-        state.userProgramIds.length === 0;
+        state.userProgramIds.length === 0 &&
+        state.equipment.length === 0 &&
+        state.equipmentStatus === 'loading';
       if (nothingToReset) return state;
       // Drop the generated-program partition but keep the catalog reference stable when there is
       // nothing to drop (so existing reference-equality expectations on the catalog hold).
@@ -116,6 +128,8 @@ export const reducer = (state: AppState, action: Action): AppState => {
         history: [],
         live: null,
         userStateStatus: 'loading',
+        equipment: [],
+        equipmentStatus: 'loading',
       };
     }
     case 'RETRY_HYDRATE': {
@@ -125,7 +139,8 @@ export const reducer = (state: AppState, action: Action): AppState => {
       if (
         state.programsStatus !== 'error' &&
         state.userStateStatus !== 'error' &&
-        state.userProgramsStatus !== 'error'
+        state.userProgramsStatus !== 'error' &&
+        state.equipmentStatus !== 'error'
       ) {
         return state;
       }
@@ -135,6 +150,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
         userStateStatus: state.userStateStatus === 'error' ? 'loading' : state.userStateStatus,
         userProgramsStatus:
           state.userProgramsStatus === 'error' ? 'loading' : state.userProgramsStatus,
+        equipmentStatus: state.equipmentStatus === 'error' ? 'loading' : state.equipmentStatus,
       };
     }
     case 'START_WORKOUT': {

@@ -7,13 +7,29 @@
  * iOS binary. Called via the platform `fetch` (no SDK dependency). Throws on a missing key or a
  * non-2xx response; callers (the routine routes) translate a throw into a 502 + the client's
  * Retry/fallback path.
+ *
+ * The `user` message accepts either a plain string (text-only callers — routine generation) or an
+ * OpenAI-compatible content-block array carrying images (the equipment photo-scan, 042). The pinned
+ * model (`claude-sonnet-4.5`) is multimodal; OpenRouter forwards `image_url` blocks unchanged.
  */
 import { LLM_MAX_TOKENS, LLM_MODEL } from '@/server/llm/model';
 import { extractText } from '@/server/llm/extract-text';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
-export async function callLlm(system: string, user: string, signal?: AbortSignal): Promise<string> {
+/**
+ * One OpenAI-compatible content block. `image_url.url` is a base64 `data:image/...;base64,<>` URL
+ * for the photo-scan (042) — the bytes are passed straight through to the model and never stored.
+ */
+export type LlmContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
+export async function callLlm(
+  system: string,
+  user: string | LlmContentBlock[],
+  signal?: AbortSignal,
+): Promise<string> {
   const key: unknown = process.env.OPENROUTER_API_KEY;
   if (typeof key !== 'string' || key.length === 0) {
     throw new Error('OPENROUTER_API_KEY is not set');

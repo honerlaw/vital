@@ -15,6 +15,12 @@ export type Action =
   | { type: 'REMOVE_USER_PROGRAM'; id: string }
   | { type: 'RESET_USER_STATE' }
   | { type: 'RETRY_HYDRATE' }
+  // Equipment profile (042): HYDRATE_* mirror the other per-user hydrations; SET_EQUIPMENT updates
+  // the slice after a successful Settings save so the routine intake pre-fill reflects it without a
+  // refetch (it carries no persistence — `save` already PUT the change).
+  | { type: 'HYDRATE_EQUIPMENT'; items: string[] }
+  | { type: 'HYDRATE_EQUIPMENT_ERROR' }
+  | { type: 'SET_EQUIPMENT'; items: string[] }
   // `nowISO` (041): the session start timestamp, stamped at the dispatch site so `startSession`
   // stays pure — same determinism contract as `FINISH_WORKOUT`'s `nowISO`.
   | { type: 'START_WORKOUT'; dayIndex: number; nowISO: string }

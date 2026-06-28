@@ -1,6 +1,7 @@
 import { useAuth } from '@clerk/expo';
 import { ReactNode, useEffect, useMemo, useReducer } from 'react';
 import { finishSession } from '@/data/engine';
+import { fetchEquipment } from '@/data/fetch-equipment';
 import { fetchPrograms } from '@/data/programs-api';
 import { fetchUserPrograms } from '@/data/fetch-user-programs';
 import { fetchUserState } from '@/data/fetch-user-state';
@@ -73,6 +74,25 @@ export default function StateProvider({ children }: { children: ReactNode }) {
     };
   }, [isLoaded, isSignedIn, getToken, state.userProgramsStatus]);
 
+  // Hydrate the user's equipment profile (042) once Clerk is loaded AND signed in — same
+  // status-keyed shape as the other per-user fetches (the route is requireAuth). A failure lands in
+  // the ordinary 'error' path; retry is user-initiated only. A user with no row gets an empty list
+  // (→ ready), so the intake simply pre-fills empty.
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || state.equipmentStatus !== 'loading') return;
+    let cancelled = false;
+    fetchEquipment(getToken)
+      .then((profile) => {
+        if (!cancelled) dispatch({ type: 'HYDRATE_EQUIPMENT', items: profile.items });
+      })
+      .catch(() => {
+        if (!cancelled) dispatch({ type: 'HYDRATE_EQUIPMENT_ERROR' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, getToken, state.equipmentStatus]);
+
   // Watchdog milestone: boot-ready when ALL startup fetches have landed — recorded here from a
   // transition-observing effect because bootStatus() is a pure selector re-evaluated every render
   // and must stay side-effect-free.
@@ -80,11 +100,17 @@ export default function StateProvider({ children }: { children: ReactNode }) {
     if (
       state.programsStatus === 'ready' &&
       state.userStateStatus === 'ready' &&
-      state.userProgramsStatus === 'ready'
+      state.userProgramsStatus === 'ready' &&
+      state.equipmentStatus === 'ready'
     ) {
       recordBootMilestone('boot-ready');
     }
-  }, [state.programsStatus, state.userStateStatus, state.userProgramsStatus]);
+  }, [
+    state.programsStatus,
+    state.userStateStatus,
+    state.userProgramsStatus,
+    state.equipmentStatus,
+  ]);
 
   // Sign-out: clear the per-user fields so they can't leak into the next account's session.
   // Transition-keyed (effects fire on dep change, not every render); the dispatch is deferred

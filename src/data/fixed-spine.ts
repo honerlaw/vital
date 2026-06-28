@@ -3,6 +3,10 @@
  * fails or the LLM is unavailable. Mirrors the spine the planner is asked to produce (same ids),
  * with no branch questions, so the wizard always has something to render and `/generate` always
  * receives a usable spec. Pure data — no LLM involved.
+ *
+ * Equipment is NO LONGER a question here (042): it comes from the user's saved equipment profile
+ * and is injected into the spec by the intake screen (with an inline, pre-filled override editor),
+ * so neither the spine nor the planner asks about it.
  */
 import { type QuestionGraph } from '@/data/routine-types';
 
@@ -40,19 +44,6 @@ export const FIXED_SPINE: QuestionGraph = {
         { value: '45', label: '45 min' },
         { value: '60', label: '60 min' },
         { value: '75+', label: '75+ min' },
-      ],
-    },
-    {
-      id: 'equipment',
-      kind: 'multi-select',
-      prompt: 'What equipment do you have?',
-      options: [
-        { value: 'barbell', label: 'Barbell' },
-        { value: 'dumbbells', label: 'Dumbbells' },
-        { value: 'machines', label: 'Machines' },
-        { value: 'cables', label: 'Cables' },
-        { value: 'kettlebell', label: 'Kettlebell' },
-        { value: 'bodyweight', label: 'Bodyweight only' },
       ],
     },
     {

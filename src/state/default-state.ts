@@ -21,4 +21,6 @@ export const DEFAULT_STATE: AppState = {
   cursors: {},
   history: [],
   live: null,
+  equipment: [],
+  equipmentStatus: 'loading',
 };

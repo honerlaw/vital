@@ -166,4 +166,9 @@ export interface AppState {
   cursors: Record<string, number>;
   history: SessionLog[];
   live: LiveSession | null;
+  // Per-user saved equipment profile (042): canonical equipment ids (see
+  // `@/data/equipment-catalog`), boot-hydrated so the routine intake pre-fills instantly. Boot
+  // readiness waits on `equipmentStatus` too, same loading/ready/error shape as the others.
+  equipment: string[];
+  equipmentStatus: ProgramsStatus;
 }
