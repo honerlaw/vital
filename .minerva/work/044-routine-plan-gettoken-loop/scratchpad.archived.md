@@ -28,3 +28,6 @@
   token (ref synced every render; init value valid; sync effect declared before plan effect), fires
   once per loading-plan entry, unmount-abort preserved, hook ordering stable (unconditional, pre-early-
   return), generate/refine/save left reading getToken directly (user-triggered, non-looping, by design).
+
+## Synthesis 2026-07-05
+- [synthesis] no-op (below threshold) — 3 entries since watermark 040 (041, 042, 044); overview.md has no broken links and 044's wikilinks all resolve; overview is advisory, full refresh deferred to a dedicated synthesize run.
