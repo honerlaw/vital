@@ -1,7 +1,13 @@
 # 044 — routine wizard: stop the plan effect from re-subscribing on every render (getToken loop)
 
 ## Status
-Draft
+Shipped (2026-07-05). Delivered via `minerva:propose-ship-quick` (main-model decisions; no
+escalations). Implementation matched the Approach exactly — no divergence, no replan. Review surfaced
+no code FIX findings. Verified: `new.tsx` lints clean, 129/129 tests pass, no new tsc errors (the
+residual local lint/tsc noise is a pre-existing incomplete-install gap — `expo-image-picker` /
+`expo-image-manipulator` declared but absent from local `node_modules`, green under CI's `npm ci`).
+Durable learning promoted to [[044-bug-clerk-expo-unstable-gettoken-stream-loop]]; global-hardening
+followup recorded in `followups.md`.
 
 ## Goal
 Stop the AI routine wizard's plan-fetch `useEffect` (`src/app/routine/new.tsx:69`) from re-subscribing
