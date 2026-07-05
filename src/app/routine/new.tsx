@@ -60,6 +60,15 @@ export default function NewRoutineScreen() {
   const [genOrigin, setGenOrigin] = useState<'initial' | 'refine'>('initial');
   const [confirmVisible, setConfirmVisible] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  // `@clerk/expo`'s useAuth() returns a NEW getToken every render (no useCallback), so keying any
+  // effect on it re-subscribes every render. The plan effect below reads the token via this ref —
+  // kept current in its own effect (ref writes belong in effects, not render: 004) — so it can key
+  // ONLY on `phase` and fire once per entry (044). Without this the plan stream was aborted and
+  // reopened ~1 Hz, hanging on `loading-plan` and flooding the server with premature-close errors.
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
 
   const inFlight = phase === 'loading-plan' || phase === 'generating' || phase === 'saving';
 
@@ -70,7 +79,7 @@ export default function NewRoutineScreen() {
     if (phase !== 'loading-plan') return;
     const controller = new AbortController();
     abortRef.current = controller;
-    fetchRoutinePlan(getToken, {
+    fetchRoutinePlan(getTokenRef.current, {
       signal: controller.signal,
       onProgress: setProgress,
       onRetry: () => setRetrying(true),
@@ -88,7 +97,7 @@ export default function NewRoutineScreen() {
         }
       });
     return () => controller.abort();
-  }, [phase, getToken]);
+  }, [phase]);
 
   // While a call is in flight, route Android hardware back through the same confirm dialog (027:
   // usePreventRemove is unavailable in expo-router ~56). setState is in the listener callback, not
