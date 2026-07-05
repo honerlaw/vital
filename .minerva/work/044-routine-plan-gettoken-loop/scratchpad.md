@@ -20,3 +20,11 @@
 - All 4 success criteria met (see table in run). Criterion 4's literal "lint clean" is met in spirit:
   new.tsx is clean; the only residual lint/tsc noise is the pre-existing local node_modules gap above,
   not a regression. No load-bearing divergence → no replan.
+
+## Review triage 2026-07-05
+- Minerva audit: PASS — diff matches proposal Approach; knowledge-compliant (001 no inline disable,
+  004 refs/exhaustive-deps, 027 benign re-subscription). Success criteria all addressed.
+- Code review (inline, no PR yet): no FIX findings, no material SUGGEST findings. Checked: no stale
+  token (ref synced every render; init value valid; sync effect declared before plan effect), fires
+  once per loading-plan entry, unmount-abort preserved, hook ordering stable (unconditional, pre-early-
+  return), generate/refine/save left reading getToken directly (user-triggered, non-looping, by design).
