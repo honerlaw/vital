@@ -46,10 +46,18 @@ tsc-compulsory because the trusted `getProgram` takes a `string`).
 - Today render-fork: chooser (ProgramCard list + the session view's header row, so Account/sign-
   out stays reachable) iff `activeProgramId === null`; the fork sits between the hooks and the
   throwing engine calls.
-- Program detail has ONE context-dependent CTA: "Choose this program" (null — saves without
-  starting a workout), "Begin workout" (active), "Switch & begin workout" (different program —
-  switching is gated on starting a workout; there is no standalone "set active" tap). Since 015
-  the switch CTA dispatches the composite `SWITCH_AND_START_WORKOUT` action.
+- Program detail CTAs by context: "Choose this program" (null — saves without starting a
+  workout), "Begin workout" (active), and for a DIFFERENT program TWO CTAs — "Switch & begin
+  workout" (primary) plus a standalone "Switch to this program" (secondary, 045). Since 015 the
+  switch-and-begin CTA dispatches the composite `SWITCH_AND_START_WORKOUT` action.
+- **045 reinstated the standalone set-active tap** that this decision originally omitted. The
+  "switching is gated on starting a workout; there is no standalone set-active tap" rule held only
+  until 015 made switch-and-begin **revert on CANCEL** (below) — which quietly broke the
+  "pick the program I'll train later" intent: a user who tapped switch & begin and abandoned the
+  workout found the switch undone. 045 adds a plain `SET_ACTIVE_PROGRAM` CTA (the same action
+  `onChoose` uses at first run — already persisted by `StateProvider`) that switches WITHOUT a live
+  session, so there is nothing to revert. Switch-and-begin (revertible) and plain switch
+  (persistent) are now distinct, deliberate paths.
 - The original switch mechanism here was an adjacent `SET_ACTIVE_PROGRAM` + `START_WORKOUT`
   dispatch pair whose correctness depended on event-handler batching. **015 retired it**: the
   composite reducer case can't race itself, resumes the target program's own per-program
