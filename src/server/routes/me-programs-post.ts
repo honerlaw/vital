@@ -15,7 +15,7 @@ const INSERT_PROGRAM =
   'INSERT INTO user_programs ' +
   '(clerk_user_id, name, tag, cred, per_week, blurb, days, spec) ' +
   'VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb) ' +
-  'RETURNING id, name, tag, cred, per_week, blurb, days';
+  'RETURNING id, name, tag, cred, per_week, blurb, days, created_at';
 
 export async function POST(request: Request): Promise<Response> {
   const auth = await requireAuth(request);

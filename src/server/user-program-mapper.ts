@@ -3,7 +3,10 @@
  * `programs-mapper` (snake_case `per_week` → `perWeek`). Each field is validated at runtime; a row
  * that doesn't match throws so the route fails rather than serving malformed data. `days` jsonb
  * arrives as a JS array from pg and is validated through `isWorkoutDayArray`, which transitively
- * validates each exercise's optional `progression`. No `pg` import, so it is unit-testable offline.
+ * validates each exercise's optional `progression`. `created_at` (a pg `Date` for timestamptz, or
+ * a string) is normalized to an ISO string on `createdAt` — the origin/disambiguation stamp the UI
+ * shows (046); catalog programs have no such column and omit the field. No `pg` import, so it is
+ * unit-testable offline.
  */
 import { isProgramTag, isWorkoutDayArray } from '@/data/guards';
 import { type UnknownRow } from '@/server/db';
@@ -17,6 +20,7 @@ export function rowToUserProgram(row: UnknownRow): Program {
   const perWeek = row['per_week'];
   const blurb = row['blurb'];
   const days = row['days'];
+  const createdAtRaw = row['created_at'];
 
   if (typeof id !== 'string') throw new Error('user_programs.id is not a string');
   if (typeof name !== 'string') throw new Error('user_programs.name is not a string');
@@ -26,5 +30,12 @@ export function rowToUserProgram(row: UnknownRow): Program {
   if (typeof blurb !== 'string') throw new Error('user_programs.blurb is not a string');
   if (!isWorkoutDayArray(days)) throw new Error('user_programs.days is not a WorkoutDay[]');
 
-  return { id, name, tag, cred, perWeek, blurb, days };
+  const createdAt =
+    createdAtRaw instanceof Date
+      ? createdAtRaw.toISOString()
+      : typeof createdAtRaw === 'string'
+        ? createdAtRaw
+        : undefined;
+
+  return { id, name, tag, cred, perWeek, blurb, days, ...(createdAt ? { createdAt } : {}) };
 }

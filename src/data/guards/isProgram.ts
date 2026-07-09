@@ -19,6 +19,8 @@ export function isProgram(value: unknown): value is Program {
     'blurb' in value &&
     typeof value.blurb === 'string' &&
     'days' in value &&
-    isWorkoutDayArray(value.days)
+    isWorkoutDayArray(value.days) &&
+    // Optional — present only on user-generated programs (030); catalog rows omit it.
+    (!('createdAt' in value) || typeof value.createdAt === 'string')
   );
 }

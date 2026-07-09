@@ -9,7 +9,7 @@ import { requireAuth } from '@/server/requireAuth';
 import { rowToUserProgram } from '@/server/user-program-mapper';
 
 const SELECT_USER_PROGRAMS =
-  'SELECT id, name, tag, cred, per_week, blurb, days FROM user_programs ' +
+  'SELECT id, name, tag, cred, per_week, blurb, days, created_at FROM user_programs ' +
   'WHERE clerk_user_id = $1 ORDER BY created_at DESC, id DESC';
 
 export async function GET(request: Request): Promise<Response> {

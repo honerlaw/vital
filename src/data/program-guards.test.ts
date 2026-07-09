@@ -30,3 +30,9 @@ void test('isProgram rejects structurally invalid values', () => {
   assert.ok(!isProgram(null));
   assert.ok(!isProgram({ id: 'x', name: 'X', tag: 'Strength', cred: 'c', perWeek: 3, blurb: 'b' }));
 });
+
+void test('isProgram tolerates a string createdAt, rejects a non-string one (046)', () => {
+  const base = SAMPLE_PROGRAMS[0];
+  assert.ok(isProgram({ ...base, createdAt: '2026-07-09T14:34:00.000Z' }));
+  assert.ok(!isProgram({ ...base, createdAt: 42 }));
+});

@@ -1,8 +1,8 @@
 # Knowledge overview
 
-<!-- synthesis-watermark: 040 -->
+<!-- synthesis-watermark: 046 -->
 
-Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030, 033, 039 and 040).
+Synthesized 2026-06-05 (work 011, refreshed in works 012–016, 020, 022, 024, 029, 030, 033, 039, 040, 041, 042, 044 and 046).
 Theme-grouped navigation over the corpus; the entries remain the source of truth.
 
 ## Strict lint guardrails — the constraint everything is written under
@@ -69,13 +69,22 @@ in-session prior set, then the user's last logged weight from history, then blan
 deliberately asymmetric qualification (in-session inherits any typed weight; history trusts
 only done sets) coalescing in `ExerciseBlock` so `SetRow` stays fallback-source-agnostic,
 and the derivation is a plain const after the render gates because a `useMemo` there would
-violate hook ordering ([[030-pattern-cross-session-weight-prefill]]). Since work 023 the
+violate hook ordering ([[030-pattern-cross-session-weight-prefill]]). Work 041 added a per-session
+elapsed timer and a derived total-volume stat: the `LiveSession.startedAtISO` stamp is injected at
+the Begin-tap dispatch site (like `FINISH_WORKOUT`'s `nowISO`) so the reducer and the write-through
+compute an identical `durationSec`, and the in-session display `useElapsedSeconds` RECOMPUTES
+`floor((Date.now() − start)/1000)` every tick rather than self-incrementing — accurate across
+re-renders and JS stalls, called unconditionally above the render gates, and SSR-safe because
+`live` is never hydrated ([[041-pattern-session-duration-and-volume]]). Since work 023 the
 Settings tab's generated avatar derives a WCAG-AA-safe background color deterministically
 from the user's email ([[029-pattern-wcag-safe-generated-avatar-colors]]). Work 029's green
 hero card surfaced the sibling contrast trap on the inverse surface: text ON an accent fill
 must be OPAQUE white (a translucent label blends toward the fill and fails AA), so dim
 secondary text with size/weight and reserve translucency for non-text dividers
-([[033-pattern-inverted-on-accent-surface]]).
+([[033-pattern-inverted-on-accent-surface]]). Work 046 sectioned the programs list by origin —
+"Your Routines" vs "Program Catalog" — purely from the `userProgramIds` partition already in state
+(no schema, no wire change), the same partition that gates the delete button
+([[046-pattern-program-origin-sections-and-generated-stamp]]).
 
 ## Data layer — Postgres as the single source of truth
 
@@ -91,7 +100,17 @@ toggle needs no backfill, written through the same single-statement CTE with a s
 tolerant-reader asymmetry — the POST 400s on malformed set data while BOTH read boundaries
 (server mapper, client sanitizer) degrade per entry instead of letting one corrupt blob brick
 boot, and the route re-projects to known fields because guards validate but don't strip
-([[028-pattern-per-set-log-tracking]]).
+([[028-pattern-per-set-log-tracking]]). Two field-level idioms recur when a value is added to an
+existing row: **persist only what you can't recompute** — work 041 stored wall-clock
+`duration_sec` (a nullable `int4`, optional/best-effort at every boundary, capped in the validator
+because an over-`int4` value passes a bare `>= 0` check then OVERFLOWS to a 500) but left total
+volume a render-time derivation of `set_log` with NO column
+([[041-pattern-session-duration-and-volume]]); and **a generated-only optional field that the
+catalog simply omits** (absence = catalog / today's behavior), the 034 `Exercise.progression` shape
+that work 046 reused for `Program.createdAt` — a column that already existed on `user_programs` but
+was never SELECTed, surfaced by adding it to the GET SELECT and POST RETURNING and normalizing
+node-pg's timestamptz `Date → toISOString()` in the cast-free mapper
+([[046-pattern-program-origin-sections-and-generated-stamp]]).
 
 ## Hosting & delivery — DigitalOcean for web/API, EAS for iOS releases
 
@@ -126,16 +145,26 @@ blocked by the release workflow's required-keys guard (green-but-blind), while a
 build merely ships unsymbolicated. The same instrument now names blocked sign-in statuses
 (`captureMessage` on every degraded auth path) so production data — not guesswork — identifies
 which intermediate Clerk status actually fires ([[026-bug-clerk-finalize-intermediate-status]]).
+A whole class stays invisible to Sentry AND PostHog and shows only in the DigitalOcean runtime
+logs (`doctl apps logs … --type run`): work 044's routine wizard hung on `loading-plan` while a
+~1 Hz burst of `ERR_STREAM_PREMATURE_CLOSE` filled DO logs — `@clerk/expo` v3's `useAuth()` returns
+a NEW `getToken` every render, and an effect that both listed it in its deps and aborted in-flight
+work on cleanup self-sustained an abort/reopen loop the moment a streaming progress driver kept
+re-rendering; the fix is a latest-ref keyed only on `[phase]`, and the generalization names the
+two-condition trap (unstable-hook-fn in deps + cleanup-abort + sustained render driver)
+([[044-bug-clerk-expo-unstable-gettoken-stream-loop]]).
 
 ## Auth & environment
 
 Clerk (core-3 `@clerk/expo`) provides the auth flows, with per-route endpoint enforcement via an
-opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]). Two
+opt-in `requireAuth` ([[011-pattern-clerk-expo-core3-auth-and-endpoint-enforcement]]). Three
 version-fragile Clerk traps are on record: `isLoaded` stuck false reads as a silent blank screen
-([[023-bug-clerk-isloaded-boot-hang]]), and Core-3 methods returning `{ error: null }` at
+([[023-bug-clerk-isloaded-boot-hang]]); Core-3 methods returning `{ error: null }` at
 intermediate sign-in statuses — where `createdSessionId` is null and an ungated `finalize()`
 THROWS — crashed native login until work 020 gated every `finalize()` behind a unit-tested
-status fence ([[026-bug-clerk-finalize-intermediate-status]]). Local dev
+status fence ([[026-bug-clerk-finalize-intermediate-status]]); and `useAuth().getToken` being a
+fresh reference every render, which an effect that keys on it and aborts on cleanup can turn into a
+stream abort/reopen loop ([[044-bug-clerk-expo-unstable-gettoken-stream-loop]]). Local dev
 env vars come from the Doppler CLI, with the local Postgres hardcoded in Docker Compose
 ([[013-decision-doppler-local-env]]); production iOS build-time env lives in EAS but is
 auto-mirrored from Doppler prd on every release
@@ -164,7 +193,18 @@ generation stream: a `stream: true` SSE sibling of `callLlm` yields assistant de
 across chunk boundaries, `[DONE]`-terminated) with `requireAuth` + the daily cap running BEFORE the
 `text/event-stream` opens (so a 401/429 is still a plain JSON `Response`), structural progress
 parsed from the partial text, and every in-flight phase cancellable — adapting 027's static workout
-exit recipe into a per-phase dynamic lock ([[038-pattern-llm-sse-streaming-and-cancel]]).
+exit recipe into a per-phase dynamic lock ([[038-pattern-llm-sse-streaming-and-cancel]]). Work 042
+added a per-user equipment profile — a shared CLOSED vocabulary persisted single-row-per-user (the
+017 upsert shape) that now PRE-FILLS the intake instead of being asked, and widened the 035 LLM
+client for a vision pass that scans an equipment photo, reusing the same `llm_usage` cap and
+strict-writer/tolerant-reader asymmetry ([[042-pattern-equipment-profile-and-vision-passthrough]]).
+The streaming plan path also surfaced work 044's abort/reopen loop (an unstable Clerk `getToken` in
+an effect's deps — see Observability) ([[044-bug-clerk-expo-unstable-gettoken-stream-loop]]). Work
+046 closed a naming gap: two generated routines the LLM named identically were indistinguishable, so
+the programs list now sections generated vs catalog and stamps each generated card with a
+date-AND-time `generatedStamp` (date alone can't split same-session generations), with the
+`/generate` prompt additionally nudged toward a specific, distinctive name
+([[046-pattern-program-origin-sections-and-generated-stamp]]).
 
 ## Nutrition — food & calorie tracking
 
@@ -200,7 +240,7 @@ the same POST response's `foodMeasures[]` household portions ("1 cup (8 fl oz)",
 
 ## Limitations
 
-The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 040, not
+The `synthesis-watermark` is a new-scope-only floor: it attests synthesis intent at entry 046, not
 body content — in-place edits to already-synthesized entries do not move it, and a stale body with
 a current watermark is not detectable mechanically. Entries promoted after this synthesis count as
 un-synthesized until the next refresh. Note: the corpus carries two entries numbered 006 (a
