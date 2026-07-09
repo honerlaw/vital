@@ -7,9 +7,11 @@ interface Props {
   onPress: () => void;
   disabled?: boolean;
   // `onAccent` is the inverted variant for use ON a filled accent surface (the green HeroCard):
-  // white pill, accent-green label. The `variant` prop must be read in the body — adding to the
-  // union alone leaves the label white-on-white (the buttonLabel preset bakes in white).
-  variant?: 'primary' | 'onAccent';
+  // white pill, accent-green label. `secondary` is the outline variant for a lower-emphasis CTA
+  // stacked under a filled primary (transparent fill, accent border + accent label). The `variant`
+  // prop must be read in the body — adding to the union alone leaves the label white-on-white (the
+  // buttonLabel preset bakes in white).
+  variant?: 'primary' | 'onAccent' | 'secondary';
 }
 
 export default function Button({ label, onPress, disabled = false, variant = 'primary' }: Props) {
@@ -17,12 +19,14 @@ export default function Button({ label, onPress, disabled = false, variant = 'pr
     ? styles.disabled
     : variant === 'onAccent'
       ? styles.onAccent
-      : styles.primary;
+      : variant === 'secondary'
+        ? styles.secondary
+        : styles.primary;
   const labelColor = disabled
     ? colors.faint
-    : variant === 'onAccent'
-      ? colors.accent
-      : colors.onAccent;
+    : variant === 'primary'
+      ? colors.onAccent
+      : colors.accent;
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -48,5 +52,6 @@ const styles = StyleSheet.create({
   },
   primary: { backgroundColor: colors.accent, borderColor: colors.accent },
   onAccent: { backgroundColor: colors.onAccent, borderColor: colors.onAccent },
+  secondary: { backgroundColor: 'transparent', borderColor: colors.accent },
   disabled: { backgroundColor: colors.line, borderColor: colors.line2 },
 });

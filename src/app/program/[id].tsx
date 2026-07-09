@@ -76,6 +76,10 @@ export default function ProgramDetailScreen() {
   };
 
   // First run (014): selecting saves the choice as the active program — no forced workout.
+  // Also the standalone "Switch to this program" path (045): a plain SET_ACTIVE_PROGRAM makes a
+  // DIFFERENT program active without starting a workout — distinct from SWITCH_AND_START_WORKOUT,
+  // whose switch commits at Begin and reverts on CANCEL (015). This one persists (StateProvider
+  // PUTs on SET_ACTIVE_PROGRAM) and never reverts — it's for "pick the program I'll train later".
   const onChoose = () => {
     dispatch({ type: 'SET_ACTIVE_PROGRAM', id: program.id });
     router.replace('/');
@@ -133,19 +137,23 @@ export default function ProgramDetailScreen() {
         ))}
       </View>
 
-      {/* One CTA per context (014): choose (first run, saves without starting a workout),
-          begin (this program is active), or switch & begin (starting a workout in a different
-          program is what makes it active — there is no standalone "set active" tap). The switch
-          commits at the Begin tap and CANCEL reverts it (015) — losslessly, since each program
-          keeps its own cursor and switching never mutates the map. */}
+      {/* CTAs per context (014/045): first run → choose (saves without starting a workout);
+          active program → begin; a DIFFERENT program → two paths: "Switch & begin workout" (the
+          switch commits at the Begin tap and CANCEL reverts it losslessly — 015) plus a standalone
+          "Switch to this program" (045) that makes it active WITHOUT starting a workout and does
+          not revert — for picking the program you'll train later. */}
       <View style={styles.cta}>
         {neverChose ? (
           <Button label="Choose this program" onPress={onChoose} />
+        ) : active ? (
+          <Button label="Begin workout →" onPress={onBegin} />
         ) : (
-          <Button
-            label={active ? 'Begin workout →' : 'Switch & begin workout →'}
-            onPress={onBegin}
-          />
+          <>
+            <Button label="Switch & begin workout →" onPress={onBegin} />
+            <View style={styles.secondaryCta}>
+              <Button label="Switch to this program" onPress={onChoose} variant="secondary" />
+            </View>
+          </>
         )}
       </View>
       {isUserProgram ? (
@@ -179,5 +187,6 @@ const styles = StyleSheet.create({
     paddingVertical: space.xs,
   },
   cta: { marginTop: space.lg },
+  secondaryCta: { marginTop: space.md },
   deleteCta: { marginTop: space.md },
 });
