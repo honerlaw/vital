@@ -3,6 +3,7 @@ import AppText from '@/components/AppText';
 import Tag from '@/components/Tag';
 import { Program } from '@/data/types';
 import { border, colors, radius, space } from '@/theme';
+import { generatedStamp } from '@/utils/generatedStamp';
 
 interface Props {
   program: Program;
@@ -24,7 +25,9 @@ export default function ProgramCard({ program, active, onPress }: Props) {
       <AppText variant="body">{program.blurb}</AppText>
       <View style={styles.foot}>
         <AppText variant="tag" color={colors.muted}>
-          {`${program.cred} / ${program.days.length}-DAY CYCLE`}
+          {program.createdAt
+            ? `Generated ${generatedStamp(program.createdAt)} / ${program.days.length}-DAY CYCLE`
+            : `${program.cred} / ${program.days.length}-DAY CYCLE`}
         </AppText>
         {active ? (
           <AppText variant="tag" color={colors.accent} style={styles.activeLabel}>

@@ -19,6 +19,8 @@ const SYSTEM_LINES = [
   '  "days": [ { "name": string, "exercises": Exercise[] } ]',
   '}',
   'Exercise: { "name": string, "sets": integer, "scheme": string, "progression": Progression }.',
+  'name MUST be a specific, distinctive title reflecting the split, goal, or emphasis',
+  '(e.g. "Upper/Lower Hypertrophy"), NOT a generic label like "Custom Program".',
   'scheme is a display string using the × character, e.g. "3×5", "3×8-12", "5×5+".',
   'The number of days MUST equal perWeek.',
   'Every exercise MUST include progression, chosen from this CLOSED vocabulary:',

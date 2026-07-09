@@ -67,6 +67,7 @@ export interface Program {
   perWeek: number;    // training days per week (used for cadence labels)
   blurb: string;
   days: WorkoutDay[]; // the rotation
+  createdAt?: string; // ISO timestamp — set only for generated programs (030); catalog omits it
 }
 
 /**
